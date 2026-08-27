@@ -5,68 +5,160 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>Big Sexy Giant Killer</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@500;700&display=swap');
-:root{--gold:#e6c35a;--text:#f6efe4}
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@500;700&display=swap");
+:root{--gold:#e6c35a;--text:#f6efe4;--felt:#0a0608}
 *{box-sizing:border-box}
-html,body{margin:0;background:#0a0608;color:var(--text);font-family:Barlow,system-ui,sans-serif}
-header.top{padding:10px 12px 0;text-align:center}
+html,body{margin:0;background:var(--felt);color:var(--text);font-family:Barlow,system-ui,sans-serif}
+button{font:inherit;color:inherit}
+header.top{padding:12px 12px 4px;text-align:center}
 header.top .who{letter-spacing:.22em;text-transform:uppercase;font-size:10px;color:var(--gold)}
-header.top h1{margin:2px 0 8px;font-family:'Bebas Neue',sans-serif;font-size:26px}
-.set-label{padding:10px 14px 4px;letter-spacing:.2em;text-transform:uppercase;font-size:11px;color:var(--gold)}
-.wrap{overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-.wrap::-webkit-scrollbar{display:none}
-.rail{display:flex;gap:10px;padding:8px calc(50vw - 32vw) 18px;width:max-content;align-items:flex-end}
-.tile{flex:0 0 64vw;max-width:340px;scroll-snap-align:center;text-decoration:none;color:var(--text)}
-.tile img{width:100%;aspect-ratio:63/88;object-fit:cover;object-position:center top;border:3px solid #c9a44a;display:block;background:#1a1210}
-.tile b,.tile i{display:block;text-align:center}
-.tile b{margin-top:8px;font-family:'Bebas Neue',sans-serif;font-size:22px}
+header.top h1{margin:2px 0 0;font-family:"Bebas Neue",sans-serif;font-size:28px;letter-spacing:.06em}
+.nav{display:flex;justify-content:center;gap:10px;padding:8px 12px 0}
+.nav button{min-width:96px;height:44px;border:1px solid var(--gold);background:transparent;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;font-size:12px}
+.stage{perspective:1100px;padding:8px 0 0}
+.wrap{overflow:hidden;touch-action:pan-y;height:min(78vw,520px)}
+.rail{position:relative;height:100%;transform-style:preserve-3d}
+.tile{all:unset;position:absolute;left:50%;top:8px;width:min(64vw,280px);margin-left:calc(min(64vw,280px)/-2);cursor:pointer;color:var(--text);transform-style:preserve-3d}
+.tile img{width:100%;aspect-ratio:63/88;object-fit:cover;object-position:center top;border:3px solid #c9a44a;display:block;background:#1a1210;pointer-events:none}
+.tile b,.tile i{display:none;text-align:center;pointer-events:none}
+.tile.is-center b,.tile.is-center i{display:block}
+.tile b{margin-top:8px;font-family:"Bebas Neue",sans-serif;font-size:24px}
 .tile i{letter-spacing:.16em;text-transform:uppercase;font-size:10px;color:var(--gold);font-style:normal}
-.page{display:none;padding:12px 14px 40px}
-.page.on{display:block}
-.back{color:var(--gold);text-decoration:none;letter-spacing:.14em;text-transform:uppercase;font-size:12px}
-.hero{width:min(320px,78vw);display:block;margin:10px auto;border:2px solid var(--gold)}
+.faces{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:10px 12px 20px}
+.faces button{height:36px;padding:0 10px;border:1px solid #3a2218;background:#140e0c;color:var(--text);font-size:12px;letter-spacing:.04em}
+.faces button.on{border-color:var(--gold);color:var(--gold)}
+.hero{width:min(320px,78vw);margin:10px auto;display:block;border:2px solid var(--gold)}
+.page{display:none;min-height:100dvh;padding-bottom:40px}
+.back{display:block;padding:10px 12px;color:var(--gold);text-decoration:none;letter-spacing:.14em;text-transform:uppercase;font-size:12px}
+.block{padding:10px 14px}
 </style>
 </head>
 <body>
 <main id="home">
 <header class="top"><div class="who">Commander Decks</div><h1>Big Sexy Giant Killer</h1></header>
-<div class="set-label">Marvel</div>
-<div class="wrap"><div class="rail">
-<a class="tile" href="#d-hulk"><img src="https://api.scryfall.com/cards/named?fuzzy=Bruce%20Banner&format=image&version=art_crop" alt="Hulk"><b>Hulk</b><i>Group slug</i></a>
-<a class="tile" href="#d-widow"><img src="https://api.scryfall.com/cards/named?fuzzy=Black%20Widow&format=image&version=art_crop" alt="Widow"><b>Black Widow</b><i>Sacrifice</i></a>
-<a class="tile" href="#d-ironman"><img src="https://api.scryfall.com/cards/named?exact=Tony%20Stark&format=image&version=art_crop" alt="Tony"><b>Tony Stark</b><i>Artifacts</i></a>
-<a class="tile" href="#d-cap"><img src="https://api.scryfall.com/cards/mar/88?format=image&version=art_crop" alt="Cap"><b>Captain America</b><i>Voltron</i></a>
-<a class="tile" href="#d-dare"><img src="https://api.scryfall.com/cards/named?fuzzy=Daredevil&format=image&version=art_crop" alt="DD"><b>Daredevil</b><i>Pain</i></a>
-<a class="tile" href="#d-ant"><img src="https://api.scryfall.com/cards/named?fuzzy=Ant-Man&format=image&version=art_crop" alt="Ant"><b>Ant-Man</b><i>Counters</i></a>
-<a class="tile" href="#d-thor"><img src="https://api.scryfall.com/cards/named?fuzzy=Thor%2C%20God%20of%20Thunder&format=image&version=art_crop" alt="Thor"><b>Thor</b><i>Pings</i></a>
-<a class="tile" href="#d-doom"><img src="https://api.scryfall.com/cards/named?fuzzy=Doctor%20Doom&format=image&version=art_crop" alt="Doom"><b>Doctor Doom</b><i>Mayhem</i></a>
-<a class="tile" href="#d-loki"><img src="https://api.scryfall.com/cards/named?fuzzy=Loki%2C%20God%20of%20Stories&format=image&version=art_crop" alt="Loki"><b>Loki</b><i>Copy</i></a>
-<a class="tile" href="#d-ultron"><img src="https://api.scryfall.com/cards/named?fuzzy=Ultron&format=image&version=art_crop" alt="Ultron"><b>Ultron</b><i>Artifacts</i></a>
-<a class="tile" href="#d-kang"><img src="https://api.scryfall.com/cards/named?fuzzy=Kang%20the%20Conqueror&format=image&version=art_crop" alt="Kang"><b>Kang</b><i>Suspend</i></a>
-<a class="tile" href="#d-skrull"><img src="https://api.scryfall.com/cards/named?fuzzy=Super-Skrull&format=image&version=art_crop" alt="Skrull"><b>Super-Skrull</b><i>Mimic</i></a>
-<a class="tile" href="#d-heroes"><img src="https://api.scryfall.com/cards/msh/10?format=image&version=art_crop" alt="Avengers"><b>Avengers</b><i>Hero tribal</i></a>
-</div></div>
-<div class="set-label">Lord of the Rings</div>
-<div class="wrap"><div class="rail">
-<a class="tile" href="#d-nazgul"><img src="https://api.scryfall.com/cards/named?fuzzy=Lord%20of%20the%20Nazgul&format=image&version=art_crop" alt="Nazgul"><b>Nazgûl</b><i>Spells</i></a>
-<a class="tile" href="#d-amass"><img src="https://api.scryfall.com/cards/named?fuzzy=Saruman%2C%20the%20White%20Hand&format=image&version=art_crop" alt="Amass"><b>Amass</b><i>Amass</i></a>
-<a class="tile" href="#d-frodo"><img src="https://api.scryfall.com/cards/ltr/304?format=image&version=art_crop" alt="Frodo"><b>Frodo</b><i>Voltron</i></a>
-<a class="tile" href="#d-gollum"><img src="https://api.scryfall.com/cards/ltr/330?format=image&version=art_crop" alt="Smeagol"><b>Sméagol</b><i>Aristocrats</i></a>
-<a class="tile" href="#d-shelob"><img src="https://api.scryfall.com/cards/named?fuzzy=Shelob%2C%20Child%20of%20Ungoliant&format=image&version=art_crop" alt="Shelob"><b>Shelob</b><i>Spiders</i></a>
-</div></div>
+<div class="nav">
+  <button type="button" id="prev">Prev</button>
+  <button type="button" id="next">Next</button>
+</div>
+<div class="stage"><div class="wrap" id="ring"><div class="rail" id="rail">
+<button type="button" class="tile" data-id="d-hulk" aria-label="Hulk"><img src="https://cards.scryfall.io/art_crop/front/e/0/e0dbbdcf-84e1-494f-8b8c-0a094f603fa9.jpg" alt="Hulk" decoding="async"><b>Hulk</b><i>Group slug</i></button>
+<button type="button" class="tile" data-id="d-widow" aria-label="Black Widow"><img src="https://cards.scryfall.io/art_crop/front/6/3/63ce0909-7d7d-410d-ab6c-c87fa3e23877.jpg" alt="Black Widow" decoding="async"><b>Black Widow</b><i>Sacrifice</i></button>
+<button type="button" class="tile" data-id="d-ironman" aria-label="Tony Stark"><img src="https://cards.scryfall.io/art_crop/front/4/c/4cea42fd-035e-4b8f-8b1d-ff363b694f14.jpg" alt="Tony Stark" decoding="async"><b>Tony Stark</b><i>Artifacts matter</i></button>
+<button type="button" class="tile" data-id="d-cap" aria-label="Captain America"><img src="https://cards.scryfall.io/art_crop/front/0/6/0669ffcf-30c1-4d90-ae5f-3deca0f82526.jpg" alt="Captain America" decoding="async"><b>Captain America</b><i>Voltron</i></button>
+<button type="button" class="tile" data-id="d-dare" aria-label="Daredevil"><img src="https://cards.scryfall.io/art_crop/front/a/5/a5cf63bd-66db-48b4-87b9-0d0e923e1e42.jpg" alt="Daredevil" decoding="async"><b>Daredevil</b><i>Pain</i></button>
+<button type="button" class="tile" data-id="d-ant" aria-label="Ant-Man"><img src="https://cards.scryfall.io/art_crop/front/5/d/5d98073e-2828-4365-a8d6-f631aac0cca9.jpg" alt="Ant-Man" decoding="async"><b>Ant-Man</b><i>Counters</i></button>
+<button type="button" class="tile" data-id="d-thor" aria-label="Thor"><img src="https://cards.scryfall.io/art_crop/front/c/d/cddd314c-c271-475a-b076-01a8599c8015.jpg" alt="Thor" decoding="async"><b>Thor</b><i>Pings</i></button>
+<button type="button" class="tile" data-id="d-doom" aria-label="Doctor Doom"><img src="https://cards.scryfall.io/art_crop/front/0/9/099ed408-9178-4403-8b2d-479ca3cbda9b.jpg" alt="Doctor Doom" decoding="async"><b>Doctor Doom</b><i>Mayhem</i></button>
+<button type="button" class="tile" data-id="d-loki" aria-label="Loki"><img src="https://cards.scryfall.io/art_crop/front/3/6/3636ecb1-8bb9-49aa-a40b-c0d0b3b71158.jpg" alt="Loki" decoding="async"><b>Loki</b><i>Copy</i></button>
+<button type="button" class="tile" data-id="d-ultron" aria-label="Ultron"><img src="https://cards.scryfall.io/art_crop/front/b/f/bf5b410f-d6cb-4a74-a975-372975cf21f6.jpg" alt="Ultron" decoding="async"><b>Ultron</b><i>Artifacts</i></button>
+<button type="button" class="tile" data-id="d-kang" aria-label="Kang"><img src="https://cards.scryfall.io/art_crop/front/8/8/88cf0311-d7e3-40bb-85fa-3cca973c5e44.jpg" alt="Kang" decoding="async"><b>Kang</b><i>Suspend</i></button>
+<button type="button" class="tile" data-id="d-skrull" aria-label="Super-Skrull"><img src="https://cards.scryfall.io/art_crop/front/1/1/11fc8221-756a-4919-9272-38793e9c1ad9.jpg" alt="Super-Skrull" decoding="async"><b>Super-Skrull</b><i>Mimic</i></button>
+<button type="button" class="tile" data-id="d-heroes" aria-label="Avengers"><img src="https://cards.scryfall.io/art_crop/front/6/1/61a51b67-d941-4e07-9c12-ffe583cb65d4.jpg" alt="Avengers" decoding="async"><b>Avengers</b><i>Hero tribal</i></button>
+<button type="button" class="tile" data-id="d-nazgul" aria-label="Nazgul"><img src="https://cards.scryfall.io/art_crop/front/4/1/41e3d118-8f97-4c68-acff-2f90a055af5b.jpg" alt="Nazgul" decoding="async"><b>Nazgul</b><i>Spells</i></button>
+<button type="button" class="tile" data-id="d-amass" aria-label="Amass"><img src="https://cards.scryfall.io/art_crop/front/6/4/6487ccbf-f6cd-45a6-8514-2c458b655ef2.jpg" alt="Amass" decoding="async"><b>Amass</b><i>Amass</i></button>
+<button type="button" class="tile" data-id="d-frodo" aria-label="Frodo"><img src="https://cards.scryfall.io/art_crop/front/7/d/7d86dc2e-6f0c-4714-9d30-5d099d3b895c.jpg" alt="Frodo" decoding="async"><b>Frodo</b><i>Voltron</i></button>
+<button type="button" class="tile" data-id="d-gollum" aria-label="Smeagol"><img src="https://cards.scryfall.io/art_crop/front/1/3/13253f8d-1897-41e8-a904-9e57ac7eff0a.jpg" alt="Smeagol" decoding="async"><b>Smeagol</b><i>Aristocrats</i></button>
+<button type="button" class="tile" data-id="d-shelob" aria-label="Shelob"><img src="https://cards.scryfall.io/art_crop/front/a/1/a14c4b29-3363-45ce-9190-0f79e1a0ef7f.jpg" alt="Shelob" decoding="async"><b>Shelob</b><i>Spiders</i></button>
+</div></div></div>
+<div class="faces" id="faces">
+<button type="button" data-i="0">Hulk</button>
+<button type="button" data-i="1">Black Widow</button>
+<button type="button" data-i="2">Tony Stark</button>
+<button type="button" data-i="3">Captain America</button>
+<button type="button" data-i="4">Daredevil</button>
+<button type="button" data-i="5">Ant-Man</button>
+<button type="button" data-i="6">Thor</button>
+<button type="button" data-i="7">Doctor Doom</button>
+<button type="button" data-i="8">Loki</button>
+<button type="button" data-i="9">Ultron</button>
+<button type="button" data-i="10">Kang</button>
+<button type="button" data-i="11">Super-Skrull</button>
+<button type="button" data-i="12">Avengers</button>
+<button type="button" data-i="13">Nazgul</button>
+<button type="button" data-i="14">Amass</button>
+<button type="button" data-i="15">Frodo</button>
+<button type="button" data-i="16">Smeagol</button>
+<button type="button" data-i="17">Shelob</button>
+</div>
 </main>
-<article class="page" id="d-ironman"><a class="back" href="#home">← Decks</a><img class="hero" src="https://api.scryfall.com/cards/named?exact=Tony%20Stark&format=image&version=normal" alt="Tony"><p>Tony Stark · artifacts. Full 100 goes on this page next.</p></article>
-<article class="page" id="d-cap"><a class="back" href="#home">← Decks</a><img class="hero" src="https://api.scryfall.com/cards/mar/88?format=image&version=normal" alt="Cap"><p>Captain America · voltron. Your printings go on this page next.</p></article>
+<article class="page" id="d-ironman"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?exact=Tony%20Stark&format=image&version=normal" alt="Tony Stark"><div class="block"><p>Tony Stark</p></div></article>
+<article class="page" id="d-cap"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/mar/88?format=image&version=normal" alt="Captain America"><div class="block"><p>Captain America</p></div></article>
+<article class="page" id="d-hulk"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Bruce%20Banner&format=image&version=normal" alt="Hulk"><div class="block"><p>Hulk</p></div></article>
+<article class="page" id="d-widow"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Black%20Widow&format=image&version=normal" alt="Black Widow"><div class="block"><p>Black Widow</p></div></article>
+<article class="page" id="d-dare"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Daredevil&format=image&version=normal" alt="Daredevil"><div class="block"><p>Daredevil</p></div></article>
+<article class="page" id="d-ant"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Ant-Man&format=image&version=normal" alt="Ant-Man"><div class="block"><p>Ant-Man</p></div></article>
+<article class="page" id="d-thor"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Thor&format=image&version=normal" alt="Thor"><div class="block"><p>Thor</p></div></article>
+<article class="page" id="d-doom"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Doctor%20Doom&format=image&version=normal" alt="Doctor Doom"><div class="block"><p>Doctor Doom</p></div></article>
+<article class="page" id="d-loki"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Loki&format=image&version=normal" alt="Loki"><div class="block"><p>Loki</p></div></article>
+<article class="page" id="d-ultron"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Ultron&format=image&version=normal" alt="Ultron"><div class="block"><p>Ultron</p></div></article>
+<article class="page" id="d-kang"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Kang&format=image&version=normal" alt="Kang"><div class="block"><p>Kang</p></div></article>
+<article class="page" id="d-skrull"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Super-Skrull&format=image&version=normal" alt="Super-Skrull"><div class="block"><p>Super-Skrull</p></div></article>
+<article class="page" id="d-heroes"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Captain%20America&format=image&version=normal" alt="Avengers"><div class="block"><p>Avengers</p></div></article>
+<article class="page" id="d-frodo"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/ltr/304?format=image&version=normal" alt="Frodo"><div class="block"><p>Frodo</p></div></article>
+<article class="page" id="d-gollum"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/ltr/330?format=image&version=normal" alt="Smeagol"><div class="block"><p>Smeagol</p></div></article>
+<article class="page" id="d-nazgul"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Lord%20of%20the%20Nazgul&format=image&version=normal" alt="Nazgul"><div class="block"><p>Nazgul</p></div></article>
+<article class="page" id="d-amass"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Saruman&format=image&version=normal" alt="Amass"><div class="block"><p>Amass</p></div></article>
+<article class="page" id="d-shelob"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Shelob&format=image&version=normal" alt="Shelob"><div class="block"><p>Shelob</p></div></article>
 <script>
 (function(){
-  function show(){
-    var h=location.hash, on=h.indexOf('#d-')===0;
-    document.getElementById('home').style.display=on?'none':'block';
-    document.querySelectorAll('.page').forEach(function(p){p.classList.toggle('on','#'+p.id===h)});
+  var tiles=[].slice.call(document.querySelectorAll("#rail .tile"));
+  var chips=[].slice.call(document.querySelectorAll("#faces button"));
+  var n=tiles.length;
+  var at=tiles.findIndex(function(el){return el.getAttribute("data-id")==="d-ironman";});
+  if(at<0) at=0;
+  var home=document.getElementById("home");
+  var pages=[].slice.call(document.querySelectorAll(".page"));
+  function show(id){
+    var on=!!id;
+    home.style.display=on?"none":"block";
+    pages.forEach(function(p){p.style.display=(id && p.id===id)?"block":"none";});
     if(on) window.scrollTo(0,0);
+    else paint();
   }
-  window.addEventListener('hashchange',show);
-  show();
+  function wrapDelta(i){
+    var d=i-at;
+    if(d>n/2) d-=n;
+    if(d<-n/2) d+=n;
+    return d;
+  }
+  function paint(){
+    tiles.forEach(function(el,i){
+      var d=wrapDelta(i);
+      var hide=Math.abs(d)>2;
+      el.classList.toggle("is-center", d===0);
+      el.style.zIndex=String(40-Math.abs(d));
+      el.style.opacity=hide?"0":String(1-Math.abs(d)*0.18);
+      el.style.pointerEvents=hide?"none":"auto";
+      var yaw=d*-32;
+      var x=d*38;
+      var z=-Math.abs(d)*80;
+      el.style.transform="translateX("+x+"vw) translateZ("+z+"px) rotateY("+yaw+"deg)";
+    });
+    chips.forEach(function(c,i){c.classList.toggle("on", i===at);});
+  }
+  function spin(dir){ at=(at+dir+n)%n; paint(); }
+  document.getElementById("prev").onclick=function(){spin(-1);};
+  document.getElementById("next").onclick=function(){spin(1);};
+  tiles.forEach(function(el,i){
+    el.onclick=function(){
+      var d=wrapDelta(i);
+      if(d===0) show(el.getAttribute("data-id"));
+      else { at=i; paint(); }
+    };
+  });
+  chips.forEach(function(c){ c.onclick=function(){ at=+c.getAttribute("data-i"); paint(); }; });
+  document.querySelectorAll(".back").forEach(function(a){
+    a.addEventListener("click", function(e){ e.preventDefault(); show(null); });
+  });
+  var startX=0;
+  var ring=document.getElementById("ring");
+  ring.addEventListener("touchstart", function(e){ startX=e.changedTouches[0].clientX; }, {passive:true});
+  ring.addEventListener("touchend", function(e){
+    var dx=e.changedTouches[0].clientX-startX;
+    if(dx>40) spin(-1);
+    else if(dx<-40) spin(1);
+  }, {passive:true});
+  paint();
 })();
 </script>
 </body>
