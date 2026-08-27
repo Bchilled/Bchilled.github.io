@@ -1,1 +1,200 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Big Sexy Giant Killer</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@500;700&display=swap");
+:root{--gold:#e6c35a;--text:#f6efe4;--felt:#0a0608}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--felt);color:var(--text);font-family:Barlow,system-ui,sans-serif;height:100%}
+html,body{overflow:hidden}
+body.deck{overflow:auto;height:auto}
+button{font:inherit;color:inherit}
+#home{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+header.top{padding:10px 12px 0;text-align:center;flex:0 0 auto}
+header.top h1{margin:0;font-family:"Bebas Neue",sans-serif;font-size:28px;letter-spacing:.06em}
+.stage{perspective:1100px;flex:1 1 auto;min-height:0;display:flex}
+.wrap{overflow:hidden;touch-action:pan-y;flex:1;height:100%}
+.rail{position:relative;height:100%;transform-style:preserve-3d}
+.tile{all:unset;position:absolute;left:50%;top:6px;width:min(64vw,280px);margin-left:calc(min(64vw,280px)/-2);cursor:pointer;color:var(--text);transform-style:preserve-3d}
+.tile img{width:100%;aspect-ratio:63/88;object-fit:cover;object-position:center top;border:3px solid #c9a44a;display:block;background:#1a1210;pointer-events:none}
+.tile b{display:none;text-align:center;pointer-events:none;margin-top:8px;font-family:"Bebas Neue",sans-serif;font-size:24px}
+.tile.is-center b{display:block}
+.flipwrap{width:min(320px,78vw);margin:0 auto}
+.flipwrap img.hero,.hero{width:min(320px,78vw);margin:10px auto;display:block;border:2px solid var(--gold)}
+.flipbtn{display:block;margin:8px auto 0;background:none;border:1px solid var(--gold);color:var(--gold);padding:6px 12px;letter-spacing:.14em;text-transform:uppercase;font-size:11px}
+.page{display:none;min-height:100dvh;padding-bottom:40px}
+.back{display:block;padding:10px 12px;color:var(--gold);text-decoration:none;letter-spacing:.14em;text-transform:uppercase;font-size:12px}
+.block{padding:10px 14px}
+.block h2{margin:14px 0 6px;font-family:"Bebas Neue",sans-serif;letter-spacing:.12em;color:var(--gold);font-size:18px}
+.block p{margin:0 0 8px;font-size:15px;line-height:1.35}
+.field{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:0 0 10px}
+.br{margin:0;padding:0;list-style:none}
+.br li{padding:4px 0;border-bottom:1px solid #3a2218;font-size:15px}
+.br b{color:var(--gold)}
+.list{padding:0 10px 12px}
+.list h3{margin:14px 8px 6px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.row{all:unset;display:flex;gap:8px;align-items:center;width:100%;padding:7px 6px;border-bottom:1px solid #3a2218;cursor:pointer}
+.nm{flex:1}
+.meta{opacity:.55;font-size:12px;width:1.2em}
+.price{opacity:.75;font-size:12px;white-space:nowrap}
+.pips{display:flex;gap:3px;min-width:54px}
+.pip{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:50%;font-size:9px;font-weight:700;color:#111;background:#bbb}
+.pip.w{background:#f3f0d8}.pip.u{background:#6eb5e0}.pip.b{background:#8a7aa8;color:#fff}.pip.r{background:#e06a4a;color:#fff}.pip.g{background:#6aa86a;color:#fff}.pip.c{background:#6a6a6a;color:#fff}.pip.h{background:#7a4a16;color:#fff;border-radius:4px}
+#lb{display:none;position:fixed;inset:0;background:#000d;z-index:20;overflow:auto;padding:24px 16px}
+#lb.on{display:block}
+#lb img{width:min(360px,92vw);display:block;margin:0 auto 12px;border:2px solid var(--gold)}
+#lb .info{max-width:36em;margin:0 auto;font-size:15px;line-height:1.4}
+#lb .info b{display:block;font-size:20px;margin-bottom:6px}
+#mount{display:none}
+</style>
+</head>
+<body>
+<main id="home">
+<header class="top"><h1>Big Sexy Giant Killer</h1></header>
+<div class="stage"><div class="wrap" id="ring"><div class="rail" id="rail">
+<button type="button" class="tile" data-id="d-hulk" aria-label="Hulk"><img src="https://cards.scryfall.io/art_crop/front/e/0/e0dbbdcf-84e1-494f-8b8c-0a094f603fa9.jpg" alt="Hulk" decoding="async"><b>Hulk</b></button>
+<button type="button" class="tile" data-id="d-widow" aria-label="Black Widow"><img src="https://cards.scryfall.io/art_crop/front/6/3/63ce0909-7d7d-410d-ab6c-c87fa3e23877.jpg" alt="Black Widow" decoding="async"><b>Black Widow</b></button>
+<button type="button" class="tile" data-id="d-ironman" aria-label="Tony Stark"><img src="https://cards.scryfall.io/art_crop/front/4/c/4cea42fd-035e-4b8f-8b1d-ff363b694f14.jpg" alt="Tony Stark" decoding="async"><b>Tony Stark</b></button>
+<button type="button" class="tile" data-id="d-cap" aria-label="Captain America"><img src="https://cards.scryfall.io/art_crop/front/0/6/0669ffcf-30c1-4d90-ae5f-3deca0f82526.jpg" alt="Captain America" decoding="async"><b>Captain America</b></button>
+<button type="button" class="tile" data-id="d-dare" aria-label="Daredevil"><img src="https://cards.scryfall.io/art_crop/front/a/5/a5cf63bd-66db-48b4-87b9-0d0e923e1e42.jpg" alt="Daredevil" decoding="async"><b>Daredevil</b></button>
+<button type="button" class="tile" data-id="d-ant" aria-label="Ant-Man"><img src="https://cards.scryfall.io/art_crop/front/5/d/5d98073e-2828-4365-a8d6-f631aac0cca9.jpg" alt="Ant-Man" decoding="async"><b>Ant-Man</b></button>
+<button type="button" class="tile" data-id="d-thor" aria-label="Thor"><img src="https://cards.scryfall.io/art_crop/front/c/d/cddd314c-c271-475a-b076-01a8599c8015.jpg" alt="Thor" decoding="async"><b>Thor</b></button>
+<button type="button" class="tile" data-id="d-doom" aria-label="Doctor Doom"><img src="https://cards.scryfall.io/art_crop/front/0/9/099ed408-9178-4403-8b2d-479ca3cbda9b.jpg" alt="Doctor Doom" decoding="async"><b>Doctor Doom</b></button>
+<button type="button" class="tile" data-id="d-loki" aria-label="Loki"><img src="https://cards.scryfall.io/art_crop/front/3/6/3636ecb1-8bb9-49aa-a40b-c0d0b3b71158.jpg" alt="Loki" decoding="async"><b>Loki</b></button>
+<button type="button" class="tile" data-id="d-ultron" aria-label="Ultron"><img src="https://cards.scryfall.io/art_crop/front/b/f/bf5b410f-d6cb-4a74-a975-372975cf21f6.jpg" alt="Ultron" decoding="async"><b>Ultron</b></button>
+<button type="button" class="tile" data-id="d-kang" aria-label="Kang"><img src="https://cards.scryfall.io/art_crop/front/8/8/88cf0311-d7e3-40bb-85fa-3cca973c5e44.jpg" alt="Kang" decoding="async"><b>Kang</b></button>
+<button type="button" class="tile" data-id="d-skrull" aria-label="Super-Skrull"><img src="https://cards.scryfall.io/art_crop/front/1/1/11fc8221-756a-4919-9272-38793e9c1ad9.jpg" alt="Super-Skrull" decoding="async"><b>Super-Skrull</b></button>
+<button type="button" class="tile" data-id="d-heroes" aria-label="Avengers"><img src="https://cards.scryfall.io/art_crop/front/6/1/61a51b67-d941-4e07-9c12-ffe583cb65d4.jpg" alt="Avengers" decoding="async"><b>Avengers</b></button>
+<button type="button" class="tile" data-id="d-nazgul" aria-label="Nazgul"><img src="https://cards.scryfall.io/art_crop/front/4/1/41e3d118-8f97-4c68-acff-2f90a055af5b.jpg" alt="Nazgul" decoding="async"><b>Nazgul</b></button>
+<button type="button" class="tile" data-id="d-amass" aria-label="Amass"><img src="https://cards.scryfall.io/art_crop/front/6/4/6487ccbf-f6cd-45a6-8514-2c458b655ef2.jpg" alt="Amass" decoding="async"><b>Amass</b></button>
+<button type="button" class="tile" data-id="d-frodo" aria-label="Frodo"><img src="https://cards.scryfall.io/art_crop/front/7/d/7d86dc2e-6f0c-4714-9d30-5d099d3b895c.jpg" alt="Frodo" decoding="async"><b>Frodo</b></button>
+<button type="button" class="tile" data-id="d-gollum" aria-label="Smeagol"><img src="https://cards.scryfall.io/art_crop/front/1/3/13253f8d-1897-41e8-a904-9e57ac7eff0a.jpg" alt="Smeagol" decoding="async"><b>Smeagol</b></button>
+<button type="button" class="tile" data-id="d-shelob" aria-label="Shelob"><img src="https://cards.scryfall.io/art_crop/front/a/1/a14c4b29-3363-45ce-9190-0f79e1a0ef7f.jpg" alt="Shelob" decoding="async"><b>Shelob</b></button>
+</div></div></div>
+</main>
+<div id="mount"></div>
+<article class="page" id="d-hulk"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Bruce%20Banner&format=image&version=normal" alt="Hulk"><div class="block"><p>Hulk</p></div></article>
+<article class="page" id="d-widow"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Black%20Widow&format=image&version=normal" alt="Black Widow"><div class="block"><p>Black Widow</p></div></article>
+<article class="page" id="d-dare"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Daredevil&format=image&version=normal" alt="Daredevil"><div class="block"><p>Daredevil</p></div></article>
+<article class="page" id="d-ant"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Ant-Man&format=image&version=normal" alt="Ant-Man"><div class="block"><p>Ant-Man</p></div></article>
+<article class="page" id="d-thor"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Thor&format=image&version=normal" alt="Thor"><div class="block"><p>Thor</p></div></article>
+<article class="page" id="d-doom"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Doctor%20Doom&format=image&version=normal" alt="Doctor Doom"><div class="block"><p>Doctor Doom</p></div></article>
+<article class="page" id="d-loki"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Loki&format=image&version=normal" alt="Loki"><div class="block"><p>Loki</p></div></article>
+<article class="page" id="d-ultron"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Ultron&format=image&version=normal" alt="Ultron"><div class="block"><p>Ultron</p></div></article>
+<article class="page" id="d-kang"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Kang&format=image&version=normal" alt="Kang"><div class="block"><p>Kang</p></div></article>
+<article class="page" id="d-skrull"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Super-Skrull&format=image&version=normal" alt="Super-Skrull"><div class="block"><p>Super-Skrull</p></div></article>
+<article class="page" id="d-heroes"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Captain%20America&format=image&version=normal" alt="Avengers"><div class="block"><p>Avengers</p></div></article>
+<article class="page" id="d-nazgul"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Lord%20of%20the%20Nazgul&format=image&version=normal" alt="Nazgul"><div class="block"><p>Nazgul</p></div></article>
+<article class="page" id="d-amass"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Saruman&format=image&version=normal" alt="Amass"><div class="block"><p>Amass</p></div></article>
+<article class="page" id="d-shelob"><a class="back" href="#home">Back</a><img class="hero" src="https://api.scryfall.com/cards/named?fuzzy=Shelob&format=image&version=normal" alt="Shelob"><div class="block"><p>Shelob</p></div></article>
+<div id="lb"></div>
+<script>
+(function(){
+  var tiles=[].slice.call(document.querySelectorAll("#rail .tile"));
+  var n=tiles.length;
+  var at=tiles.findIndex(function(el){return el.getAttribute("data-id")==="d-ironman";});
+  if(at<0) at=0;
+  var home=document.getElementById("home");
+  var mount=document.getElementById("mount");
+  var full=["d-ironman","d-cap","d-frodo","d-gollum"];
+  var loaded={};
+  var lb=document.getElementById("lb");
+  function pages(){return [].slice.call(document.querySelectorAll(".page"));}
+  function bindBack(){
+    document.querySelectorAll(".back").forEach(function(a){
+      a.onclick=function(e){ e.preventDefault(); show(null); };
+    });
+    var flip=document.getElementById("tony-flip");
+    var art=document.getElementById("tony-art");
+    if(flip && art && !flip.getAttribute("data-bound")){
+      flip.setAttribute("data-bound","1");
+      var tony=true;
+      flip.onclick=function(){
+        tony=!tony;
+        art.src=tony
+          ? "https://api.scryfall.com/cards/named?exact=Tony%20Stark&format=image&version=normal"
+          : "https://api.scryfall.com/cards/named?fuzzy=The%20Invincible%20Iron%20Man&format=image&version=normal";
+        flip.textContent=tony?"Show Iron Man":"Show Tony Stark";
+      };
+    }
+  }
+  function show(id){
+    var on=!!id;
+    home.style.display=on?"none":"flex";
+    document.body.classList.toggle("deck", on);
+    pages().forEach(function(p){p.style.display=(id && p.id===id)?"block":"none";});
+    if(on) window.scrollTo(0,0);
+    else paint();
+  }
+  function openDeck(id){
+    if(full.indexOf(id)>=0 && !loaded[id]){
+      fetch(id+".html").then(function(r){return r.text();}).then(function(html){
+        mount.insertAdjacentHTML("beforeend", html);
+        loaded[id]=true;
+        bindBack();
+        show(id);
+      }).catch(function(){ show(id); });
+      return;
+    }
+    show(id);
+  }
+  function wrapDelta(i){
+    var d=i-at;
+    if(d>n/2) d-=n;
+    if(d<-n/2) d+=n;
+    return d;
+  }
+  function paint(){
+    tiles.forEach(function(el,i){
+      var d=wrapDelta(i);
+      var hide=Math.abs(d)>2;
+      el.classList.toggle("is-center", d===0);
+      el.style.zIndex=String(40-Math.abs(d));
+      el.style.opacity=hide?"0":String(1-Math.abs(d)*0.18);
+      el.style.pointerEvents=hide?"none":"auto";
+      var yaw=d*-32;
+      var x=d*38;
+      var z=-Math.abs(d)*80;
+      el.style.transform="translateX("+x+"vw) translateZ("+z+"px) rotateY("+yaw+"deg)";
+    });
+  }
+  function spin(dir){ at=(at+dir+n)%n; paint(); }
+  tiles.forEach(function(el,i){
+    el.onclick=function(){
+      var d=wrapDelta(i);
+      if(d===0) openDeck(el.getAttribute("data-id"));
+      else { at=i; paint(); }
+    };
+  });
+  bindBack();
+  document.addEventListener("click", function(e){
+    var row=e.target.closest(".row");
+    if(row && row.getAttribute("data-img")){
+      var name=row.getAttribute("data-name")||"";
+      lb.className="on";
+      lb.innerHTML='<img src="'+row.getAttribute("data-img")+'" alt="'+name+'"><div class="info"><b>'+name+'</b></div>';
+      return;
+    }
+    if(lb.classList.contains("on") && !e.target.closest(".row")){ lb.className=""; lb.innerHTML=""; }
+  });
+  var startX=0, ring=document.getElementById("ring");
+  ring.addEventListener("touchstart", function(e){ startX=e.changedTouches[0].clientX; }, {passive:true});
+  ring.addEventListener("touchend", function(e){
+    var dx=e.changedTouches[0].clientX-startX;
+    if(dx>40) spin(-1); else if(dx<-40) spin(1);
+  }, {passive:true});
+  var mx=0, down=false;
+  ring.addEventListener("pointerdown", function(e){ down=true; mx=e.clientX; });
+  ring.addEventListener("pointerup", function(e){
+    if(!down) return; down=false;
+    var dx=e.clientX-mx;
+    if(dx>40) spin(-1); else if(dx<-40) spin(1);
+  });
+  paint();
+})();
+</script>
+</body>
+</html>
