@@ -10,14 +10,14 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"IM Fell English",Georgia,serif;background:#1a1208;color:var(--ink);min-height:100dvh;padding:8px}
 .sheet{max-width:560px;margin:0 auto;background:var(--p);border:8px double var(--b);box-shadow:0 0 0 3px #2a1a0a;padding:10px}
-h1{font-family:Cinzel,serif;font-size:1.25rem;color:var(--blood);text-align:center}
+h1{font-family:Cinzel,serif;font-size:1.2rem;color:var(--blood);text-align:center}
 .sub{text-align:center;font-size:.78rem;margin-bottom:6px}
 .pick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
 .pick button{font-family:Cinzel,serif;padding:12px 6px;border:3px solid var(--b);background:var(--panel);color:var(--ink);font-size:1rem;line-height:1.2}
 .pick button.on-o{background:#6b2a4a;color:#fff8e8;border-color:#c9a227}
 .pick button.on-b{background:#3d2412;color:#fff8e8;border-color:#c9a227}
 .pick small{display:block;font-family:"IM Fell English",serif;font-size:.72rem;font-weight:400}
-.who{text-align:center;font-size:.85rem;margin:2px 0 6px}
+.who{text-align:center;font-size:.9rem;margin:4px 0}
 .hp-box{background:var(--panel);border:3px solid var(--blood);padding:8px;text-align:center;margin:6px 0}
 .hp-num{font-size:2.1rem;font-weight:800}
 .row{display:flex;justify-content:center;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
@@ -25,9 +25,9 @@ button.act{font-family:Cinzel,serif;background:#3d2412;color:var(--p);border:2px
 .danger{background:var(--blood)}
 input[type=number]{width:54px;font-size:1rem;text-align:center;background:#fff8e8;border:2px solid var(--b)}
 .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:6px 0}
-.stat{background:var(--panel);border:2px solid var(--b);text-align:center;padding:5px 1px}
-.stat b{display:block;font-family:Cinzel;font-size:.65rem}
-.stat .n{font-size:1.15rem;font-weight:800}
+.stat{background:var(--panel);border:2px solid var(--b);text-align:center;padding:5px 2px}
+.stat b{display:block;font-family:Cinzel;font-size:.62rem}
+.stat .n{font-size:1.12rem;font-weight:800}
 details{background:var(--panel);border:2px solid var(--b);margin:6px 0;padding:6px 8px}
 summary{font-family:Cinzel;font-weight:700;cursor:pointer}
 .uses{display:flex;gap:6px;margin:6px 0;flex-wrap:wrap;align-items:center}
@@ -42,24 +42,27 @@ td,th{border-bottom:1px solid #c4a574;padding:3px 2px;text-align:left}
 .dot{width:16px;height:16px;border:2px solid var(--b);border-radius:50%;margin-right:6px;flex-shrink:0;background:#fff8e8}
 .dot.on{background:var(--blood)}
 .lab{display:flex;align-items:center}
-textarea{width:100%;min-height:70px;background:#fff8e8;border:2px solid var(--b);font-family:inherit;padding:6px}
+textarea{width:100%;min-height:72px;background:#fff8e8;border:2px solid var(--b);font-family:inherit;padding:6px}
 footer{text-align:center;font-size:.7rem;margin-top:8px;opacity:.7}
 .tiny{font-size:.78rem;margin-top:4px}
+h3{font-family:Cinzel;font-size:.85rem;margin:8px 0 4px;color:var(--blood)}
 </style>
 </head>
 <body>
 <div class="sheet">
 <h1>BOINKER & OINKER</h1>
-<div class="sub">2-Headed Ettin · Hermit · Fighter 1 / Barbarian 1 · Large · Iron Spine</div>
+<div class="sub">2-Headed Ettin · one body, two heads</div>
 <div class="pick">
-<button id="btnB" onclick="show('b')">BOINKER<small>left head · flail · angry</small></button>
-<button id="btnO" onclick="show('o')">OINKER<small>right head · axe · joyful</small></button>
+<button id="btnB" onclick="show('b')">BOINKER<small>left side of page and body · flail</small></button>
+<button id="btnO" onclick="show('o')">OINKER<small>right side of page and body · axe</small></button>
 </div>
 <div class="who" id="who"></div>
+
+<h3>Combat (shared body)</h3>
 <div class="hp-box">
-<div style="font-family:Cinzel;color:var(--blood)">Shared HP</div>
+<div style="font-family:Cinzel;color:var(--blood)">Hit Points</div>
 <div class="hp-num"><span id="hp">23</span> / <span id="hpmax">23</span></div>
-<div class="row">Temp <input type="number" id="temp" value="0" min="0">
+<div class="row">Temp HP <input type="number" id="temp" value="0" min="0">
 Max <input type="number" id="maxin" value="23" min="1" onchange="setMax()"></div>
 <div class="row">
 <button class="act" onclick="dmg(1)">-1</button>
@@ -71,84 +74,100 @@ Max <input type="number" id="maxin" value="23" min="1" onchange="setMax()"></div
 </div>
 </div>
 <div class="stat-row">
-<div class="stat"><b>AC</b><div class="n">13</div></div>
-<div class="stat"><b>INIT</b><div class="n">+1</div></div>
-<div class="stat"><b>SPD</b><div class="n">30</div></div>
-<div class="stat"><b>PB</b><div class="n">+2</div></div>
+<div class="stat"><b>ARMOR CLASS</b><div class="n">13</div></div>
+<div class="stat"><b>INITIATIVE</b><div class="n">+1</div></div>
+<div class="stat"><b>SPEED</b><div class="n">30</div></div>
+<div class="stat"><b>SIZE</b><div class="n">L</div></div>
 </div>
 <div class="stat-row">
-<div class="stat"><b>SIZE</b><div class="n">L</div></div>
-<div class="stat"><b>P.PERC</b><div class="n" id="pperc">10</div></div>
-<div class="stat"><b>P.INS</b><div class="n" id="pins">10</div></div>
-<div class="stat"><b>P.INV</b><div class="n" id="pinv">9</div></div>
+<div class="stat"><b>REACH</b><div class="n">10</div></div>
+<div class="stat"><b>PROF BONUS</b><div class="n">+2</div></div>
+<div class="stat"><b>PASSIVE PERC</b><div class="n" id="pperc">10</div></div>
+<div class="stat"><b>PASSIVE INS</b><div class="n" id="pins">10</div></div>
 </div>
-<details open>
-<summary>This head</summary>
+<p class="tiny">Speed 30 ft walk. Large. 10 ft reach. Unarmored Defense 10+Dex+Con = 13. Paper initiative +1.</p>
+
+<details open><summary>This head — stats, weapon, abilities</summary>
 <table id="mind"></table>
 <p class="tiny" id="headnote"></p>
-<table>
-<tr><th>Weapon</th><th>Atk</th><th>Damage</th></tr>
-<tr id="wep"></tr>
-</table>
+<table><tr><th>Weapon</th><th>Atk</th><th>Damage</th></tr><tr id="wep"></tr></table>
+<p class="tiny" id="passline"></p>
 </details>
-<details open>
-<summary>Body scores</summary>
+
+<details open><summary>Body ability scores (shared)</summary>
 <table>
-<tr><th></th><th>Score</th><th>Mod</th><th>Save</th></tr>
-<tr><td>STR</td><td>17</td><td>+3</td><td class="prof">+5</td></tr>
-<tr><td>DEX</td><td>13</td><td>+1</td><td>+1</td></tr>
-<tr><td>CON</td><td>15</td><td>+2</td><td class="prof">+4</td></tr>
+<tr><th>Ability</th><th>Score</th><th>Mod</th><th>Save</th></tr>
+<tr><td>Strength</td><td>17</td><td>+3</td><td class="prof">+5 proficient</td></tr>
+<tr><td>Dexterity</td><td>13</td><td>+1</td><td>+1</td></tr>
+<tr><td>Constitution</td><td>15</td><td>+2</td><td class="prof">+4 proficient</td></tr>
 </table>
-<p class="tiny">13-14 ft tall · 5200 lb · 10 ft reach</p>
+<p class="tiny">13-14 ft tall · 5200 lb</p>
 </details>
-<details open>
-<summary>Skills (tap dot = proficient)</summary>
+
+<details open><summary>Skills</summary>
 <div id="skills"></div>
-<p class="tiny">Pre-checked: Athletics, Medicine, Religion. First class still owes 2 picks — tap them.</p>
+<p class="tiny">Red number = proficient. Tap the dot to toggle. Mental skills change when you switch heads. Pre-checked Athletics, Medicine, Religion. You still owe 2 class skill picks.</p>
 </details>
-<details open>
-<summary>Features / uses</summary>
-<div><b>Rage</b> 2 / long rest. Adv STR checks and saves, +2 melee STR dmg, resist B/P/S.
-<div class="uses" id="rage"></div></div>
-<div><b>Second Wind</b> paper: 1 / short rest, 1d10+1.
-<div class="uses" id="sw"></div></div>
-<div><b>Stone's Endurance</b> reaction, reduce dmg 1d12+2. 2 / long rest.
-<div class="uses" id="stone"></div></div>
-<p class="tiny"><b>Hit dice:</b> 1d10 + 1d12</p>
+
+<details open><summary>Training and proficiencies</summary>
+<p><b>Armor training:</b> Light, Medium, Heavy, Shields</p>
+<p><b>Weapon training:</b> Simple, Martial</p>
+<p><b>Saving throws:</b> Strength, Constitution</p>
+<p><b>Tools:</b> leatherworker's tools, herbalism kit, Iron Spine artisan tool</p>
+<p><b>Languages:</b> Giant, Common, Orc, Goblin</p>
+<p><b>Feats:</b> Alert</p>
+</details>
+
+<details open><summary>Class features (shared — one body)</summary>
+<p class="tiny">Rage and Second Wind are not per-head. One barbarian/fighter body.</p>
+<div><b>Rage</b> 2 / long rest. Adv on STR checks and saves, +2 melee STR damage, resist B/P/S.<div class="uses" id="rage"></div></div>
+<div><b>Second Wind</b> 1 / short rest, heal 1d10+1.<div class="uses" id="sw"></div></div>
+<div><b>Stone's Endurance</b> reaction, reduce damage by 1d12+2. 2 / long rest.<div class="uses" id="stone"></div></div>
+<p><b>Hit dice:</b> 1d10 + 1d12</p>
 <div>Death saves S <span id="dss"></span> F <span id="dsf"></span></div>
 <div>Inspiration <span class="pip" id="insp" onclick="this.classList.toggle('on');save()"></span></div>
 <ul class="tiny" style="margin:6px 0 0 16px">
-<li>Little Giant — Athletics + Powerful Build</li>
+<li>Little Giant — Athletics, Powerful Build</li>
 <li>Mountain Born — cold resistance</li>
-<li>Alert — paper also wrote can't be surprised (2014). Paper init is +1</li>
+<li>Alert — paper also wrote cannot be surprised</li>
 <li>Iron Spine — extra artisan tool</li>
-<li>Discovery — secret hole / Iron Spine tunnel</li>
-<li>Fighting Style — never written. Pick one</li>
-<li>No Reckless Attack until Barb 2</li>
+<li>Fighting Style — not on the paper. Pick one.</li>
+<li>No Reckless Attack until Barbarian 2</li>
 </ul>
 </details>
-<details open>
-<summary>Gear / proficiencies</summary>
-<p>Thick leather harness, one lopsided mixed-hide loincloth, heirloom tool, forged pieces.</p>
-<p>Oinker: hay wig, sloppy berry makeup, glitter-shit.</p>
-<p>Boinker: a few lone hairs, no makeup.</p>
-<p>Weapons: flail (Boinker), battleaxe (Oinker).</p>
-<p>Money: 40 gp</p>
-<p>Armor: Light, Medium, Heavy, Shields</p>
-<p>Weapons trained: Simple, Martial</p>
-<p>Tools: leatherworker's, herbalism kit, Iron Spine artisan tool</p>
-<p>Languages: Giant, Common, Orc, Goblin</p>
+
+<details open><summary>Gear and money / inventory</summary>
+<p><b>Money:</b> 40 gp</p>
+<p><b>Worn:</b> thick leather weapon harness, one lopsided mixed-hide loincloth</p>
+<p><b>Weapons:</b> battleaxe (Oinker, right hand), flail (Boinker, left hand)</p>
+<p><b>Other:</b> heirloom tool, forged pieces, herbalism kit</p>
+<p><b>Oinker only:</b> horse-hay wig, sloppy berry makeup, glitter-shit</p>
+<p><b>Boinker only:</b> a few lone hairs</p>
 </details>
-<details>
-<summary>Notes</summary>
-<textarea id="notes">Mountain Iron Spine hermits. Internal philosophers. Know a secret hole/tunnel.</textarea>
+
+<details open><summary>Background, backstory, alignment</summary>
+<p><b>Background:</b> Hermit</p>
+<p><b>Origin:</b> Mountain, Iron Spine</p>
+<p><b>Personality:</b> Internal philosophers</p>
+<p><b>Discovery:</b> secret hole / Iron Spine tunnel</p>
+<p><b>Alignment:</b> not filled on the paper</p>
+<p><b>Oinker:</b> positive, smiley, joyful to a stupid degree</p>
+<p><b>Boinker:</b> angry and hungry</p>
 </details>
-<footer>https://brentsnow.ca/ettin/ · this phone only</footer>
+
+<details open><summary>Notes</summary>
+<textarea id="notes">Add session notes here.</textarea>
+</details>
+<footer>https://brentsnow.ca/ettin/ · saves on this phone only</footer>
 </div>
 <script>
 const HEADS = {
-  o: {name:'Oinker', note:'Right head + right hand. Joyful idiot. Hay wig, cheap drag makeup, glitter-shit.', int:8, wis:10, cha:14, wep:'<td>Battleaxe</td><td>+5</td><td>1d8+3 slashing</td>'},
-  b: {name:'Boinker', note:'Left head + left hand. Angry and hungry. Sparse hairs. No makeup.', int:12, wis:12, cha:10, wep:'<td>Flail</td><td>+5</td><td>1d8+3 bludgeoning</td>'}
+  o: {name:'Oinker', side:'right', int:8, wis:10, cha:14,
+      note:'Right head, right hand, right side of the page. Joyful idiot. Hay wig, cheap drag makeup, glitter-shit.',
+      wep:'<td>Battleaxe</td><td>+5</td><td>1d8+3 slashing</td>'},
+  b: {name:'Boinker', side:'left', int:12, wis:12, cha:10,
+      note:'Left head, left hand, left side of the page. Angry and hungry. Sparse hairs. No makeup.',
+      wep:'<td>Flail</td><td>+5</td><td>1d8+3 bludgeoning</td>'}
 };
 const SKILLS = [
   ['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],
@@ -176,11 +195,11 @@ function show(w){
   const h = HEADS[w];
   $('btnO').className = w==='o' ? 'on-o' : '';
   $('btnB').className = w==='b' ? 'on-b' : '';
-  $('who').textContent = 'Viewing '+h.name;
-  $('mind').innerHTML = '<tr><th></th><th>Score</th><th>Mod</th><th>Save</th></tr>'+
-    '<tr><td>INT</td><td>'+h.int+'</td><td>'+signed(mod(h.int))+'</td><td>'+signed(mod(h.int))+'</td></tr>'+
-    '<tr><td>WIS</td><td>'+h.wis+'</td><td>'+signed(mod(h.wis))+'</td><td>'+signed(mod(h.wis))+'</td></tr>'+
-    '<tr><td>CHA</td><td>'+h.cha+'</td><td>'+signed(mod(h.cha))+'</td><td>'+signed(mod(h.cha))+'</td></tr>';
+  $('who').textContent = 'Looking at '+h.name+' ('+h.side+' side)';
+  $('mind').innerHTML = '<tr><th>Ability</th><th>Score</th><th>Mod</th><th>Save</th></tr>'+
+    '<tr><td>Intelligence</td><td>'+h.int+'</td><td>'+signed(mod(h.int))+'</td><td>'+signed(mod(h.int))+'</td></tr>'+
+    '<tr><td>Wisdom</td><td>'+h.wis+'</td><td>'+signed(mod(h.wis))+'</td><td>'+signed(mod(h.wis))+'</td></tr>'+
+    '<tr><td>Charisma</td><td>'+h.cha+'</td><td>'+signed(mod(h.cha))+'</td><td>'+signed(mod(h.cha))+'</td></tr>';
   $('headnote').textContent = h.note;
   $('wep').innerHTML = h.wep;
   renderSkills();
@@ -199,9 +218,12 @@ function renderSkills(){
     row.querySelector('.dot').onclick = () => { skillOn[name] = !skillOn[name]; renderSkills(); save(); };
     box.appendChild(row);
   });
-  $('pperc').textContent = 10 + bodyMod('wis') + (skillOn.Perception?2:0);
-  $('pins').textContent = 10 + bodyMod('wis') + (skillOn.Insight?2:0);
-  $('pinv').textContent = 10 + bodyMod('int') + (skillOn.Investigation?2:0);
+  const pp = 10 + bodyMod('wis') + (skillOn.Perception?2:0);
+  const pi = 10 + bodyMod('wis') + (skillOn.Insight?2:0);
+  const pv = 10 + bodyMod('int') + (skillOn.Investigation?2:0);
+  $('pperc').textContent = pp;
+  $('pins').textContent = pi;
+  $('passline').textContent = 'Passive Perception '+pp+' · Passive Insight '+pi+' · Passive Investigation '+pv;
 }
 function pips(id){return [...$(id).querySelectorAll('.pip')].map(p=>p.classList.contains('on'));}
 function renderPips(id,arr){
