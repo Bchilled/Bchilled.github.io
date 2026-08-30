@@ -10,116 +10,156 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"IM Fell English",Georgia,serif;background:#1a1208;color:var(--ink);min-height:100dvh;padding:8px}
 .sheet{max-width:520px;margin:0 auto;background:var(--p);border:8px double var(--b);box-shadow:0 0 0 3px #2a1a0a;padding:12px}
-h1{font-family:Cinzel,serif;font-size:1.45rem;color:var(--blood);text-align:center}
-.sub,.heads{text-align:center;font-size:.85rem}
-.heads{display:flex;gap:6px;margin:6px 0 10px}
-.heads span{flex:1;background:var(--panel);border:2px solid var(--b);padding:4px;font-size:.8rem}
-.portrait{width:100%;border:4px solid var(--b);margin:8px 0;display:block}
+h1{font-family:Cinzel,serif;font-size:1.35rem;color:var(--blood);text-align:center}
+.sub{text-align:center;font-size:.8rem;margin-bottom:8px}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.pick button{font-family:Cinzel,serif;padding:14px 8px;border:3px solid var(--b);background:var(--panel);color:var(--ink);font-size:1.05rem;line-height:1.25}
+.pick button.on-o{background:#6b2a4a;color:#fff8e8;border-color:#c9a227}
+.pick button.on-b{background:#3d2412;color:#fff8e8;border-color:#c9a227}
+.pick small{display:block;font-family:"IM Fell English",Georgia,serif;font-size:.75rem;font-weight:400}
+.who{text-align:center;font-size:.9rem;margin:4px 0 8px}
+.hp-box{background:var(--panel);border:3px solid var(--blood);padding:10px;text-align:center;margin:8px 0}
+.hp-num{font-size:2.3rem;font-weight:800}
+.hp-btns{display:flex;justify-content:center;gap:6px;margin-top:6px;flex-wrap:wrap}
+button.act{font-family:Cinzel,serif;background:#3d2412;color:var(--p);border:2px solid var(--gold);padding:8px 12px;min-width:44px}
+.danger{background:var(--blood)}
+input[type=number]{width:60px;font-size:1.05rem;text-align:center;background:#fff8e8;border:2px solid var(--b)}
 .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
 .stat{background:var(--panel);border:2px solid var(--b);text-align:center;padding:6px 2px}
-.stat b{display:block;font-family:Cinzel;font-size:.7rem}
-.stat .n{font-size:1.3rem;font-weight:800}
-.hp-box{background:var(--panel);border:3px solid var(--blood);padding:10px;text-align:center;margin:10px 0}
-.hp-num{font-size:2.4rem;font-weight:800}
-.hp-btns{display:flex;justify-content:center;gap:8px;margin-top:6px;flex-wrap:wrap}
-button{font-family:Cinzel,serif;background:#3d2412;color:var(--p);border:2px solid var(--gold);padding:8px 14px;font-size:1rem;min-width:48px}
-.danger{background:var(--blood)}
-input[type=number]{width:64px;font-size:1.1rem;text-align:center;background:#fff8e8;border:2px solid var(--b)}
+.stat b{display:block;font-family:Cinzel;font-size:.68rem}
+.stat .n{font-size:1.25rem;font-weight:800}
 details{background:var(--panel);border:2px solid var(--b);margin:8px 0;padding:6px 8px}
 summary{font-family:Cinzel;font-weight:700;cursor:pointer}
 .uses{display:flex;gap:6px;margin:6px 0}
 .pip{width:28px;height:28px;border:2px solid var(--b);background:#fff8e8;border-radius:50%;cursor:pointer}
 .pip.on{background:var(--blood)}
-table{width:100%;border-collapse:collapse;font-size:.9rem}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
 td,th{border-bottom:1px solid #c4a574;padding:4px 2px;text-align:left}
 .prof{color:var(--blood);font-weight:700}
-textarea{width:100%;min-height:70px;background:#fff8e8;border:2px solid var(--b);font-family:inherit;padding:6px}
-footer{text-align:center;font-size:.7rem;margin-top:10px;opacity:.7}
+textarea{width:100%;min-height:64px;background:#fff8e8;border:2px solid var(--b);font-family:inherit;padding:6px}
+footer{text-align:center;font-size:.7rem;margin-top:8px;opacity:.7}
+.hide{display:none}
 </style>
 </head>
 <body>
 <div class="sheet">
-<header>
 <h1>BOINKER & OINKER</h1>
-<div class="sub">2-Headed Ettin · Fighter 1 / Barbarian 1 · Hermit · Large</div>
-<div class="heads">
-<span><b>Oinker</b><br>Right head + right hand + axe</span>
-<span><b>Boinker</b><br>Left head + left hand + flail</span>
+<div class="sub">One body · Fighter 1 / Barbarian 1 · Hermit · Large</div>
+<div class="pick">
+<button id="btnO" onclick="show('o')">OINKER<small>right head · right hand · axe</small></button>
+<button id="btnB" onclick="show('b')">BOINKER<small>left head · left hand · flail</small></button>
 </div>
-</header>
-<img class="portrait" src="portrait.jpg" alt="Boinker and Oinker">
+<div class="who" id="who"></div>
 <div class="hp-box">
-<h2>Hit Points</h2>
+<div style="font-family:Cinzel;color:var(--blood)">Shared Hit Points</div>
 <div class="hp-num"><span id="hp">23</span> / <span id="hpmax">23</span></div>
-<div>Temp: <input type="number" id="temp" value="0" min="0" style="width:52px"></div>
+<div>Temp <input type="number" id="temp" value="0" min="0"></div>
 <div class="hp-btns">
-<button onclick="dmg(1)">−1</button>
-<button onclick="dmg(5)">−5</button>
-<button class="danger" onclick="dmg(10)">−10</button>
-<button onclick="heal(1)">+1</button>
-<button onclick="heal(5)">+5</button>
-<button onclick="fullHeal()">Full</button>
+<button class="act" onclick="dmg(1)">−1</button>
+<button class="act" onclick="dmg(5)">−5</button>
+<button class="act danger" onclick="dmg(10)">−10</button>
+<button class="act" onclick="heal(1)">+1</button>
+<button class="act" onclick="heal(5)">+5</button>
+<button class="act" onclick="fullHeal()">Full</button>
 </div>
-<div style="margin-top:6px;font-size:.85rem">Max HP <input type="number" id="maxin" value="23" min="1" onchange="setMax()"></div>
+<div style="margin-top:6px;font-size:.85rem">Max <input type="number" id="maxin" value="23" min="1" onchange="setMax()"></div>
 </div>
 <div class="stat-row">
 <div class="stat"><b>AC</b><div class="n">13</div></div>
 <div class="stat"><b>INIT</b><div class="n">+3</div></div>
-<div class="stat"><b>SPEED</b><div class="n">30</div></div>
-<div class="stat"><b>PROF</b><div class="n">+2</div></div>
+<div class="stat"><b>SPD</b><div class="n">30</div></div>
+<div class="stat"><b>PB</b><div class="n">+2</div></div>
 </div>
-<details open><summary>Scores</summary>
+<div id="panelO">
+<details open><summary>Oinker — mind</summary>
+<table>
+<tr><th></th><th>Score</th><th>Mod</th><th>Save</th></tr>
+<tr><td>INT</td><td>8</td><td>−1</td><td>−1</td></tr>
+<tr><td>WIS</td><td>10</td><td>+0</td><td>+0</td></tr>
+<tr><td>CHA</td><td>14</td><td>+2</td><td>+2</td></tr>
+</table>
+<p style="font-size:.85rem;margin-top:6px">Passive Perception 10. Joyful idiot. Hay wig, cheap drag makeup, glitter-shit on his half.</p>
+</details>
+<details open><summary>Oinker — weapon</summary>
+<table>
+<tr><th>Weapon</th><th>Atk</th><th>Damage</th></tr>
+<tr><td>Battleaxe</td><td>+5</td><td>1d8+3 slashing</td></tr>
+</table>
+</details>
+</div>
+<div id="panelB" class="hide">
+<details open><summary>Boinker — mind</summary>
+<table>
+<tr><th></th><th>Score</th><th>Mod</th><th>Save</th></tr>
+<tr><td>INT</td><td>12</td><td>+1</td><td>+1</td></tr>
+<tr><td>WIS</td><td>12</td><td>+1</td><td>+1</td></tr>
+<tr><td>CHA</td><td>10</td><td>+0</td><td>+0</td></tr>
+</table>
+<p style="font-size:.85rem;margin-top:6px">Passive Perception 11. Angry and hungry. A few lone hairs. No makeup.</p>
+</details>
+<details open><summary>Boinker — weapon</summary>
+<table>
+<tr><th>Weapon</th><th>Atk</th><th>Damage</th></tr>
+<tr><td>Flail</td><td>+5</td><td>1d8+3 bludgeoning</td></tr>
+</table>
+</details>
+</div>
+<details open><summary>Body (both)</summary>
 <table>
 <tr><th></th><th>Score</th><th>Mod</th><th>Save</th></tr>
 <tr><td>STR</td><td>17</td><td>+3</td><td class="prof">+5</td></tr>
 <tr><td>DEX</td><td>13</td><td>+1</td><td>+1</td></tr>
 <tr><td>CON</td><td>15</td><td>+2</td><td class="prof">+4</td></tr>
-<tr><td>INT</td><td>8 / 12</td><td>−1 / +1</td><td>−1 / +1</td></tr>
-<tr><td>WIS</td><td>10 / 12</td><td>+0 / +1</td><td>+0 / +1</td></tr>
-<tr><td>CHA</td><td>10 / 14</td><td>+0 / +2</td><td>+0 / +2</td></tr>
 </table>
-</details>
-<details open><summary>Weapons</summary>
-<table>
-<tr><th>Weapon</th><th>Atk</th><th>Damage</th></tr>
-<tr><td>Flail (Boinker)</td><td>+5</td><td>1d8+3 bludgeoning</td></tr>
-<tr><td>Battleaxe (Oinker)</td><td>+5</td><td>1d8+3 slashing</td></tr>
-</table>
-</details>
-<details open><summary>Features</summary>
 <div><b>Rage</b> 2 / long rest<div class="uses" id="rage"></div></div>
 <div><b>Second Wind</b> 2 uses, 1d10+1<div class="uses" id="sw"></div></div>
 <div><b>Stone's Endurance</b> 2 / long rest, 1d12+2<div class="uses" id="stone"></div></div>
-<ul>
-<li>Unarmored Defense 13</li>
-<li>Alert 2024: +PB to initiative</li>
-<li>No Reckless Attack until Barb 2</li>
-<li>Skills still empty on paper — fill Athletics, Medicine, Religion plus 2 from first class</li>
-</ul>
+<p style="font-size:.85rem;margin-top:6px">Unarmored 13. Alert +PB to init. No Reckless until Barb 2.</p>
 </details>
 <details><summary>Notes</summary>
-<textarea id="notes">Harness + one lopsided hide loincloth. Oinker: hay wig, cheap drag makeup, glitter-shit, axe, right side. Boinker: sparse hairs, angry, hungry, flail, left side. Mountain hermits. Know a hole.</textarea>
+<textarea id="notes">Oinker: right head/hand, axe, CHA 14 / INT 8 / WIS 10. Boinker: left head/hand, flail, INT 12 / WIS 12 / CHA 10. One HP pool. If those mental scores are swapped, change them.</textarea>
 </details>
-<footer>Saves in this browser only. Same URL, separate phones, not synced.</footer>
+<footer>https://brentsnow.ca/ettin/ · saves on this phone only</footer>
 </div>
 <script>
 const $=id=>document.getElementById(id);
-function load(){const s=JSON.parse(localStorage.getItem('ettin')||'{}');
-if(s.hp!=null)$('hp').textContent=s.hp;
-if(s.max){$('hpmax').textContent=s.max;$('maxin').value=s.max;}
-if(s.temp!=null)$('temp').value=s.temp;
-if(s.notes)$('notes').value=s.notes;
-renderPips('rage',s.rage||[false,false]);
-renderPips('sw',s.sw||[false,false]);
-renderPips('stone',s.stone||[false,false]);}
-function save(){localStorage.setItem('ettin',JSON.stringify({hp:+$('hp').textContent,max:+$('hpmax').textContent,temp:+$('temp').value,notes:$('notes').value,rage:pips('rage'),sw:pips('sw'),stone:pips('stone')}));}
+function show(who){
+  $('panelO').classList.toggle('hide', who!=='o');
+  $('panelB').classList.toggle('hide', who!=='b');
+  $('btnO').className = who==='o' ? 'on-o' : '';
+  $('btnB').className = who==='b' ? 'on-b' : '';
+  $('who').textContent = who==='o' ? 'Viewing Oinker' : 'Viewing Boinker';
+  localStorage.setItem('ettinWho', who);
+}
+function load(){
+  const s=JSON.parse(localStorage.getItem('ettin')||'{}');
+  if(s.hp!=null)$('hp').textContent=s.hp;
+  if(s.max){$('hpmax').textContent=s.max;$('maxin').value=s.max;}
+  if(s.temp!=null)$('temp').value=s.temp;
+  if(s.notes)$('notes').value=s.notes;
+  renderPips('rage',s.rage||[false,false]);
+  renderPips('sw',s.sw||[false,false]);
+  renderPips('stone',s.stone||[false,false]);
+  show(localStorage.getItem('ettinWho')||'o');
+}
+function save(){
+  localStorage.setItem('ettin',JSON.stringify({
+    hp:+$('hp').textContent,max:+$('hpmax').textContent,temp:+$('temp').value,
+    notes:$('notes').value,rage:pips('rage'),sw:pips('sw'),stone:pips('stone')
+  }));
+}
 function pips(id){return [...$(id).querySelectorAll('.pip')].map(p=>p.classList.contains('on'));}
-function renderPips(id,arr){$(id).innerHTML='';arr.forEach(on=>{const d=document.createElement('div');d.className='pip'+(on?' on':'');d.onclick=()=>{d.classList.toggle('on');save();};$(id).appendChild(d);});}
+function renderPips(id,arr){
+  $(id).innerHTML='';
+  arr.forEach(on=>{const d=document.createElement('div');d.className='pip'+(on?' on':'');d.onclick=()=>{d.classList.toggle('on');save();};$(id).appendChild(d);});
+}
 function dmg(n){let hp=+$('hp').textContent,t=+$('temp').value;if(t>0){const u=Math.min(t,n);t-=u;n-=u;$('temp').value=t;}hp=Math.max(0,hp-n);$('hp').textContent=hp;save();}
 function heal(n){const max=+$('hpmax').textContent;$('hp').textContent=Math.min(max,+$('hp').textContent+n);save();}
 function fullHeal(){$('hp').textContent=$('hpmax').textContent;$('temp').value=0;save();}
 function setMax(){$('hpmax').textContent=$('maxin').value;save();}
-$('notes').addEventListener('input',save);$('temp').addEventListener('change',save);load();
+$('notes').addEventListener('input',save);
+$('temp').addEventListener('change',save);
+load();
 </script>
 </body>
 </html>
