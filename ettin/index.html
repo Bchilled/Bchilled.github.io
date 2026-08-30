@@ -17,7 +17,7 @@ h1{font-family:Cinzel,serif;font-size:1.2rem;color:var(--blood);text-align:cente
 .pick button.on-o{background:#6b2a4a;color:#fff8e8;border-color:#c9a227}
 .pick button.on-b{background:#3d2412;color:#fff8e8;border-color:#c9a227}
 .pick small{display:block;font-family:"IM Fell English",serif;font-size:.72rem;font-weight:400}
-.who{text-align:center;font-size:.9rem;margin:4px 0}
+.who{text-align:center;font-size:.95rem;margin:6px 0;font-weight:700}
 .hp-box{background:var(--panel);border:3px solid var(--blood);padding:8px;text-align:center;margin:6px 0}
 .hp-num{font-size:2.1rem;font-weight:800}
 .row{display:flex;justify-content:center;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
@@ -51,19 +51,17 @@ h3{font-family:Cinzel;font-size:.85rem;margin:8px 0 4px;color:var(--blood)}
 <body>
 <div class="sheet">
 <h1>BOINKER & OINKER</h1>
-<div class="sub">2-Headed Ettin · one body, two heads</div>
+<div class="sub">Tap a head. Only that head's weapon, gear, and mind show.</div>
 <div class="pick">
-<button id="btnB" onclick="show('b')">BOINKER<small>left side of page and body · flail</small></button>
-<button id="btnO" onclick="show('o')">OINKER<small>right side of page and body · axe</small></button>
+<button id="btnB" onclick="show('b')">BOINKER<small>left · flail</small></button>
+<button id="btnO" onclick="show('o')">OINKER<small>right · axe</small></button>
 </div>
 <div class="who" id="who"></div>
-
-<h3>Combat (shared body)</h3>
+<h3>Shared body</h3>
 <div class="hp-box">
 <div style="font-family:Cinzel;color:var(--blood)">Hit Points</div>
 <div class="hp-num"><span id="hp">23</span> / <span id="hpmax">23</span></div>
-<div class="row">Temp HP <input type="number" id="temp" value="0" min="0">
-Max <input type="number" id="maxin" value="23" min="1" onchange="setMax()"></div>
+<div class="row">Temp <input type="number" id="temp" value="0" min="0"> Max <input type="number" id="maxin" value="23" min="1" onchange="setMax()"></div>
 <div class="row">
 <button class="act" onclick="dmg(1)">-1</button>
 <button class="act" onclick="dmg(5)">-5</button>
@@ -71,205 +69,115 @@ Max <input type="number" id="maxin" value="23" min="1" onchange="setMax()"></div
 <button class="act" onclick="heal(1)">+1</button>
 <button class="act" onclick="heal(5)">+5</button>
 <button class="act" onclick="fullHeal()">Full</button>
-</div>
-</div>
+</div></div>
 <div class="stat-row">
-<div class="stat"><b>ARMOR CLASS</b><div class="n">13</div></div>
-<div class="stat"><b>INITIATIVE</b><div class="n">+1</div></div>
+<div class="stat"><b>AC</b><div class="n">13</div></div>
+<div class="stat"><b>INIT</b><div class="n">+1</div></div>
 <div class="stat"><b>SPEED</b><div class="n">30</div></div>
 <div class="stat"><b>SIZE</b><div class="n">L</div></div>
 </div>
 <div class="stat-row">
 <div class="stat"><b>REACH</b><div class="n">10</div></div>
-<div class="stat"><b>PROF BONUS</b><div class="n">+2</div></div>
-<div class="stat"><b>PASSIVE PERC</b><div class="n" id="pperc">10</div></div>
-<div class="stat"><b>PASSIVE INS</b><div class="n" id="pins">10</div></div>
+<div class="stat"><b>PB</b><div class="n">+2</div></div>
+<div class="stat"><b>P.PERC</b><div class="n" id="pperc">10</div></div>
+<div class="stat"><b>P.INS</b><div class="n" id="pins">10</div></div>
 </div>
-<p class="tiny">Speed 30 ft walk. Large. 10 ft reach. Unarmored Defense 10+Dex+Con = 13. Paper initiative +1.</p>
-
-<details open><summary>This head — stats, weapon, abilities</summary>
+<details open><summary id="sumHead">This head</summary>
 <table id="mind"></table>
 <p class="tiny" id="headnote"></p>
 <table><tr><th>Weapon</th><th>Atk</th><th>Damage</th></tr><tr id="wep"></tr></table>
 <p class="tiny" id="passline"></p>
 </details>
-
-<details open><summary>Body ability scores (shared)</summary>
+<details open><summary>Body scores</summary>
 <table>
 <tr><th>Ability</th><th>Score</th><th>Mod</th><th>Save</th></tr>
-<tr><td>Strength</td><td>17</td><td>+3</td><td class="prof">+5 proficient</td></tr>
+<tr><td>Strength</td><td>17</td><td>+3</td><td class="prof">+5</td></tr>
 <tr><td>Dexterity</td><td>13</td><td>+1</td><td>+1</td></tr>
-<tr><td>Constitution</td><td>15</td><td>+2</td><td class="prof">+4 proficient</td></tr>
+<tr><td>Constitution</td><td>15</td><td>+2</td><td class="prof">+4</td></tr>
 </table>
-<p class="tiny">13-14 ft tall · 5200 lb</p>
 </details>
-
-<details open><summary>Skills</summary>
-<div id="skills"></div>
-<p class="tiny">Red number = proficient. Tap the dot to toggle. Mental skills change when you switch heads. Pre-checked Athletics, Medicine, Religion. You still owe 2 class skill picks.</p>
-</details>
-
-<details open><summary>Training and proficiencies</summary>
-<p><b>Armor training:</b> Light, Medium, Heavy, Shields</p>
-<p><b>Weapon training:</b> Simple, Martial</p>
-<p><b>Saving throws:</b> Strength, Constitution</p>
-<p><b>Tools:</b> leatherworker's tools, herbalism kit, Iron Spine artisan tool</p>
-<p><b>Languages:</b> Giant, Common, Orc, Goblin</p>
-<p><b>Feats:</b> Alert</p>
-</details>
-
-<details open><summary>Class features (shared — one body)</summary>
-<p class="tiny">Rage and Second Wind are not per-head. One barbarian/fighter body.</p>
-<div><b>Rage</b> 2 / long rest. Adv on STR checks and saves, +2 melee STR damage, resist B/P/S.<div class="uses" id="rage"></div></div>
-<div><b>Second Wind</b> 1 / short rest, heal 1d10+1.<div class="uses" id="sw"></div></div>
-<div><b>Stone's Endurance</b> reaction, reduce damage by 1d12+2. 2 / long rest.<div class="uses" id="stone"></div></div>
-<p><b>Hit dice:</b> 1d10 + 1d12</p>
+<details open><summary id="sumSkills">Skills</summary><div id="skills"></div></details>
+<details open><summary id="sumGear">Gear</summary><div id="gear"></div></details>
+<details open><summary id="sumStory">Story</summary><div id="story"></div></details>
+<details open><summary>Shared training / class</summary>
+<p>Armor: Light, Medium, Heavy, Shields</p>
+<p>Weapons trained: Simple, Martial</p>
+<p>Saves: Strength, Constitution</p>
+<p>Tools: leatherworker's, herbalism kit, Iron Spine artisan tool</p>
+<p>Languages: Giant, Common, Orc, Goblin</p>
+<p>Feat: Alert</p>
+<p class="tiny">Rage and Second Wind belong to the body, not a head.</p>
+<div><b>Rage</b> 2 / long rest<div class="uses" id="rage"></div></div>
+<div><b>Second Wind</b> 1 / short rest, 1d10+1<div class="uses" id="sw"></div></div>
+<div><b>Stone's Endurance</b> 1d12+2, 2 / long rest<div class="uses" id="stone"></div></div>
+<p>Hit dice: 1d10 + 1d12</p>
 <div>Death saves S <span id="dss"></span> F <span id="dsf"></span></div>
 <div>Inspiration <span class="pip" id="insp" onclick="this.classList.toggle('on');save()"></span></div>
-<ul class="tiny" style="margin:6px 0 0 16px">
-<li>Little Giant — Athletics, Powerful Build</li>
-<li>Mountain Born — cold resistance</li>
-<li>Alert — paper also wrote cannot be surprised</li>
-<li>Iron Spine — extra artisan tool</li>
-<li>Fighting Style — not on the paper. Pick one.</li>
-<li>No Reckless Attack until Barbarian 2</li>
-</ul>
 </details>
-
-<details open><summary>Gear and money / inventory</summary>
-<p><b>Money:</b> 40 gp</p>
-<p><b>Worn:</b> thick leather weapon harness, one lopsided mixed-hide loincloth</p>
-<p><b>Weapons:</b> battleaxe (Oinker, right hand), flail (Boinker, left hand)</p>
-<p><b>Other:</b> heirloom tool, forged pieces, herbalism kit</p>
-<p><b>Oinker only:</b> horse-hay wig, sloppy berry makeup, glitter-shit</p>
-<p><b>Boinker only:</b> a few lone hairs</p>
-</details>
-
-<details open><summary>Background, backstory, alignment</summary>
-<p><b>Background:</b> Hermit</p>
-<p><b>Origin:</b> Mountain, Iron Spine</p>
-<p><b>Personality:</b> Internal philosophers</p>
-<p><b>Discovery:</b> secret hole / Iron Spine tunnel</p>
-<p><b>Alignment:</b> not filled on the paper</p>
-<p><b>Oinker:</b> positive, smiley, joyful to a stupid degree</p>
-<p><b>Boinker:</b> angry and hungry</p>
-</details>
-
-<details open><summary>Notes</summary>
-<textarea id="notes">Add session notes here.</textarea>
-</details>
-<footer>https://brentsnow.ca/ettin/ · saves on this phone only</footer>
+<details><summary>Notes</summary><textarea id="notes"></textarea></details>
+<footer>https://brentsnow.ca/ettin/</footer>
 </div>
 <script>
 const HEADS = {
-  o: {name:'Oinker', side:'right', int:8, wis:10, cha:14,
-      note:'Right head, right hand, right side of the page. Joyful idiot. Hay wig, cheap drag makeup, glitter-shit.',
-      wep:'<td>Battleaxe</td><td>+5</td><td>1d8+3 slashing</td>'},
-  b: {name:'Boinker', side:'left', int:12, wis:12, cha:10,
-      note:'Left head, left hand, left side of the page. Angry and hungry. Sparse hairs. No makeup.',
-      wep:'<td>Flail</td><td>+5</td><td>1d8+3 bludgeoning</td>'}
+  o: {name:'Oinker', note:'Right head. Right hand. Right side of the page. Joyful idiot.', int:8, wis:10, cha:14,
+      wep:'<td>Battleaxe</td><td>+5</td><td>1d8+3 slashing</td>',
+      gear:'<p><b>Weapon:</b> battleaxe only.</p><p><b>His side:</b> hay wig, sloppy berry makeup, glitter-shit, loincloth as a half-bra.</p><p><b>Shared worn:</b> leather harness.</p><p><b>Money:</b> 40 gp</p>',
+      story:'<p><b>Head:</b> Oinker</p><p><b>Background:</b> Hermit</p><p><b>From:</b> Mountain Iron Spine</p><p><b>Personality:</b> smiley, joyful, dumb-happy</p><p><b>Alignment:</b> blank on the paper</p>'},
+  b: {name:'Boinker', note:'Left head. Left hand. Left side of the page. Angry and hungry.', int:12, wis:12, cha:10,
+      wep:'<td>Flail</td><td>+5</td><td>1d8+3 bludgeoning</td>',
+      gear:'<p><b>Weapon:</b> flail only.</p><p><b>His side:</b> a few lone hairs, no makeup, no hay, no glitter.</p><p><b>Shared worn:</b> leather harness, hide loincloth.</p><p><b>Money:</b> 40 gp</p>',
+      story:'<p><b>Head:</b> Boinker</p><p><b>Background:</b> Hermit</p><p><b>From:</b> Mountain Iron Spine</p><p><b>Personality:</b> angry, hungry</p><p><b>Alignment:</b> blank on the paper</p>'}
 };
-const SKILLS = [
-  ['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],
-  ['Arcana','int',false],['History','int',false],['Investigation','int',false],['Nature','int',false],['Religion','int',true],
-  ['Animal Handling','wis',false],['Insight','wis',false],['Medicine','wis',true],['Perception','wis',false],['Survival','wis',false],
-  ['Deception','cha',false],['Intimidation','cha',false],['Performance','cha',false],['Persuasion','cha',false]
-];
-const $ = id => document.getElementById(id);
-let who = 'o';
-let skillOn = {};
-SKILLS.forEach(s => skillOn[s[0]] = s[2]);
-function mod(score){ return Math.floor((score-10)/2); }
-function signed(n){ return (n>=0?'+':'')+n; }
-function bodyMod(ab){
-  if(ab==='str') return 3;
-  if(ab==='dex') return 1;
-  const h = HEADS[who];
-  if(ab==='int') return mod(h.int);
-  if(ab==='wis') return mod(h.wis);
-  if(ab==='cha') return mod(h.cha);
-  return 0;
-}
+const SKILLS = [['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],['Arcana','int',false],['History','int',false],['Investigation','int',false],['Nature','int',false],['Religion','int',true],['Animal Handling','wis',false],['Insight','wis',false],['Medicine','wis',true],['Perception','wis',false],['Survival','wis',false],['Deception','cha',false],['Intimidation','cha',false],['Performance','cha',false],['Persuasion','cha',false]];
+const $=id=>document.getElementById(id);
+let who='o'; let skillOn={}; SKILLS.forEach(s=>skillOn[s[0]]=s[2]);
+function mod(score){return Math.floor((score-10)/2)}
+function signed(n){return (n>=0?'+':'')+n}
+function bodyMod(ab){if(ab==='str')return 3;if(ab==='dex')return 1;const h=HEADS[who];if(ab==='int')return mod(h.int);if(ab==='wis')return mod(h.wis);if(ab==='cha')return mod(h.cha);return 0}
 function show(w){
-  who = w;
-  const h = HEADS[w];
-  $('btnO').className = w==='o' ? 'on-o' : '';
-  $('btnB').className = w==='b' ? 'on-b' : '';
-  $('who').textContent = 'Looking at '+h.name+' ('+h.side+' side)';
-  $('mind').innerHTML = '<tr><th>Ability</th><th>Score</th><th>Mod</th><th>Save</th></tr>'+
+  who=w; const h=HEADS[w];
+  $('btnO').className=w==='o'?'on-o':''; $('btnB').className=w==='b'?'on-b':'';
+  $('who').textContent=h.name.toUpperCase()+' ONLY';
+  $('sumHead').textContent=h.name+' — mind and weapon';
+  $('sumSkills').textContent=h.name+' — skills';
+  $('sumGear').textContent=h.name+' — gear';
+  $('sumStory').textContent=h.name+' — story';
+  $('mind').innerHTML='<tr><th>Ability</th><th>Score</th><th>Mod</th><th>Save</th></tr>'+
     '<tr><td>Intelligence</td><td>'+h.int+'</td><td>'+signed(mod(h.int))+'</td><td>'+signed(mod(h.int))+'</td></tr>'+
     '<tr><td>Wisdom</td><td>'+h.wis+'</td><td>'+signed(mod(h.wis))+'</td><td>'+signed(mod(h.wis))+'</td></tr>'+
     '<tr><td>Charisma</td><td>'+h.cha+'</td><td>'+signed(mod(h.cha))+'</td><td>'+signed(mod(h.cha))+'</td></tr>';
-  $('headnote').textContent = h.note;
-  $('wep').innerHTML = h.wep;
-  renderSkills();
-  localStorage.setItem('ettinWho', w);
-  save();
+  $('headnote').textContent=h.note; $('wep').innerHTML=h.wep; $('gear').innerHTML=h.gear; $('story').innerHTML=h.story;
+  renderSkills(); localStorage.setItem('ettinWho',w); save();
 }
 function renderSkills(){
-  const box = $('skills');
-  box.innerHTML = '';
-  SKILLS.forEach(s => {
-    const name=s[0], ab=s[1];
-    const tot = bodyMod(ab) + (skillOn[name]?2:0);
-    const row = document.createElement('div');
-    row.className = 'sk';
-    row.innerHTML = '<span class="lab"><span class="dot'+(skillOn[name]?' on':'')+'"></span>'+name+' <small>('+ab+')</small></span><b class="'+(skillOn[name]?'prof':'')+'">'+signed(tot)+'</b>';
-    row.querySelector('.dot').onclick = () => { skillOn[name] = !skillOn[name]; renderSkills(); save(); };
-    box.appendChild(row);
-  });
-  const pp = 10 + bodyMod('wis') + (skillOn.Perception?2:0);
-  const pi = 10 + bodyMod('wis') + (skillOn.Insight?2:0);
-  const pv = 10 + bodyMod('int') + (skillOn.Investigation?2:0);
-  $('pperc').textContent = pp;
-  $('pins').textContent = pi;
-  $('passline').textContent = 'Passive Perception '+pp+' · Passive Insight '+pi+' · Passive Investigation '+pv;
+  const box=$('skills'); box.innerHTML='';
+  SKILLS.forEach(s=>{const name=s[0],ab=s[1]; const tot=bodyMod(ab)+(skillOn[name]?2:0);
+    const row=document.createElement('div'); row.className='sk';
+    row.innerHTML='<span class="lab"><span class="dot'+(skillOn[name]?' on':'')+'"></span>'+name+'</span><b class="'+(skillOn[name]?'prof':'')+'">'+signed(tot)+'</b>';
+    row.querySelector('.dot').onclick=()=>{skillOn[name]=!skillOn[name];renderSkills();save();};
+    box.appendChild(row);});
+  const pp=10+bodyMod('wis')+(skillOn.Perception?2:0);
+  const pi=10+bodyMod('wis')+(skillOn.Insight?2:0);
+  const pv=10+bodyMod('int')+(skillOn.Investigation?2:0);
+  $('pperc').textContent=pp; $('pins').textContent=pi;
+  $('passline').textContent='Passive Perception '+pp+' · Passive Insight '+pi+' · Passive Investigation '+pv;
 }
-function pips(id){return [...$(id).querySelectorAll('.pip')].map(p=>p.classList.contains('on'));}
-function renderPips(id,arr){
-  $(id).innerHTML='';
-  arr.forEach(on=>{const d=document.createElement('div');d.className='pip'+(on?' on':'');d.onclick=()=>{d.classList.toggle('on');save();};$(id).appendChild(d);});
+function pips(id){return [...$(id).querySelectorAll('.pip')].map(p=>p.classList.contains('on'))}
+function renderPips(id,arr){$(id).innerHTML='';arr.forEach(on=>{const d=document.createElement('div');d.className='pip'+(on?' on':'');d.onclick=()=>{d.classList.toggle('on');save();};$(id).appendChild(d);});}
+function renderDS(id,n,arr){$(id).innerHTML='';for(let i=0;i<n;i++){const d=document.createElement('span');d.className='ds'+((arr&&arr[i])?' on':'');d.onclick=()=>{d.classList.toggle('on');save();};$(id).appendChild(d);}}
+function load(){const s=JSON.parse(localStorage.getItem('ettin')||'{}');
+  if(s.hp!=null)$('hp').textContent=s.hp; if(s.max){$('hpmax').textContent=s.max;$('maxin').value=s.max;}
+  if(s.temp!=null)$('temp').value=s.temp; if(s.notes)$('notes').value=s.notes;
+  if(s.skills) Object.assign(skillOn,s.skills); if(s.insp)$('insp').classList.add('on');
+  renderPips('rage',s.rage||[false,false]); renderPips('sw',s.sw||[false]); renderPips('stone',s.stone||[false,false]);
+  renderDS('dss',3,s.dss); renderDS('dsf',3,s.dsf); show(localStorage.getItem('ettinWho')||'o');
 }
-function renderDS(id,n,arr){
-  $(id).innerHTML='';
-  for(let i=0;i<n;i++){
-    const d=document.createElement('span');
-    d.className='ds'+((arr&&arr[i])?' on':'');
-    d.onclick=()=>{d.classList.toggle('on');save();};
-    $(id).appendChild(d);
-  }
-}
-function load(){
-  const s=JSON.parse(localStorage.getItem('ettin')||'{}');
-  if(s.hp!=null)$('hp').textContent=s.hp;
-  if(s.max){$('hpmax').textContent=s.max;$('maxin').value=s.max;}
-  if(s.temp!=null)$('temp').value=s.temp;
-  if(s.notes)$('notes').value=s.notes;
-  if(s.skills) Object.assign(skillOn, s.skills);
-  if(s.insp) $('insp').classList.add('on');
-  renderPips('rage', s.rage || [false,false]);
-  renderPips('sw', s.sw || [false]);
-  renderPips('stone', s.stone || [false,false]);
-  renderDS('dss',3,s.dss);
-  renderDS('dsf',3,s.dsf);
-  show(localStorage.getItem('ettinWho')||'o');
-}
-function save(){
-  localStorage.setItem('ettin', JSON.stringify({
-    hp:+$('hp').textContent, max:+$('hpmax').textContent, temp:+$('temp').value,
-    notes:$('notes').value, rage:pips('rage'), sw:pips('sw'), stone:pips('stone'),
-    skills:skillOn, insp:$('insp').classList.contains('on'),
-    dss:[...$('dss').querySelectorAll('.ds')].map(x=>x.classList.contains('on')),
-    dsf:[...$('dsf').querySelectorAll('.ds')].map(x=>x.classList.contains('on'))
-  }));
-}
-function dmg(n){let hp=+$('hp').textContent,t=+$('temp').value;if(t>0){const u=Math.min(t,n);t-=u;n-=u;$('temp').value=t;}hp=Math.max(0,hp-n);$('hp').textContent=hp;save();}
-function heal(n){const max=+$('hpmax').textContent;$('hp').textContent=Math.min(max,+$('hp').textContent+n);save();}
-function fullHeal(){$('hp').textContent=$('hpmax').textContent;$('temp').value=0;save();}
-function setMax(){$('hpmax').textContent=$('maxin').value;save();}
-$('notes').addEventListener('input',save);
-$('temp').addEventListener('change',save);
-load();
+function save(){localStorage.setItem('ettin',JSON.stringify({hp:+$('hp').textContent,max:+$('hpmax').textContent,temp:+$('temp').value,notes:$('notes').value,rage:pips('rage'),sw:pips('sw'),stone:pips('stone'),skills:skillOn,insp:$('insp').classList.contains('on'),dss:[...$('dss').querySelectorAll('.ds')].map(x=>x.classList.contains('on')),dsf:[...$('dsf').querySelectorAll('.ds')].map(x=>x.classList.contains('on'))}))}
+function dmg(n){let hp=+$('hp').textContent,t=+$('temp').value;if(t>0){const u=Math.min(t,n);t-=u;n-=u;$('temp').value=t;}hp=Math.max(0,hp-n);$('hp').textContent=hp;save()}
+function heal(n){const max=+$('hpmax').textContent;$('hp').textContent=Math.min(max,+$('hp').textContent+n);save()}
+function fullHeal(){$('hp').textContent=$('hpmax').textContent;$('temp').value=0;save()}
+function setMax(){$('hpmax').textContent=$('maxin').value;save()}
+$('notes').addEventListener('input',save); $('temp').addEventListener('change',save); load();
 </script>
 </body>
 </html>
