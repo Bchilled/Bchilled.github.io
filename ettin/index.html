@@ -9,127 +9,213 @@
 :root{--p:#e8d5b0;--ink:#2a1a0a;--blood:#8b1e1e;--gold:#c9a227;--b:#5c3317;--panel:#f3e6c4}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"IM Fell English",Georgia,serif;background:#1a1208;color:var(--ink);min-height:100dvh;padding:8px}
-.sheet{max-width:520px;margin:0 auto;background:var(--p);border:8px double var(--b);box-shadow:0 0 0 3px #2a1a0a;padding:12px}
-h1{font-family:Cinzel,serif;font-size:1.35rem;color:var(--blood);text-align:center}
-.sub{text-align:center;font-size:.8rem;margin-bottom:8px}
-.pick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
-.pick button{font-family:Cinzel,serif;padding:14px 8px;border:3px solid var(--b);background:var(--panel);color:var(--ink);font-size:1.05rem;line-height:1.25}
+.sheet{max-width:560px;margin:0 auto;background:var(--p);border:8px double var(--b);box-shadow:0 0 0 3px #2a1a0a;padding:10px}
+h1{font-family:Cinzel,serif;font-size:1.25rem;color:var(--blood);text-align:center}
+.sub{text-align:center;font-size:.78rem;margin-bottom:6px}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
+.pick button{font-family:Cinzel,serif;padding:12px 6px;border:3px solid var(--b);background:var(--panel);color:var(--ink);font-size:1rem;line-height:1.2}
 .pick button.on-o{background:#6b2a4a;color:#fff8e8;border-color:#c9a227}
 .pick button.on-b{background:#3d2412;color:#fff8e8;border-color:#c9a227}
-.pick small{display:block;font-family:"IM Fell English",Georgia,serif;font-size:.75rem;font-weight:400}
-.who{text-align:center;font-size:.9rem;margin:4px 0 8px}
-.hp-box{background:var(--panel);border:3px solid var(--blood);padding:10px;text-align:center;margin:8px 0}
-.hp-num{font-size:2.3rem;font-weight:800}
-.hp-btns{display:flex;justify-content:center;gap:6px;margin-top:6px;flex-wrap:wrap}
-button.act{font-family:Cinzel,serif;background:#3d2412;color:var(--p);border:2px solid var(--gold);padding:8px 12px;min-width:44px}
+.pick small{display:block;font-family:"IM Fell English",serif;font-size:.72rem;font-weight:400}
+.who{text-align:center;font-size:.85rem;margin:2px 0 6px}
+.hp-box{background:var(--panel);border:3px solid var(--blood);padding:8px;text-align:center;margin:6px 0}
+.hp-num{font-size:2.1rem;font-weight:800}
+.row{display:flex;justify-content:center;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
+button.act{font-family:Cinzel,serif;background:#3d2412;color:var(--p);border:2px solid var(--gold);padding:7px 10px;min-width:42px}
 .danger{background:var(--blood)}
-input[type=number]{width:60px;font-size:1.05rem;text-align:center;background:#fff8e8;border:2px solid var(--b)}
-.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
-.stat{background:var(--panel);border:2px solid var(--b);text-align:center;padding:6px 2px}
-.stat b{display:block;font-family:Cinzel;font-size:.68rem}
-.stat .n{font-size:1.25rem;font-weight:800}
-details{background:var(--panel);border:2px solid var(--b);margin:8px 0;padding:6px 8px}
+input[type=number]{width:54px;font-size:1rem;text-align:center;background:#fff8e8;border:2px solid var(--b)}
+.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:6px 0}
+.stat{background:var(--panel);border:2px solid var(--b);text-align:center;padding:5px 1px}
+.stat b{display:block;font-family:Cinzel;font-size:.65rem}
+.stat .n{font-size:1.15rem;font-weight:800}
+details{background:var(--panel);border:2px solid var(--b);margin:6px 0;padding:6px 8px}
 summary{font-family:Cinzel;font-weight:700;cursor:pointer}
-.uses{display:flex;gap:6px;margin:6px 0}
-.pip{width:28px;height:28px;border:2px solid var(--b);background:#fff8e8;border-radius:50%;cursor:pointer}
+.uses{display:flex;gap:6px;margin:6px 0;flex-wrap:wrap;align-items:center}
+.pip{width:26px;height:26px;border:2px solid var(--b);background:#fff8e8;border-radius:50%;cursor:pointer}
 .pip.on{background:var(--blood)}
-table{width:100%;border-collapse:collapse;font-size:.92rem}
-td,th{border-bottom:1px solid #c4a574;padding:4px 2px;text-align:left}
+.ds{width:22px;height:22px;border:2px solid var(--b);background:#fff8e8;cursor:pointer;display:inline-block}
+.ds.on{background:var(--blood)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+td,th{border-bottom:1px solid #c4a574;padding:3px 2px;text-align:left}
 .prof{color:var(--blood);font-weight:700}
-textarea{width:100%;min-height:64px;background:#fff8e8;border:2px solid var(--b);font-family:inherit;padding:6px}
+.sk{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #c4a574;padding:3px 0;font-size:.88rem}
+.dot{width:16px;height:16px;border:2px solid var(--b);border-radius:50%;margin-right:6px;flex-shrink:0;background:#fff8e8}
+.dot.on{background:var(--blood)}
+.lab{display:flex;align-items:center}
+textarea{width:100%;min-height:70px;background:#fff8e8;border:2px solid var(--b);font-family:inherit;padding:6px}
 footer{text-align:center;font-size:.7rem;margin-top:8px;opacity:.7}
-.hide{display:none}
+.tiny{font-size:.78rem;margin-top:4px}
 </style>
 </head>
 <body>
 <div class="sheet">
 <h1>BOINKER & OINKER</h1>
-<div class="sub">One body · Fighter 1 / Barbarian 1 · Hermit · Large</div>
+<div class="sub">2-Headed Ettin · Hermit · Fighter 1 / Barbarian 1 · Large · Iron Spine</div>
 <div class="pick">
-<button id="btnO" onclick="show('o')">OINKER<small>right head · right hand · axe</small></button>
-<button id="btnB" onclick="show('b')">BOINKER<small>left head · left hand · flail</small></button>
+<button id="btnO" onclick="show('o')">OINKER<small>right head · axe · joyful</small></button>
+<button id="btnB" onclick="show('b')">BOINKER<small>left head · flail · angry</small></button>
 </div>
 <div class="who" id="who"></div>
 <div class="hp-box">
-<div style="font-family:Cinzel;color:var(--blood)">Shared Hit Points</div>
+<div style="font-family:Cinzel;color:var(--blood)">Shared HP</div>
 <div class="hp-num"><span id="hp">23</span> / <span id="hpmax">23</span></div>
-<div>Temp <input type="number" id="temp" value="0" min="0"></div>
-<div class="hp-btns">
-<button class="act" onclick="dmg(1)">−1</button>
-<button class="act" onclick="dmg(5)">−5</button>
-<button class="act danger" onclick="dmg(10)">−10</button>
+<div class="row">Temp <input type="number" id="temp" value="0" min="0">
+Max <input type="number" id="maxin" value="23" min="1" onchange="setMax()"></div>
+<div class="row">
+<button class="act" onclick="dmg(1)">-1</button>
+<button class="act" onclick="dmg(5)">-5</button>
+<button class="act danger" onclick="dmg(10)">-10</button>
 <button class="act" onclick="heal(1)">+1</button>
 <button class="act" onclick="heal(5)">+5</button>
 <button class="act" onclick="fullHeal()">Full</button>
 </div>
-<div style="margin-top:6px;font-size:.85rem">Max <input type="number" id="maxin" value="23" min="1" onchange="setMax()"></div>
 </div>
 <div class="stat-row">
 <div class="stat"><b>AC</b><div class="n">13</div></div>
-<div class="stat"><b>INIT</b><div class="n">+3</div></div>
+<div class="stat"><b>INIT</b><div class="n">+1</div></div>
 <div class="stat"><b>SPD</b><div class="n">30</div></div>
 <div class="stat"><b>PB</b><div class="n">+2</div></div>
 </div>
-<div id="panelO">
-<details open><summary>Oinker — mind</summary>
-<table>
-<tr><th></th><th>Score</th><th>Mod</th><th>Save</th></tr>
-<tr><td>INT</td><td>8</td><td>−1</td><td>−1</td></tr>
-<tr><td>WIS</td><td>10</td><td>+0</td><td>+0</td></tr>
-<tr><td>CHA</td><td>14</td><td>+2</td><td>+2</td></tr>
-</table>
-<p style="font-size:.85rem;margin-top:6px">Passive Perception 10. Joyful idiot. Hay wig, cheap drag makeup, glitter-shit on his half.</p>
-</details>
-<details open><summary>Oinker — weapon</summary>
+<div class="stat-row">
+<div class="stat"><b>SIZE</b><div class="n">L</div></div>
+<div class="stat"><b>P.PERC</b><div class="n" id="pperc">10</div></div>
+<div class="stat"><b>P.INS</b><div class="n" id="pins">10</div></div>
+<div class="stat"><b>P.INV</b><div class="n" id="pinv">9</div></div>
+</div>
+<details open>
+<summary>This head</summary>
+<table id="mind"></table>
+<p class="tiny" id="headnote"></p>
 <table>
 <tr><th>Weapon</th><th>Atk</th><th>Damage</th></tr>
-<tr><td>Battleaxe</td><td>+5</td><td>1d8+3 slashing</td></tr>
+<tr id="wep"></tr>
 </table>
 </details>
-</div>
-<div id="panelB" class="hide">
-<details open><summary>Boinker — mind</summary>
-<table>
-<tr><th></th><th>Score</th><th>Mod</th><th>Save</th></tr>
-<tr><td>INT</td><td>12</td><td>+1</td><td>+1</td></tr>
-<tr><td>WIS</td><td>12</td><td>+1</td><td>+1</td></tr>
-<tr><td>CHA</td><td>10</td><td>+0</td><td>+0</td></tr>
-</table>
-<p style="font-size:.85rem;margin-top:6px">Passive Perception 11. Angry and hungry. A few lone hairs. No makeup.</p>
-</details>
-<details open><summary>Boinker — weapon</summary>
-<table>
-<tr><th>Weapon</th><th>Atk</th><th>Damage</th></tr>
-<tr><td>Flail</td><td>+5</td><td>1d8+3 bludgeoning</td></tr>
-</table>
-</details>
-</div>
-<details open><summary>Body (both)</summary>
+<details open>
+<summary>Body scores</summary>
 <table>
 <tr><th></th><th>Score</th><th>Mod</th><th>Save</th></tr>
 <tr><td>STR</td><td>17</td><td>+3</td><td class="prof">+5</td></tr>
 <tr><td>DEX</td><td>13</td><td>+1</td><td>+1</td></tr>
 <tr><td>CON</td><td>15</td><td>+2</td><td class="prof">+4</td></tr>
 </table>
-<div><b>Rage</b> 2 / long rest<div class="uses" id="rage"></div></div>
-<div><b>Second Wind</b> 2 uses, 1d10+1<div class="uses" id="sw"></div></div>
-<div><b>Stone's Endurance</b> 2 / long rest, 1d12+2<div class="uses" id="stone"></div></div>
-<p style="font-size:.85rem;margin-top:6px">Unarmored 13. Alert +PB to init. No Reckless until Barb 2.</p>
+<p class="tiny">13-14 ft tall · 5200 lb · 10 ft reach</p>
 </details>
-<details><summary>Notes</summary>
-<textarea id="notes">Oinker: right head/hand, axe, CHA 14 / INT 8 / WIS 10. Boinker: left head/hand, flail, INT 12 / WIS 12 / CHA 10. One HP pool. If those mental scores are swapped, change them.</textarea>
+<details open>
+<summary>Skills (tap dot = proficient)</summary>
+<div id="skills"></div>
+<p class="tiny">Pre-checked: Athletics, Medicine, Religion. First class still owes 2 picks — tap them.</p>
 </details>
-<footer>https://brentsnow.ca/ettin/ · saves on this phone only</footer>
+<details open>
+<summary>Features / uses</summary>
+<div><b>Rage</b> 2 / long rest. Adv STR checks and saves, +2 melee STR dmg, resist B/P/S.
+<div class="uses" id="rage"></div></div>
+<div><b>Second Wind</b> paper: 1 / short rest, 1d10+1.
+<div class="uses" id="sw"></div></div>
+<div><b>Stone's Endurance</b> reaction, reduce dmg 1d12+2. 2 / long rest.
+<div class="uses" id="stone"></div></div>
+<p class="tiny"><b>Hit dice:</b> 1d10 + 1d12</p>
+<div>Death saves S <span id="dss"></span> F <span id="dsf"></span></div>
+<div>Inspiration <span class="pip" id="insp" onclick="this.classList.toggle('on');save()"></span></div>
+<ul class="tiny" style="margin:6px 0 0 16px">
+<li>Little Giant — Athletics + Powerful Build</li>
+<li>Mountain Born — cold resistance</li>
+<li>Alert — paper also wrote can't be surprised (2014). Paper init is +1</li>
+<li>Iron Spine — extra artisan tool</li>
+<li>Discovery — secret hole / Iron Spine tunnel</li>
+<li>Fighting Style — never written. Pick one</li>
+<li>No Reckless Attack until Barb 2</li>
+</ul>
+</details>
+<details open>
+<summary>Gear / proficiencies</summary>
+<p>Thick leather harness, one lopsided mixed-hide loincloth, heirloom tool, forged pieces.</p>
+<p>Oinker: hay wig, sloppy berry makeup, glitter-shit.</p>
+<p>Boinker: a few lone hairs, no makeup.</p>
+<p>Weapons: flail (Boinker), battleaxe (Oinker).</p>
+<p>Money: 40 gp</p>
+<p>Armor: Light, Medium, Heavy, Shields</p>
+<p>Weapons trained: Simple, Martial</p>
+<p>Tools: leatherworker's, herbalism kit, Iron Spine artisan tool</p>
+<p>Languages: Giant, Common, Orc, Goblin</p>
+</details>
+<details>
+<summary>Notes</summary>
+<textarea id="notes">Mountain Iron Spine hermits. Internal philosophers. Know a secret hole/tunnel.</textarea>
+</details>
+<footer>https://brentsnow.ca/ettin/ · this phone only</footer>
 </div>
 <script>
-const $=id=>document.getElementById(id);
-function show(who){
-  $('panelO').classList.toggle('hide', who!=='o');
-  $('panelB').classList.toggle('hide', who!=='b');
-  $('btnO').className = who==='o' ? 'on-o' : '';
-  $('btnB').className = who==='b' ? 'on-b' : '';
-  $('who').textContent = who==='o' ? 'Viewing Oinker' : 'Viewing Boinker';
-  localStorage.setItem('ettinWho', who);
+const HEADS = {
+  o: {name:'Oinker', note:'Right head + right hand. Joyful idiot. Hay wig, cheap drag makeup, glitter-shit.', int:8, wis:10, cha:14, wep:'<td>Battleaxe</td><td>+5</td><td>1d8+3 slashing</td>'},
+  b: {name:'Boinker', note:'Left head + left hand. Angry and hungry. Sparse hairs. No makeup.', int:12, wis:12, cha:10, wep:'<td>Flail</td><td>+5</td><td>1d8+3 bludgeoning</td>'}
+};
+const SKILLS = [
+  ['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],
+  ['Arcana','int',false],['History','int',false],['Investigation','int',false],['Nature','int',false],['Religion','int',true],
+  ['Animal Handling','wis',false],['Insight','wis',false],['Medicine','wis',true],['Perception','wis',false],['Survival','wis',false],
+  ['Deception','cha',false],['Intimidation','cha',false],['Performance','cha',false],['Persuasion','cha',false]
+];
+const $ = id => document.getElementById(id);
+let who = 'o';
+let skillOn = {};
+SKILLS.forEach(s => skillOn[s[0]] = s[2]);
+function mod(score){ return Math.floor((score-10)/2); }
+function signed(n){ return (n>=0?'+':'')+n; }
+function bodyMod(ab){
+  if(ab==='str') return 3;
+  if(ab==='dex') return 1;
+  const h = HEADS[who];
+  if(ab==='int') return mod(h.int);
+  if(ab==='wis') return mod(h.wis);
+  if(ab==='cha') return mod(h.cha);
+  return 0;
+}
+function show(w){
+  who = w;
+  const h = HEADS[w];
+  $('btnO').className = w==='o' ? 'on-o' : '';
+  $('btnB').className = w==='b' ? 'on-b' : '';
+  $('who').textContent = 'Viewing '+h.name;
+  $('mind').innerHTML = '<tr><th></th><th>Score</th><th>Mod</th><th>Save</th></tr>'+
+    '<tr><td>INT</td><td>'+h.int+'</td><td>'+signed(mod(h.int))+'</td><td>'+signed(mod(h.int))+'</td></tr>'+
+    '<tr><td>WIS</td><td>'+h.wis+'</td><td>'+signed(mod(h.wis))+'</td><td>'+signed(mod(h.wis))+'</td></tr>'+
+    '<tr><td>CHA</td><td>'+h.cha+'</td><td>'+signed(mod(h.cha))+'</td><td>'+signed(mod(h.cha))+'</td></tr>';
+  $('headnote').textContent = h.note;
+  $('wep').innerHTML = h.wep;
+  renderSkills();
+  localStorage.setItem('ettinWho', w);
+  save();
+}
+function renderSkills(){
+  const box = $('skills');
+  box.innerHTML = '';
+  SKILLS.forEach(s => {
+    const name=s[0], ab=s[1];
+    const tot = bodyMod(ab) + (skillOn[name]?2:0);
+    const row = document.createElement('div');
+    row.className = 'sk';
+    row.innerHTML = '<span class="lab"><span class="dot'+(skillOn[name]?' on':'')+'"></span>'+name+' <small>('+ab+')</small></span><b class="'+(skillOn[name]?'prof':'')+'">'+signed(tot)+'</b>';
+    row.querySelector('.dot').onclick = () => { skillOn[name] = !skillOn[name]; renderSkills(); save(); };
+    box.appendChild(row);
+  });
+  $('pperc').textContent = 10 + bodyMod('wis') + (skillOn.Perception?2:0);
+  $('pins').textContent = 10 + bodyMod('wis') + (skillOn.Insight?2:0);
+  $('pinv').textContent = 10 + bodyMod('int') + (skillOn.Investigation?2:0);
+}
+function pips(id){return [...$(id).querySelectorAll('.pip')].map(p=>p.classList.contains('on'));}
+function renderPips(id,arr){
+  $(id).innerHTML='';
+  arr.forEach(on=>{const d=document.createElement('div');d.className='pip'+(on?' on':'');d.onclick=()=>{d.classList.toggle('on');save();};$(id).appendChild(d);});
+}
+function renderDS(id,n,arr){
+  $(id).innerHTML='';
+  for(let i=0;i<n;i++){
+    const d=document.createElement('span');
+    d.className='ds'+((arr&&arr[i])?' on':'');
+    d.onclick=()=>{d.classList.toggle('on');save();};
+    $(id).appendChild(d);
+  }
 }
 function load(){
   const s=JSON.parse(localStorage.getItem('ettin')||'{}');
@@ -137,21 +223,23 @@ function load(){
   if(s.max){$('hpmax').textContent=s.max;$('maxin').value=s.max;}
   if(s.temp!=null)$('temp').value=s.temp;
   if(s.notes)$('notes').value=s.notes;
-  renderPips('rage',s.rage||[false,false]);
-  renderPips('sw',s.sw||[false,false]);
-  renderPips('stone',s.stone||[false,false]);
+  if(s.skills) Object.assign(skillOn, s.skills);
+  if(s.insp) $('insp').classList.add('on');
+  renderPips('rage', s.rage || [false,false]);
+  renderPips('sw', s.sw || [false]);
+  renderPips('stone', s.stone || [false,false]);
+  renderDS('dss',3,s.dss);
+  renderDS('dsf',3,s.dsf);
   show(localStorage.getItem('ettinWho')||'o');
 }
 function save(){
-  localStorage.setItem('ettin',JSON.stringify({
-    hp:+$('hp').textContent,max:+$('hpmax').textContent,temp:+$('temp').value,
-    notes:$('notes').value,rage:pips('rage'),sw:pips('sw'),stone:pips('stone')
+  localStorage.setItem('ettin', JSON.stringify({
+    hp:+$('hp').textContent, max:+$('hpmax').textContent, temp:+$('temp').value,
+    notes:$('notes').value, rage:pips('rage'), sw:pips('sw'), stone:pips('stone'),
+    skills:skillOn, insp:$('insp').classList.contains('on'),
+    dss:[...$('dss').querySelectorAll('.ds')].map(x=>x.classList.contains('on')),
+    dsf:[...$('dsf').querySelectorAll('.ds')].map(x=>x.classList.contains('on'))
   }));
-}
-function pips(id){return [...$(id).querySelectorAll('.pip')].map(p=>p.classList.contains('on'));}
-function renderPips(id,arr){
-  $(id).innerHTML='';
-  arr.forEach(on=>{const d=document.createElement('div');d.className='pip'+(on?' on':'');d.onclick=()=>{d.classList.toggle('on');save();};$(id).appendChild(d);});
 }
 function dmg(n){let hp=+$('hp').textContent,t=+$('temp').value;if(t>0){const u=Math.min(t,n);t-=u;n-=u;$('temp').value=t;}hp=Math.max(0,hp-n);$('hp').textContent=hp;save();}
 function heal(n){const max=+$('hpmax').textContent;$('hp').textContent=Math.min(max,+$('hp').textContent+n);save();}
