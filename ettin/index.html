@@ -82,12 +82,12 @@ footer{text-align:center;color:#8a8070;font-size:.7rem;padding:8px}
 <p>Money <button class="act" onclick="gold=Math.max(0,gold-1);paintInv();save()">−</button> <span id="gold">40</span> gp <button class="act" onclick="gold+=1;paintInv();save()">+</button></p></div>
 <div id="palbum" class="hide"><h3>Album</h3>
 <img alt="us" src="https://raw.githubusercontent.com/Bchilled/Bchilled.github.io/main/ettin/us.jpg">
-<p class="cap">Oinker RIGHT: axe/greatsword, hay wig, purple hermit shell over right eye. Boinker LEFT: flail/brick mace.</p>
+<p class="cap">Oinker RIGHT: axe/greatsword, hay wig, purple hermit shell over right eye. Boinker LEFT: flail/brick mace d12.</p>
 <div id="story"></div><textarea id="notes"></textarea></div>
 </div><footer>Photos load from /ettin/us.jpg. Hard refresh.</footer></div>
 <script>
 const STORY='<p>Hermit. Hole in the Iron Spine. Hungry year, came to town. Jobs for coins or a herd as payment.</p>';
-const HEADS={o:{name:'OINKER',sub:'Barbarian 2 \u00b7 Ettin \u00b7 Hermit',int:8,wis:10,cha:14,cls:'barb',gear:'<p>Greatsword 1d12 +12. Battleaxe. Purple scaly hermit shell over right eye. Wet hay wig. Smeared makeup.</p>',story:STORY+'<p>Oinker is sad. Right eye covered by the crooked hermit shell.</p>',feats:'<h3>Barbarian 2</h3><p>Rage. Unarmored Defense 13. Reckless Attack. Danger Sense.</p>'},b:{name:'BOINKER',sub:'Fighter 2 \u00b7 Ettin \u00b7 Hermit',int:12,wis:12,cha:10,cls:'fight',gear:'<p>Rod with brick mace +12. Flail. Harness. Loincloth. Few hairs.</p>',story:STORY+'<p>Boinker is angry and hungry. Both eyes work.</p>',feats:'<h3>Fighter 2</h3><p>Second Wind. Action Surge. Fighting Style not chosen.</p>'}};
+const HEADS={o:{name:'OINKER',sub:'Barbarian 2 \u00b7 Ettin \u00b7 Hermit',int:8,wis:10,cha:14,cls:'barb',gear:'<p>Greatsword 1d12 +12. Battleaxe. Purple scaly hermit shell over right eye. Wet hay wig. Smeared makeup.</p>',story:STORY+'<p>Oinker is sad. Right eye covered by the crooked hermit shell.</p>',feats:'<h3>Barbarian 2</h3><p>Rage. Unarmored Defense 13. Reckless Attack. Danger Sense.</p>'},b:{name:'BOINKER',sub:'Fighter 2 \u00b7 Ettin \u00b7 Hermit',int:12,wis:12,cha:10,cls:'fight',gear:'<p>Rod with brick mace 1d12 +12. Flail. Harness. Loincloth. Few hairs.</p>',story:STORY+'<p>Boinker is angry and hungry. Both eyes work.</p>',feats:'<h3>Fighter 2</h3><p>Second Wind. Action Surge. Fighting Style not chosen.</p>'}};
 const SKILLS=[['Athletics','str',true,'Goliath'],['Acrobatics','dex',false,''],['Sleight of Hand','dex',false,''],['Stealth','dex',false,''],['Arcana','int',false,''],['History','int',false,''],['Investigation','int',false,''],['Nature','int',false,''],['Religion','int',true,'Hermit'],['Animal Handling','wis',false,''],['Insight','wis',false,''],['Medicine','wis',true,'Hermit'],['Perception','wis',false,''],['Survival','wis',false,''],['Deception','cha',false,''],['Intimidation','cha',false,''],['Performance','cha',false,''],['Persuasion','cha',false,'']];
 const $=id=>document.getElementById(id);
 let who='o',skillOn={},gold=40,raging=false,reckless=false,rage=2,sw=1,surge=1;
@@ -108,7 +108,7 @@ function paintActs(){let h='';
   h+='<div class="use"><div><b>Rage</b></div><button class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';
   h+='<div class="use"><div><b>Reckless</b></div><button class="act '+(reckless?'danger':'')+'" onclick="reckless=!reckless;paintActs();save()">'+(reckless?'ON':'off')+'</button></div>';
  } else {
-  h+='<div class="use"><div><b>Brick mace</b><span class="tiny">+12 \u00b7 1d8 B</span></div><button class="act" onclick="atk(12,\'Brick mace\',8)">Attack</button></div>';
+  h+='<div class="use"><div><b>Brick mace</b><span class="tiny">+12 \u00b7 1d12 B</span></div><button class="act" onclick="atk(12,\'Brick mace\',12)">Attack</button></div>';
   h+='<div class="use"><div><b>Flail</b><span class="tiny">+5 \u00b7 1d8+3 B</span></div><button class="act" onclick="atk(5,\'Flail\',8)">Attack</button></div>';
   h+='<div class="use"><div><b>Second Wind</b></div><button class="act" onclick="doSW()">'+sw+'/1</button></div>';
   h+='<div class="use"><div><b>Action Surge</b></div><button class="act" onclick="doSurge()">'+surge+'/1</button></div>';
