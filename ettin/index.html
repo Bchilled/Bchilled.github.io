@@ -25,7 +25,7 @@ button.act{background:#3a2412}button.danger{background:#9b2c2c}
 .abs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
 .ab{background:#fff8e4;border:2px solid #3a2412;text-align:center;padding:6px 2px}
 .mod{font-size:1.4rem;font-weight:700}.sc,.sv{font-size:.72rem;color:#6a543c}.sv.p{color:#9b2c2c;font-weight:700}
-.roll{min-height:40px;text-align:center;font-family:Cinzel,serif;color:#9b2c2c;font-size:.95rem}
+.roll{min-height:96px;text-align:left;white-space:pre-wrap;font-family:"Source Serif 4",Georgia,serif;color:#3a2412;font-size:.92rem;background:#fff8e4;border:2px solid #9b2c2c;padding:8px;margin-bottom:8px}
 .sk{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #ead7b0}
 .dot{width:16px;height:16px;border:2px solid #3a2412;border-radius:50%;display:inline-block;margin-right:8px;background:#fff}.dot.on{background:#9b2c2c}
 .bonus{font-weight:700}
@@ -48,7 +48,7 @@ p{margin:.4rem 0}
 <button id="tinventory" onclick="tab('inventory')">Gear</button>
 <button id="talbum" onclick="tab('album')">Album</button>
 </div>
-<div class="sheet"><div class="roll" id="rollout">d20 + 5 to hit. If it hits, weapon + 3 damage.</div>
+<div class="sheet"><div class="roll" id="rollout">Tap a button. This box will say what happened and what to tell the DM.</div>
 <div id="pcombat">
 <div class="row3">
 <div class="box hp"><div class="k" id="hplab">OINKER HP</div><div class="v"><span id="hp">23</span>/<span id="hpmax">23</span></div>
@@ -80,23 +80,23 @@ p{margin:.4rem 0}
 <div class="box"><div class="k">P.INS</div><div class="v" id="pins">10</div></div>
 <div class="box"><div class="k">HIT DICE</div><div class="v" style="font-size:1rem" id="hdbox">2d12</div></div>
 </div>
-<h3>Actions</h3><p class="tiny">Tap Attack. First number is to-hit (say that to the DM). Second is damage only if the DM says you hit.</p><div id="acts"></div>
+<h3>Actions</h3><p class="tiny">The red box above explains every tap.</p><div id="acts"></div>
 </div>
-<div id="pskills" class="hide"><h3>Skills</h3><p class="tiny">Tap the number to roll. Red dots are trained. Medicine and Religion = Hermit. Other trained skills = that head's class.</p><div id="skills"></div></div>
+<div id="pskills" class="hide"><h3>Skills</h3><p class="tiny">Tap the number. The red box tells you what to say.</p><div id="skills"></div></div>
 <div id="pfeatures" class="hide"><div id="feats"></div></div>
 <div id="pinventory" class="hide"><h3>Gear</h3><div id="gear"></div>
 <p>Money <button class="act" onclick="gold=Math.max(0,gold-1);paintInv();save()">−</button> <span id="gold">40</span> gp <button class="act" onclick="gold+=1;paintInv();save()">+</button></p></div>
 <div id="palbum" class="hide"><h3>Album</h3>
 <img alt="us" src="https://raw.githubusercontent.com/Bchilled/Bchilled.github.io/main/ettin/us.jpg">
-<p class="cap">Both heads are Half-giant Ettin, type Giant. Oinker RIGHT barbarian. Boinker LEFT fighter.</p>
+<p class="cap">Half-giant Ettin. Oinker RIGHT barbarian. Boinker LEFT fighter.</p>
 <div id="story"></div><textarea id="notes"></textarea></div>
-</div><footer>Both heads: Half-giant Ettin (Giant). Hard refresh.</footer></div>
+</div><footer>Hard refresh so the explain box works.</footer></div>
 <script>
 const STORY='<p>Two heads, one Large half-giant ettin body. Type: Giant. Came out of a hole in the Iron Spine after a hungry year. Do jobs for coins or a herd of sheep to take home.</p>';
-const HOW='<h3>How a turn works</h3><p>On your turn: move 40 feet and take 1 Action. Sometimes also a Bonus Action. A Reaction is only when something hits you.</p><p><b>To hit:</b> roll d20, add +5, tell the DM that total.</p><p><b>Damage:</b> only after the DM says hit. Roll the weapon, add +3 Strength.</p><p><b>Hit Dice</b> are for HP and resting. Strength is never added to Hit Dice.</p>';
-const ETTIN='<h3>Both heads</h3><p><b>Type: Giant.</b> Half-giant ettin. Large. Speed 40. Darkvision 60 feet.</p><p><b>Two Heads.</b> Perception with advantage. Advantage on saves vs blinded, charmed, deafened, frightened, stunned, or knocked out.</p><p><b>Wakeful.</b> One head can sleep while the other stays awake.</p><p><b>Languages.</b> Common and Giant.</p><p><b>Armor 13.</b> No armor. 10 + Dex +1 + Con +2 from Unarmored Defense.</p>';
-const HEADS={o:{name:'OINKER',sub:'Half-giant Ettin Barbarian 2 \u00b7 Hermit',int:8,wis:10,cha:14,cls:'barb',hp0:23,hd:'2d12',gear:'<p><b>Greatsword</b>: d20+5 to hit, then 2d6+3 slashing.</p><p><b>Battleaxe:</b> d20+5, then 1d8+3 slashing.</p><p>Leather harness. Lopsided hide loincloth used as a half-bra. Wet hay wig. Smeared berry makeup. Crooked purple scaly hermit shell over the right eye.</p>',story:STORY+'<p>Oinker is the right head. Joyful. Right eye covered by the shell.</p>',feats:HOW+ETTIN+'<h3>Oinker \u2014 Half-giant Ettin Barbarian 2</h3><p><b>Attack (Action).</b> Tap Attack. Say the to-hit number. If the DM says hit, use the damage number.</p><p><b>Rage (Bonus Action).</b> 2 times per long rest. +2 damage after you hit. Weapon hits deal you half. Does not help the d20.</p><p><b>Reckless.</b> ON = roll the d20 twice, keep the higher. Enemies hit you easier too.</p><p><b>Danger Sense.</b> Seen traps/blasts: Dex saves with advantage.</p><p><b>No spells. No Second Wind. No Action Surge.</b></p>'},b:{name:'BOINKER',sub:'Half-giant Ettin Fighter 2 \u00b7 Hermit',int:12,wis:12,cha:10,cls:'fight',hp0:20,hd:'2d10',gear:'<p><b>Brick mace</b> (mace): d20+5 to hit, then 1d6+3 bludgeoning.</p><p><b>Flail:</b> d20+5, then 1d8+3 bludgeoning.</p><p>Leather harness. Shared hide loincloth. A few stray hairs.</p>',story:STORY+'<p>Boinker is the left head. Angry and hungry. Both eyes work.</p>',feats:HOW+ETTIN+'<h3>Boinker \u2014 Half-giant Ettin Fighter 2</h3><p><b>Attack (Action).</b> Tap Attack. Say the to-hit number. If the DM says hit, use the damage number.</p><p><b>Second Wind (Bonus Action).</b> 1 per short rest. Heal 1d10+2 on Boinker only.</p><p><b>Action Surge.</b> 1 per short rest. One extra Action this turn.</p><p><b>Fighting Style: Great Weapon Fighting.</b> Reroll 1s and 2s on two-handed weapon damage.</p><p><b>No spells. No Rage. No Reckless.</b></p>'}};
-const SKILLS=[['Athletics','str',true,'Oinker barb'],['Acrobatics','dex',false,''],['Sleight of Hand','dex',false,''],['Stealth','dex',false,''],['Arcana','int',false,''],['History','int',false,''],['Investigation','int',false,''],['Nature','int',false,''],['Religion','int',true,'Hermit'],['Animal Handling','wis',true,'Boinker fighter'],['Insight','wis',false,''],['Medicine','wis',true,'Hermit'],['Perception','wis',true,'Boinker fighter'],['Survival','wis',true,'Oinker barb'],['Deception','cha',false,''],['Intimidation','cha',false,''],['Performance','cha',false,''],['Persuasion','cha',false,'']];
+const HOW='<h3>How a turn works</h3><p>Move 40 feet and take 1 Action. Bonus Action is extra if a button says so. Reaction is only when you get hit.</p><p>Tap buttons on Combat. The red box tells you what happened.</p>';
+const ETTIN='<h3>Both heads</h3><p><b>Type: Giant.</b> Half-giant ettin. Large. Speed 40. Darkvision 60.</p><p><b>Two Heads.</b> Perception with advantage. Advantage on saves vs blinded, charmed, deafened, frightened, stunned, knocked out.</p><p><b>Wakeful.</b> One head sleeps, the other can stay awake.</p><p><b>Languages.</b> Common and Giant. Armor 13.</p>';
+const HEADS={o:{name:'OINKER',sub:'Half-giant Ettin Barbarian 2 \u00b7 Hermit',int:8,wis:10,cha:14,cls:'barb',hp0:23,hd:'2d12',gear:'<p>Greatsword: d20+5 then 2d6+3 slashing.</p><p>Battleaxe: d20+5 then 1d8+3 slashing.</p><p>Hay wig. Berry makeup. Purple shell over right eye. Wool body. Harness.</p>',story:STORY+'<p>Oinker is the right head.</p>',feats:HOW+ETTIN+'<h3>Oinker \u2014 Barbarian 2</h3><p>Rage, Reckless, Danger Sense. No spells. No Second Wind.</p>'},b:{name:'BOINKER',sub:'Half-giant Ettin Fighter 2 \u00b7 Hermit',int:12,wis:12,cha:10,cls:'fight',hp0:20,hd:'2d10',gear:'<p>Brick mace (mace): d20+5 then 1d6+3 bludgeoning.</p><p>Flail: d20+5 then 1d8+3 bludgeoning.</p><p>Few hairs. Harness. Wool body.</p>',story:STORY+'<p>Boinker is the left head.</p>',feats:HOW+ETTIN+'<h3>Boinker \u2014 Fighter 2</h3><p>Second Wind, Action Surge, Great Weapon Fighting. No spells. No Rage.</p>'}};
+const SKILLS=[['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],['Arcana','int',false],['History','int',false],['Investigation','int',false],['Nature','int',false],['Religion','int',true],['Animal Handling','wis',true],['Insight','wis',false],['Medicine','wis',true],['Perception','wis',true],['Survival','wis',true],['Deception','cha',false],['Intimidation','cha',false],['Performance','cha',false],['Persuasion','cha',false]];
 const $=id=>document.getElementById(id);
 let who='o',skillOn={},gold=40,raging=false,reckless=false,rage=2,sw=1,surge=1;
 let pool={o:{hp:23,max:23,temp:0},b:{hp:20,max:20,temp:0}};
@@ -112,27 +112,33 @@ function tab(id){['combat','skills','features','inventory','album'].forEach(x=>{
 function paintHP(){const p=cur();$('hplab').textContent=HEADS[who].name+' HP';$('hp').textContent=p.hp;$('hpmax').textContent=p.max;$('tempv').textContent=p.temp;$('maxv').textContent=p.max;$('hdbox').textContent=HEADS[who].hd}
 function paintActs(){let h='';
  if(HEADS[who].cls==='barb'){
-  h+='<div class="use"><div><b>Greatsword</b><span class="tiny">d20+5 \u00b7 2d6+3 S</span></div><button class="act" onclick="atk(\'Greatsword\',6,2,true)">Attack</button></div>';
-  h+='<div class="use"><div><b>Battleaxe</b><span class="tiny">d20+5 \u00b7 1d8+3 S</span></div><button class="act" onclick="atk(\'Battleaxe\',8,1,false)">Attack</button></div>';
-  h+='<div class="use"><div><b>Rage</b><span class="tiny">bonus \u00b7 +2 dmg</span></div><button class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';
-  h+='<div class="use"><div><b>Reckless</b><span class="tiny">roll d20 twice</span></div><button class="act '+(reckless?'danger':'')+'" onclick="reckless=!reckless;paintActs();save()">'+(reckless?'ON':'off')+'</button></div>';
+  h+='<div class="use"><div><b>Greatsword</b><span class="tiny">Action</span></div><button class="act" onclick="atk(\'Greatsword\',6,2,true)">Attack</button></div>';
+  h+='<div class="use"><div><b>Battleaxe</b><span class="tiny">Action</span></div><button class="act" onclick="atk(\'Battleaxe\',8,1,false)">Attack</button></div>';
+  h+='<div class="use"><div><b>Rage</b><span class="tiny">Bonus Action</span></div><button class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';
+  h+='<div class="use"><div><b>Reckless</b><span class="tiny">toggle</span></div><button class="act '+(reckless?'danger':'')+'" onclick="doReck()">'+(reckless?'ON':'off')+'</button></div>';
  } else {
-  h+='<div class="use"><div><b>Brick mace</b><span class="tiny">d20+5 \u00b7 1d6+3 B</span></div><button class="act" onclick="atk(\'Brick mace\',6,1,false)">Attack</button></div>';
-  h+='<div class="use"><div><b>Flail</b><span class="tiny">d20+5 \u00b7 1d8+3 B</span></div><button class="act" onclick="atk(\'Flail\',8,1,false)">Attack</button></div>';
-  h+='<div class="use"><div><b>Second Wind</b><span class="tiny">bonus \u00b7 heal</span></div><button class="act" onclick="doSW()">'+sw+'/1</button></div>';
+  h+='<div class="use"><div><b>Brick mace</b><span class="tiny">Action</span></div><button class="act" onclick="atk(\'Brick mace\',6,1,false)">Attack</button></div>';
+  h+='<div class="use"><div><b>Flail</b><span class="tiny">Action</span></div><button class="act" onclick="atk(\'Flail\',8,1,false)">Attack</button></div>';
+  h+='<div class="use"><div><b>Second Wind</b><span class="tiny">Bonus Action</span></div><button class="act" onclick="doSW()">'+sw+'/1</button></div>';
   h+='<div class="use"><div><b>Action Surge</b><span class="tiny">extra Action</span></div><button class="act" onclick="doSurge()">'+surge+'/1</button></div>';
  }
  $('acts').innerHTML=h;}
-function atk(n,sides,count,gwf){let a=d20();let a2=0;if(reckless&&HEADS[who].cls==='barb'){a2=d20();a=Math.max(a,a2)}const hit=a+5;let parts=[];let dmg=0;for(let i=0;i<count;i++){let r=die(sides);if(gwf&&(r===1||r===2))r=die(sides);parts.push(r);dmg+=r}dmg+=3;if(raging&&HEADS[who].cls==='barb')dmg+=2;let msg=n+'  to hit '+hit+' (d20='+a+(a2?(' or '+a2):'')+' +5)';msg+='   |   if hit, damage '+dmg+' ('+parts.join('+')+'+3'+(raging&&HEADS[who].cls==='barb'?'+2 rage':'')+')';say(msg)}
-function doRage(){if(!raging){if(rage<=0)return;rage--;raging=true;say('Rage ON. +2 damage after you hit. Weapon hits deal you half.')}else{raging=false;say('Rage off')}paintActs();save()}
-function doSW(){if(sw<=0)return;sw--;const r=die(10);chgHP(r+2);say('Second Wind heals '+(r+2)+' (1d10='+r+' +2). Not an attack.');paintActs();save()}
-function doSurge(){if(surge<=0)return;surge--;say('Action Surge: take one more Action now (attack again).');paintActs();save()}
-function shortRest(){if(who==='b'){sw=1;surge=1}raging=false;paintActs();say(HEADS[who].name+' short rest. Fighter uses come back. Spend Hit Dice + CON to heal if the DM asks.');save()}
-function longRest(){const p=cur();p.hp=p.max;p.temp=0;if(who==='o'){rage=2;raging=false;reckless=false}else{sw=1;surge=1}paintHP();paintActs();say(HEADS[who].name+' long rest. HP full. Uses back.');save()}
+function atk(n,sides,count,gwf){let a=d20(),a2=0;if(reckless&&HEADS[who].cls==='barb'){a2=d20();if(a2>a)a=a2}const hit=a+5;let parts=[],dmg=0;for(let i=0;i<count;i++){let r=die(sides);if(gwf&&(r===1||r===2))r=die(sides);parts.push(r);dmg+=r}dmg+=3;const rageOn=raging&&HEADS[who].cls==='barb';if(rageOn)dmg+=2;
+ let msg=HEADS[who].name+' used an ACTION to swing the '+n+'.\n';
+ msg+='STEP 1 TO HIT: d20 showed '+a+(a2?(' (Reckless, other d20 was '+a2+')':'')+'. Add +5 (Strength 3 + proficiency 2). TELL THE DM: '+hit+'.\n';
+ msg+='STEP 2 WAIT. If the DM says MISS, stop. If the DM says HIT, damage is '+dmg+' ('+parts.join('+')+' on the weapon, plus 3 Strength'+(rageOn?', plus 2 Rage':'')+').\n';
+ msg+='Say: "'+hit+' to hit. If that hits, '+dmg+' damage."';
+ say(msg)}
+function doRage(){if(!raging){if(rage<=0){say('Rage failed. No uses left. Need a Long Rest.');return}rage--;raging=true;say('Oinker used a BONUS ACTION to RAGE.\nUses left: '+rage+' of 2.\nWhat changed: next time you HIT, add +2 damage. Weapon hits against you deal half.\nWhat did NOT change: the d20 to-hit is still +5.\nTell the DM: "I rage."')}else{raging=false;say('Rage turned OFF. No more +2 damage. You take full weapon damage again.')}paintActs();save()}
+function doReck(){reckless=!reckless;paintActs();save();if(reckless)say('Reckless is ON.\nWhat that means: the next Attack rolls two d20s and keeps the higher one, so it is easier to hit.\nCost: enemies hit YOU easier until your next turn.\nTell the DM: "I attack reckless."');else say('Reckless is OFF. Attacks use one d20 again.')}
+function doSW(){if(sw<=0){say('Second Wind failed. Already used. Need a Short Rest or Long Rest.');return}sw--;const r=die(10);const heal=r+2;const before=cur().hp;chgHP(heal);say('Boinker used a BONUS ACTION: Second Wind.\nThis is NOT an attack.\nRolled 1d10 got '+r+', plus fighter level 2 = heal '+heal+'.\nHP went from '+before+' to '+cur().hp+' / 20.\nUses left: 0 until you rest.\nTell the DM: "Bonus action, I Second Wind and heal '+heal+'."');paintActs();save()}
+function doSurge(){if(surge<=0){say('Action Surge failed. Already used. Need a Short Rest or Long Rest.');return}surge--;say('Boinker used ACTION SURGE.\nWhat happened: you get one extra ACTION this turn.\nDo this now: tap Attack again.\nUses left: 0 until you rest.\nTell the DM: "Action Surge. I attack again."');paintActs();save()}
+function shortRest(){if(who==='b'){sw=1;surge=1}raging=false;paintActs();say(HEADS[who].name+' took a SHORT REST (about 1 hour).\nBoinker: Second Wind and Action Surge come back.\nHP does not fill by itself. If the DM lets you, spend Hit Dice and add Constitution +2 per die.\nRage turns off.');save()}
+function longRest(){const p=cur();p.hp=p.max;p.temp=0;if(who==='o'){rage=2;raging=false;reckless=false}else{sw=1;surge=1}paintHP();paintActs();say(HEADS[who].name+' took a LONG REST (about 8 hours).\nHP is full. Rage / Second Wind / Action Surge are back.');save()}
 function show(w){who=w;const h=HEADS[w];$('btnO').className=w==='o'?'on':'';$('btnB').className=w==='b'?'on':'';$('cname').textContent=h.name;$('csub').textContent=h.sub;$('abs').innerHTML='';
- [['STR',17,3,5,1],['DEX',13,1,1,0],['CON',15,2,4,1],['INT',h.int,mod(h.int),mod(h.int),0],['WIS',h.wis,mod(h.wis),mod(h.wis),0],['CHA',h.cha,mod(h.cha),mod(h.cha),0]].forEach(a=>{const d=document.createElement('div');d.className='ab';d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';d.onclick=()=>{const r=d20();say(a[0]+' check '+(r+a[2])+' (d20='+r+' '+signed(a[2])+')')};$('abs').appendChild(d)});
+ [['STR',17,3,5,1],['DEX',13,1,1,0],['CON',15,2,4,1],['INT',h.int,mod(h.int),mod(h.int),0],['WIS',h.wis,mod(h.wis),mod(h.wis),0],['CHA',h.cha,mod(h.cha),mod(h.cha),0]].forEach(a=>{const d=document.createElement('div');d.className='ab';d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';d.onclick=()=>{const r=d20();const tot=r+a[2];say(a[0]+' check.\nd20 showed '+r+'. Add '+signed(a[2])+'.\nTELL THE DM: '+tot+'.');};$('abs').appendChild(d)});
  $('gear').innerHTML=h.gear;$('story').innerHTML=h.story;$('feats').innerHTML=h.feats;paintHP();paintActs();renderSkills();paintInv();localStorage.setItem('ettinWho',w);save()}
-function renderSkills(){const box=$('skills');box.innerHTML='';SKILLS.forEach(s=>{const tot=bodyMod(s[1])+(skillOn[s[0]]?2:0);const row=document.createElement('div');row.className='sk';row.innerHTML='<span><span class="dot'+(skillOn[s[0]]?' on':'')+'"></span>'+s[0]+'</span><span class="bonus">'+signed(tot)+'</span>';row.querySelector('.dot').onclick=()=>{skillOn[s[0]]=!skillOn[s[0]];renderSkills();save()};row.querySelector('.bonus').onclick=()=>{const r=d20();say(s[0]+' '+(r+tot)+' (d20='+r+' '+signed(tot)+')')};box.appendChild(row)});
+function renderSkills(){const box=$('skills');box.innerHTML='';SKILLS.forEach(s=>{const tot=bodyMod(s[1])+(skillOn[s[0]]?2:0);const row=document.createElement('div');row.className='sk';row.innerHTML='<span><span class="dot'+(skillOn[s[0]]?' on':'')+'"></span>'+s[0]+'</span><span class="bonus">'+signed(tot)+'</span>';row.querySelector('.dot').onclick=()=>{skillOn[s[0]]=!skillOn[s[0]];renderSkills();save()};row.querySelector('.bonus').onclick=()=>{const r=d20();const trained=skillOn[s[0]];const t=r+tot;say(s[0]+' check.\nd20 showed '+r+'. Bonus is '+signed(tot)+(trained?' (trained)':' (not trained)')+'.\nTELL THE DM: '+t+' '+s[0]+'.');};box.appendChild(row)});
  $('pperc').textContent=10+bodyMod('wis')+(skillOn.Perception?2:0);$('pins').textContent=10+bodyMod('wis')+(skillOn.Insight?2:0)}
 function paintInv(){$('gold').textContent=gold}
 function load(){const s=JSON.parse(localStorage.getItem('ettinLegal')||'{}');
@@ -142,9 +148,9 @@ function load(){const s=JSON.parse(localStorage.getItem('ettinLegal')||'{}');
  if(s.rage!=null)rage=s.rage;if(s.sw!=null)sw=s.sw;if(s.surge!=null)surge=s.surge;if(s.raging)raging=s.raging;if(s.reckless)reckless=s.reckless;
  show(localStorage.getItem('ettinWho')||'o')}
 function save(){localStorage.setItem('ettinLegal',JSON.stringify({pool,notes:$('notes').value,skills:skillOn,gold,rage,sw,surge,raging,reckless}))}
-function chgHP(n){const p=cur();if(n<0){n=-n;if(p.temp>0){const u=Math.min(p.temp,n);p.temp-=u;n-=u}p.hp=Math.max(0,p.hp-n)}else p.hp=Math.min(p.max,p.hp+n);paintHP();save()}
-function chgTemp(n){cur().temp=Math.max(0,cur().temp+n);paintHP();save()}
+function chgHP(n){const p=cur();const name=HEADS[who].name;if(n<0){let left=-n;if(p.temp>0){const u=Math.min(p.temp,left);p.temp-=u;left-=u}p.hp=Math.max(0,p.hp-left);say(name+' took '+(-n)+' damage. HP is now '+p.hp+' / '+p.max+'.')}else{p.hp=Math.min(p.max,p.hp+n);say(name+' healed '+n+'. HP is now '+p.hp+' / '+p.max+'.')}paintHP();save()}
+function chgTemp(n){cur().temp=Math.max(0,cur().temp+n);paintHP();save();say('Temp HP is now '+cur().temp+'.')}
 function chgMax(n){const p=cur();p.max=Math.max(1,p.max+n);if(p.hp>p.max)p.hp=p.max;paintHP();save()}
-function fullHeal(){const p=cur();p.hp=p.max;p.temp=0;paintHP();save()}
+function fullHeal(){const p=cur();p.hp=p.max;p.temp=0;paintHP();save();say(HEADS[who].name+' HP set to full '+p.max+'.')}
 $('notes').oninput=save;load();
 </script></body></html>
