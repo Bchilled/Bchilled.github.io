@@ -78,11 +78,11 @@ footer{text-align:center;color:#8a8070;font-size:.7rem;padding:8px}
 <div id="pfeatures" class="hide"><div id="feats"></div></div>
 <div id="pinventory" class="hide"><h3>Gear</h3><div id="gear"></div>
 <p>Money <button class="act" onclick="gold=Math.max(0,gold-1);paintInv();save()">−</button> <span id="gold">40</span> gp <button class="act" onclick="gold+=1;paintInv();save()">+</button></p></div>
-<div id="palbum" class="hide"><h3>Album</h3><p class="cap">After the river. Oinker RIGHT with the axe and a crooked purple scaly hermit shell over his right eye. Boinker LEFT with the flail.</p><div id="story"></div><textarea id="notes"></textarea></div>
+<div id="palbum" class="hide"><h3>Album</h3><p class="cap">After the river. Oinker RIGHT with greatsword and axe. Boinker LEFT with brick mace and flail.</p><div id="story"></div><textarea id="notes"></textarea></div>
 </div><footer>Two HP pools. + and − only.</footer></div>
 <script>
 const STORY='<p>Hermit. Hole in the Iron Spine. Hungry year, came to town. Jobs for coins or a herd as payment.</p>';
-const HEADS={o:{name:'OINKER',sub:'Barbarian 2 \u00b7 Ettin \u00b7 Hermit',int:8,wis:10,cha:14,cls:'barb',gear:'<p>Axe. Harness. Lopsided loincloth half-bra. Wet hay wig. Smeared makeup. Glitter gone. Pretty purple scaly hermit shell worn crooked over the right eye. That eye is blocked.</p>',story:STORY+'<p>Oinker is sad. Fell in water. Hermit shell covers his right eye so he cannot see out of it.</p>',feats:'<h3>Barbarian 2</h3><p>Rage. Unarmored Defense 13. Reckless Attack. Danger Sense.</p><p>Right eye covered by the crooked hermit shell.</p>'},b:{name:'BOINKER',sub:'Fighter 2 \u00b7 Ettin \u00b7 Hermit',int:12,wis:12,cha:10,cls:'fight',gear:'<p>Flail. Harness. Loincloth. Few hairs. Soaked.</p>',story:STORY+'<p>Boinker is angry and hungry. Still wet. Both of his eyes work.</p>',feats:'<h3>Fighter 2</h3><p>Second Wind. Action Surge. Fighting Style not chosen.</p>'}};
+const HEADS={o:{name:'OINKER',sub:'Barbarian 2 \u00b7 Ettin \u00b7 Hermit',int:8,wis:10,cha:14,cls:'barb',gear:'<p>Greatsword 1d12 +12. Battleaxe. Harness. Lopsided loincloth half-bra. Wet hay wig. Smeared makeup. Glitter gone. Pretty purple scaly hermit shell worn crooked over the right eye. That eye is blocked.</p>',story:STORY+'<p>Oinker is sad. Fell in water. Hermit shell covers his right eye so he cannot see out of it.</p>',feats:'<h3>Barbarian 2</h3><p>Rage. Unarmored Defense 13. Reckless Attack. Danger Sense.</p><p>Right eye covered by the crooked hermit shell.</p>'},b:{name:'BOINKER',sub:'Fighter 2 \u00b7 Ettin \u00b7 Hermit',int:12,wis:12,cha:10,cls:'fight',gear:'<p>Rod with brick mace +12. Flail. Harness. Loincloth. Few hairs. Soaked.</p>',story:STORY+'<p>Boinker is angry and hungry. Still wet. Both of his eyes work.</p>',feats:'<h3>Fighter 2</h3><p>Second Wind. Action Surge. Fighting Style not chosen.</p>'}};
 const SKILLS=[['Athletics','str',true,'Goliath'],['Acrobatics','dex',false,''],['Sleight of Hand','dex',false,''],['Stealth','dex',false,''],['Arcana','int',false,''],['History','int',false,''],['Investigation','int',false,''],['Nature','int',false,''],['Religion','int',true,'Hermit'],['Animal Handling','wis',false,''],['Insight','wis',false,''],['Medicine','wis',true,'Hermit'],['Perception','wis',false,''],['Survival','wis',false,''],['Deception','cha',false,''],['Intimidation','cha',false,''],['Performance','cha',false,''],['Persuasion','cha',false,'']];
 const $=id=>document.getElementById(id);
 let who='o',skillOn={},gold=40,raging=false,reckless=false,rage=2,sw=1,surge=1;
@@ -98,17 +98,19 @@ function tab(id){['combat','skills','features','inventory','album'].forEach(x=>{
 function paintHP(){const p=cur();$('hplab').textContent=HEADS[who].name+' HP';$('hp').textContent=p.hp;$('hpmax').textContent=p.max;$('tempv').textContent=p.temp;$('maxv').textContent=p.max}
 function paintActs(){let h='';
  if(HEADS[who].cls==='barb'){
-  h+='<div class="use"><div><b>Battleaxe</b><span class="tiny">+5 \u00b7 1d8+3 S</span></div><button class="act" onclick="atk(5,\'Battleaxe\')">Attack</button></div>';
+  h+='<div class="use"><div><b>Greatsword</b><span class="tiny">+12 \u00b7 1d12 S</span></div><button class="act" onclick="atk(12,\'Greatsword\',12)">Attack</button></div>';
+  h+='<div class="use"><div><b>Battleaxe</b><span class="tiny">+5 \u00b7 1d8+3 S</span></div><button class="act" onclick="atk(5,\'Battleaxe\',8)">Attack</button></div>';
   h+='<div class="use"><div><b>Rage</b></div><button class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';
   h+='<div class="use"><div><b>Reckless</b></div><button class="act '+(reckless?'danger':'')+'" onclick="reckless=!reckless;paintActs();save()">'+(reckless?'ON':'off')+'</button></div>';
  } else {
-  h+='<div class="use"><div><b>Flail</b><span class="tiny">+5 \u00b7 1d8+3 B</span></div><button class="act" onclick="atk(5,\'Flail\')">Attack</button></div>';
+  h+='<div class="use"><div><b>Brick mace</b><span class="tiny">+12 \u00b7 1d8 B</span></div><button class="act" onclick="atk(12,\'Brick mace\',8)">Attack</button></div>';
+  h+='<div class="use"><div><b>Flail</b><span class="tiny">+5 \u00b7 1d8+3 B</span></div><button class="act" onclick="atk(5,\'Flail\',8)">Attack</button></div>';
   h+='<div class="use"><div><b>Second Wind</b></div><button class="act" onclick="doSW()">'+sw+'/1</button></div>';
   h+='<div class="use"><div><b>Action Surge</b></div><button class="act" onclick="doSurge()">'+surge+'/1</button></div>';
  }
  h+='<div class="use"><div><b>Stone Endurance</b></div><button class="act" onclick="doStone()">'+cur().stone+'/2</button></div>';
  $('acts').innerHTML=h;}
-function atk(b,n){const r=d20();const extra=raging&&HEADS[who].cls==='barb'?2:0;const d=1+Math.floor(Math.random()*8);say(n+' hit '+(r+b)+'  dmg '+(d+3+extra))}
+function atk(b,n,die){die=die||8;const r=d20();const extra=raging&&HEADS[who].cls==='barb'?2:0;const d=1+Math.floor(Math.random()*die);const add=(n==='Greatsword'||n==='Brick mace')?0:3;say(n+' hit '+(r+b)+'  dmg '+(d+add+extra))}
 function doRage(){if(!raging){if(rage<=0)return;rage--;raging=true;say('Rage ON')}else{raging=false;say('Rage off')}paintActs();save()}
 function doSW(){if(sw<=0)return;sw--;const r=1+Math.floor(Math.random()*10);chgHP(r+2);say('Second Wind +'+(r+2));paintActs();save()}
 function doSurge(){if(surge<=0)return;surge--;say('Action Surge');paintActs();save()}
