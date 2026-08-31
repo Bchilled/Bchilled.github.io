@@ -4,145 +4,154 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Boinker & Oinker</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Source+Serif+4:opsz,wght@8..60,400;8..60,700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#140c08;--sheet:#f4e6c8;--ink:#1c1208;--muted:#5c4630;--red:#8c1f1f;--gold:#c9a227;--line:#c4a574;--card:#fff6df}
+:root{--bg:#121418;--sheet:#f3e6c9;--ink:#1c1208;--muted:#6a543c;--red:#9b2c2c;--gold:#c9a227;--card:#fff8e4}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:"Source Serif 4",Georgia,serif;background:var(--bg);color:var(--ink);padding:8px}
-.wrap{max-width:430px;margin:0 auto}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
-.tabs button{font-family:Cinzel,serif;font-weight:700;font-size:1.05rem;padding:14px 8px;border:2px solid var(--gold);background:#2a160e;color:#f4e6c8}
-.tabs button.on{background:var(--red);color:#fff8e8}
-.sheet{background:var(--sheet);border:3px solid #3a2412;box-shadow:0 0 0 4px #0d0704,inset 0 0 0 2px var(--gold);overflow:hidden}
-.head{background:linear-gradient(#7a1a1a,#4a1010);color:#fff4d6;padding:14px 12px 12px;border-bottom:3px solid var(--gold);text-align:center}
-.head h1{font-family:Cinzel,serif;font-weight:900;font-size:1.7rem;letter-spacing:.04em}
-.head .meta{font-size:.82rem;margin-top:4px}
-.portrait-wrap{background:#2a160e;padding:8px 8px 0}
-.portrait-wrap img{width:100%;display:block;border:3px solid var(--gold)}
-.combat{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:6px;padding:10px}
-.hp{background:var(--card);border:2px solid var(--red);text-align:center;padding:8px}
-.hp .lab,.mini .lab{font-family:Cinzel,serif;font-size:.62rem;letter-spacing:.06em}
-.hp .lab{color:var(--red)}
-.hp .num{font-size:2rem;font-weight:700;line-height:1.1}
-.mini{background:var(--card);border:2px solid #3a2412;text-align:center;padding:8px}
-.mini .num{font-size:1.45rem;font-weight:700}
-.hp-btns{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;padding:0 10px 8px}
-button.act{font-family:Cinzel,serif;background:#3a2412;color:#f4e6c8;border:1px solid var(--gold);padding:8px 11px;min-width:46px}
+body{font-family:"Source Serif 4",Georgia,serif;background:#121418;color:var(--ink);padding:8px}
+.wrap{max-width:440px;margin:0 auto}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+.who button,.rest button,.nav button{font-family:Cinzel,serif;border:1px solid var(--gold);padding:12px 6px;background:#2a2e34;color:#f3e6c9}
+.who button.on,.nav button.on{background:var(--red);color:#fff}
+.header{background:#16181c;color:#f3e6c9;border:1px solid #3a3f47;padding:10px}
+.header h1{font-family:Cinzel,serif;font-size:1.45rem}
+.header .meta{font-size:.78rem;color:#c9b48a;margin:3px 0 8px}
+.header img{width:100%;border:2px solid var(--gold);display:block;margin-bottom:8px}
+.rest,.nav{display:grid;gap:6px;margin-top:6px}
+.rest{grid-template-columns:1fr 1fr}
+.nav{grid-template-columns:repeat(5,1fr);gap:4px;margin:8px 0}
+.nav button{padding:10px 2px;font-size:.68rem}
+.sheet{background:var(--sheet);border:1px solid #3a2412;padding:10px}
+.combat{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:6px}
+.box{background:var(--card);border:2px solid #3a2412;text-align:center;padding:7px 4px}
+.box .k{font-family:Cinzel,serif;font-size:.6rem;letter-spacing:.05em;color:var(--muted)}
+.box .v{font-size:1.4rem;font-weight:700}
+.hp{border-color:var(--red)}
+.hp .v{font-size:1.8rem}
+.btns{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin:8px 0}
+button.act{font-family:Cinzel,serif;background:#3a2412;color:#f3e6c9;border:1px solid var(--gold);padding:8px 10px}
 button.danger{background:var(--red)}
-input[type=number]{width:52px;text-align:center;font:inherit;background:var(--card);border:1px solid #3a2412;padding:4px}
-.abilities{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:0 10px 10px}
-.ab{background:var(--card);border:2px solid #3a2412;text-align:center;padding:6px 2px 8px;border-radius:4px}
-.ab .n{font-family:Cinzel,serif;font-size:.68rem;letter-spacing:.08em}
-.ab .mod{font-size:1.55rem;font-weight:700;line-height:1}
-.ab .sc{font-size:.8rem;color:var(--muted)}
-.ab .sv{font-size:.72rem;margin-top:2px}
-.sv.p{color:var(--red);font-weight:700}
-.pass{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:0 10px 10px}
-details{border-top:1px solid var(--line);padding:8px 12px}
-summary{font-family:Cinzel,serif;font-size:.95rem;font-weight:700;cursor:pointer;list-style:none}
-summary::-webkit-details-marker{display:none}
-summary:before{content:"\25B8 ";color:var(--red)}
-details[open] summary:before{content:"\25BE "}
-.sk{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #ead7b0;font-size:.95rem}
-.dot{width:18px;height:18px;border:2px solid #3a2412;border-radius:50%;margin-right:8px;background:#fff;flex-shrink:0}
+input[type=number]{width:50px;text-align:center;font:inherit;background:var(--card);border:1px solid #3a2412}
+.abs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.ab{background:var(--card);border:2px solid #3a2412;text-align:center;padding:6px 2px;cursor:pointer}
+.ab .n{font-family:Cinzel,serif;font-size:.68rem}
+.ab .mod{font-size:1.5rem;font-weight:700}
+.ab .sc{font-size:.78rem;color:var(--muted)}
+.sv{font-size:.72rem}.sv.p{color:var(--red);font-weight:700}
+.roll{min-height:28px;text-align:center;font-family:Cinzel,serif;color:var(--red);margin:4px 0}
+.sk{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #ead7b0}
+.dot{width:18px;height:18px;border:2px solid #3a2412;border-radius:50%;margin-right:8px;background:#fff}
 .dot.on{background:var(--red)}
-.lab{display:flex;align-items:center}
-.prof{color:var(--red);font-weight:700}
-table{width:100%;border-collapse:collapse;font-size:.95rem;margin-top:6px}
-th{text-align:left;font-family:Cinzel,serif;font-size:.72rem;color:var(--muted)}
-td,th{padding:5px 2px;border-bottom:1px solid #ead7b0}
+.row{display:flex;align-items:center}
+.bonus{min-width:42px;text-align:right;font-weight:700;cursor:pointer}
+.prof{color:var(--red)}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th{text-align:left;font-family:Cinzel,serif;font-size:.7rem;color:var(--muted)}
+td,th{padding:6px 2px;border-bottom:1px solid #ead7b0}
 .uses{display:flex;gap:8px;margin:6px 0 10px}
-.pip{width:28px;height:28px;border:2px solid #3a2412;border-radius:50%;background:#fff;cursor:pointer}
-.pip.on{background:var(--red)}
-.ds{width:22px;height:22px;border:2px solid #3a2412;display:inline-block;background:#fff;cursor:pointer;margin-right:4px}
-.ds.on{background:var(--red)}
-textarea{width:100%;min-height:80px;margin-top:6px;padding:8px;font:inherit;background:var(--card);border:1px solid #3a2412}
-p{margin:6px 0;line-height:1.35;font-size:.95rem}
+.pip,.ds{width:26px;height:26px;border:2px solid #3a2412;background:#fff;cursor:pointer}
+.pip{border-radius:50%}
+.pip.on,.ds.on{background:var(--red)}
+h3{font-family:Cinzel,serif;font-size:.9rem;margin:10px 0 4px;color:var(--red)}
+p{margin:6px 0;line-height:1.35}
 .tiny{font-size:.8rem;color:var(--muted)}
-footer{text-align:center;color:#c4a574;font-size:.7rem;padding:8px}
-</style>
-</head>
+textarea{width:100%;min-height:90px;padding:8px;font:inherit;background:var(--card);border:1px solid #3a2412}
+.hide{display:none}
+footer{text-align:center;color:#8a8070;font-size:.7rem;padding:8px}
+</style></head>
 <body>
 <div class="wrap">
-<div class="tabs">
+<div class="who">
 <button id="btnB" onclick="show('b')">BOINKER</button>
 <button id="btnO" onclick="show('o')">OINKER</button>
 </div>
+<div class="header">
+<img alt="portrait" src="data:image/jpeg;base64,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">
+<h1 id="cname">OINKER</h1>
+<div class="meta" id="csub"></div>
+<div class="rest"><button onclick="shortRest()">Short Rest</button><button onclick="longRest()">Long Rest</button></div>
+</div>
+<div class="nav">
+<button class="on" id="tcombat" onclick="tab('combat')">Combat</button>
+<button id="tskills" onclick="tab('skills')">Skills</button>
+<button id="tfeatures" onclick="tab('features')">Features</button>
+<button id="tinventory" onclick="tab('inventory')">Inventory</button>
+<button id="tnotes" onclick="tab('notes')">Notes</button>
+</div>
 <div class="sheet">
-<div class="head"><h1 id="cname">OINKER</h1><div class="meta" id="csub"></div></div>
-<div class="portrait-wrap"><img alt="portrait" src="data:image/jpeg;base64,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"></div>
+<div class="roll" id="rollout"></div>
+<div id="pcombat">
 <div class="combat">
-<div class="hp"><div class="lab">HIT POINTS</div><div class="num"><span id="hp">23</span>/<span id="hpmax">23</span></div><div class="tiny">Temp <input type="number" id="temp" value="0" min="0"> Max <input type="number" id="maxin" value="23" min="1" onchange="setMax()"></div></div>
-<div class="mini"><div class="lab">ARMOR</div><div class="num">13</div></div>
-<div class="mini"><div class="lab">SPEED</div><div class="num">30</div></div>
+<div class="box hp"><div class="k">HIT POINTS</div><div class="v"><span id="hp">23</span>/<span id="hpmax">23</span></div><div class="tiny">Temp <input id="temp" type="number" value="0" min="0"> Max <input id="maxin" type="number" value="23" min="1" onchange="setMax()"></div></div>
+<div class="box"><div class="k">ARMOR</div><div class="v">13</div></div>
+<div class="box"><div class="k">SPEED</div><div class="v">30</div></div>
 </div>
-<div class="combat" style="padding-top:0">
-<div class="mini"><div class="lab">INITIATIVE</div><div class="num">+1</div></div>
-<div class="mini"><div class="lab">PROF</div><div class="num">+2</div></div>
-<div class="mini"><div class="lab">SIZE / REACH</div><div class="num">L / 10</div></div>
+<div class="combat" style="margin-top:6px">
+<div class="box"><div class="k">INITIATIVE</div><div class="v">+1</div></div>
+<div class="box"><div class="k">PROF BONUS</div><div class="v">+2</div></div>
+<div class="box"><div class="k">SIZE / REACH</div><div class="v">L / 10</div></div>
 </div>
-<div class="hp-btns">
-<button class="act" onclick="dmg(1)">-1</button>
-<button class="act" onclick="dmg(5)">-5</button>
-<button class="act danger" onclick="dmg(10)">-10</button>
-<button class="act" onclick="heal(1)">+1</button>
-<button class="act" onclick="heal(5)">+5</button>
-<button class="act" onclick="fullHeal()">Full</button>
+<div class="btns">
+<button class="act" onclick="dmg(1)">-1</button><button class="act" onclick="dmg(5)">-5</button><button class="act danger" onclick="dmg(10)">-10</button>
+<button class="act" onclick="heal(1)">+1</button><button class="act" onclick="heal(5)">+5</button><button class="act" onclick="fullHeal()">Full</button>
 </div>
-<div class="abilities" id="abs"></div>
-<div class="pass">
-<div class="mini"><div class="lab">PASSIVE PERC</div><div class="num" id="pperc">10</div></div>
-<div class="mini"><div class="lab">PASSIVE INS</div><div class="num" id="pins">10</div></div>
-<div class="mini"><div class="lab">PASSIVE INV</div><div class="num" id="pinv">9</div></div>
+<div class="abs" id="abs"></div>
+<div class="combat">
+<div class="box"><div class="k">P. PERCEPTION</div><div class="v" id="pperc">10</div></div>
+<div class="box"><div class="k">P. INSIGHT</div><div class="v" id="pins">10</div></div>
+<div class="box"><div class="k">P. INVEST</div><div class="v" id="pinv">9</div></div>
 </div>
-<details open><summary>Weapon</summary><table><tr><th>Name</th><th>Atk</th><th>Damage</th></tr><tr id="wep"></tr></table></details>
-<details open><summary>Skills</summary><div id="skills"></div><p class="tiny">Filled dot = proficient. Tap to change.</p></details>
-<details open><summary>Features</summary>
-<p><b>Rage</b> — 2 / long rest. Advantage on Strength checks and saves. +2 melee Strength damage. Resist bludgeoning, piercing, slashing.</p>
-<div class="uses" id="rage"></div>
-<p><b>Second Wind</b> — 1 / short rest. Heal 1d10+1.</p>
-<div class="uses" id="sw"></div>
-<p><b>Stone's Endurance</b> — reaction. Reduce damage 1d12+2. 2 / long rest.</p>
-<div class="uses" id="stone"></div>
-<p>Little Giant. Mountain Born (cold resistance). Alert. Iron Spine artisan tool. Discovery: a hole in the mountain.</p>
-<p>Fighting Style not chosen. No Reckless Attack until Barbarian 2. Hit dice 1d10 + 1d12.</p>
-<p>Death saves S <span id="dss"></span> F <span id="dsf"></span></p>
+<h3>Actions</h3>
+<table><tr><th>Attack</th><th>Hit</th><th>Damage</th></tr><tr id="wep"></tr></table>
+<p class="tiny">Tap +5 to roll attack. Tap damage to roll damage.</p>
+</div>
+<div id="pskills" class="hide"><h3>Skills</h3><div id="skills"></div><p class="tiny">Dot = proficient. Tap the number to roll.</p></div>
+<div id="pfeatures" class="hide">
+<h3>Limited Use</h3>
+<p><b>Rage</b> 2 / long rest. Bonus action. Adv on Strength checks and saves. +2 melee Strength damage. Resist B/P/S.</p><div class="uses" id="rage"></div>
+<p><b>Second Wind</b> Bonus action, heal 1d10+1. Paper used 2014: 1 / short rest. 2024 Fighter 1 has 2 uses.</p><div class="uses" id="sw"></div>
+<p><b>Stone's Endurance</b> Reaction, reduce damage 1d12+2. 2 / long rest.</p><div class="uses" id="stone"></div>
+<p>Hit dice 1d10 + 1d12. Death saves S <span id="dss"></span> F <span id="dsf"></span></p>
 <p>Inspiration <span class="pip" id="insp" onclick="this.classList.toggle('on');save()"></span></p>
-</details>
-<details open><summary>Proficiencies</summary>
-<p>Armor: Light, Medium, Heavy, Shields</p>
-<p>Weapons: Simple, Martial</p>
-<p>Saves: Strength, Constitution</p>
-<p>Tools: leatherworker's tools, herbalism kit, Iron Spine artisan tool</p>
-<p>Languages: Giant, Common, Orc, Goblin</p>
-</details>
-<details open><summary>Gear</summary><div id="gear"></div></details>
-<details open><summary>Background</summary><div id="story"></div></details>
-<details><summary>Notes</summary><textarea id="notes"></textarea></details>
+<h3>Features & Traits</h3>
+<p>Unarmored Defense 13. Little Giant. Mountain Born (cold resistance). Alert. Iron Spine tool. Discovery: a hole in the mountain.</p>
+<p>Fighting Style not chosen. No Reckless Attack until Barbarian 2.</p>
+<h3>Proficiencies & Training</h3>
+<p>Armor: Light, Medium, Heavy, Shields. Weapons: Simple, Martial. Saves: Strength, Constitution.</p>
+<p>Tools: leatherworker's, herbalism kit, Iron Spine artisan tool. Languages: Giant, Common, Orc, Goblin.</p>
 </div>
-<footer>brentsnow.ca/ettin</footer>
+<div id="pinventory" class="hide"><h3>Inventory</h3><div id="gear"></div><p><b>Money</b> 40 gp</p></div>
+<div id="pnotes" class="hide"><h3>Background</h3><div id="story"></div><h3>Notes</h3><textarea id="notes"></textarea></div>
+</div>
+<footer>Beyond-style sections. Numbers from your paper.</footer>
 </div>
 <script>
-const HEADS={o:{name:'OINKER',sub:'Level 2 Ettin  \u00b7  Hermit  \u00b7  Fighter / Barbarian',int:8,wis:10,cha:14,wep:'<td>Battleaxe</td><td>+5</td><td>1d8+3 slashing</td>',gear:'<p>Battleaxe. Leather harness. Mixed-hide loincloth worn as a half-bra. Horse-hay wig. Sloppy berry makeup. Glitter-shit. Heirloom tool. Forged pieces. Herbalism kit. 40 gp.</p>',story:'<p>Hermit from the Iron Spine mountain. Internal philosopher. Knows a hole in the mountain. Joyful and smiley. Alignment not filled.</p>'},b:{name:'BOINKER',sub:'Level 2 Ettin  \u00b7  Hermit  \u00b7  Fighter / Barbarian',int:12,wis:12,cha:10,wep:'<td>Flail</td><td>+5</td><td>1d8+3 bludgeoning</td>',gear:'<p>Flail. Leather harness. Mixed-hide loincloth. A few lone hairs. Heirloom tool. Forged pieces. Herbalism kit. 40 gp.</p>',story:'<p>Hermit from the Iron Spine mountain. Internal philosopher. Knows a hole in the mountain. Angry and hungry. Alignment not filled.</p>'}};
+const HEADS={o:{name:'OINKER',sub:'Level 2  \u00b7  Ettin  \u00b7  Hermit  \u00b7  Fighter 1 / Barbarian 1',int:8,wis:10,cha:14,wep:'<td>Battleaxe</td><td class="bonus" onclick="atk(5,\'Battleaxe\')">+5</td><td class="bonus" onclick="dmgRoll()">1d8+3 S</td>',gear:'<p>Battleaxe. Leather harness. Mixed-hide loincloth worn as a half-bra. Horse-hay wig. Sloppy berry makeup. Glitter-shit. Heirloom tool. Forged pieces. Herbalism kit.</p>',story:'<p>Hermit from the Iron Spine mountain. Internal philosopher. Knows a hole in the mountain. Joyful and smiley. Alignment not filled.</p>'},b:{name:'BOINKER',sub:'Level 2  \u00b7  Ettin  \u00b7  Hermit  \u00b7  Fighter 1 / Barbarian 1',int:12,wis:12,cha:10,wep:'<td>Flail</td><td class="bonus" onclick="atk(5,\'Flail\')">+5</td><td class="bonus" onclick="dmgRoll()">1d8+3 B</td>',gear:'<p>Flail. Leather harness. Mixed-hide loincloth. A few lone hairs. Heirloom tool. Forged pieces. Herbalism kit.</p>',story:'<p>Hermit from the Iron Spine mountain. Internal philosopher. Knows a hole in the mountain. Angry and hungry. Alignment not filled.</p>'}};
 const SKILLS=[['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],['Arcana','int',false],['History','int',false],['Investigation','int',false],['Nature','int',false],['Religion','int',true],['Animal Handling','wis',false],['Insight','wis',false],['Medicine','wis',true],['Perception','wis',false],['Survival','wis',false],['Deception','cha',false],['Intimidation','cha',false],['Performance','cha',false],['Persuasion','cha',false]];
 const $=id=>document.getElementById(id); let who='o'; let skillOn={}; SKILLS.forEach(s=>skillOn[s[0]]=s[2]);
-function mod(s){return Math.floor((s-10)/2)} function signed(n){return (n>=0?'+':'')+n}
+function d20(){return 1+Math.floor(Math.random()*20)}
+function say(t){$('rollout').textContent=t}
+function mod(s){return Math.floor((s-10)/2)}
+function signed(n){return (n>=0?'+':'')+n}
 function bodyMod(ab){if(ab==='str')return 3;if(ab==='dex')return 1;const h=HEADS[who];if(ab==='int')return mod(h.int);if(ab==='wis')return mod(h.wis);if(ab==='cha')return mod(h.cha);return 0}
+function atk(b,n){const r=d20(); say(n+' attack '+r+' '+signed(b)+' = '+(r+b)+(r===20?' CRIT':r===1?' FUMBLE':''))}
+function dmgRoll(){const r=1+Math.floor(Math.random()*8); say('Damage '+(r+3)+' ('+r+'+3)')}
+function tab(id){['combat','skills','features','inventory','notes'].forEach(x=>{$('p'+x).className=x===id?'':'hide';$('t'+x).className=x===id?'on':'';})}
 function show(w){who=w;const h=HEADS[w];$('btnO').className=w==='o'?'on':'';$('btnB').className=w==='b'?'on':'';$('cname').textContent=h.name;$('csub').textContent=h.sub;
- const box=(n,sc,m,sv,pro)=>'<div class="ab"><div class="n">'+n+'</div><div class="mod">'+signed(m)+'</div><div class="sc">'+sc+'</div><div class="sv'+(pro?' p':'')+'">save '+signed(sv)+'</div></div>';
- $('abs').innerHTML=box('STR',17,3,5,true)+box('DEX',13,1,1,false)+box('CON',15,2,4,true)+box('INT',h.int,mod(h.int),mod(h.int),false)+box('WIS',h.wis,mod(h.wis),mod(h.wis),false)+box('CHA',h.cha,mod(h.cha),mod(h.cha),false);
+ $('abs').innerHTML='';
+ [['STR',17,3,5,true],['DEX',13,1,1,false],['CON',15,2,4,true],['INT',h.int,mod(h.int),mod(h.int),false],['WIS',h.wis,mod(h.wis),mod(h.wis),false],['CHA',h.cha,mod(h.cha),mod(h.cha),false]].forEach(a=>{const d=document.createElement('div');d.className='ab';d.innerHTML='<div class="n">'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';d.onclick=()=>{const r=d20();say(a[0]+' check '+r+' '+signed(a[2])+' = '+(r+a[2]));};$('abs').appendChild(d);});
  $('wep').innerHTML=h.wep;$('gear').innerHTML=h.gear;$('story').innerHTML=h.story;renderSkills();localStorage.setItem('ettinWho',w);save();}
-function renderSkills(){const box=$('skills');box.innerHTML='';SKILLS.forEach(s=>{const name=s[0],tot=bodyMod(s[1])+(skillOn[name]?2:0);const row=document.createElement('div');row.className='sk';row.innerHTML='<span class="lab"><span class="dot'+(skillOn[name]?' on':'')+'"></span>'+name+'</span><b class="'+(skillOn[name]?'prof':'')+'">'+signed(tot)+'</b>';row.querySelector('.dot').onclick=()=>{skillOn[name]=!skillOn[name];renderSkills();save();};box.appendChild(row);});$('pperc').textContent=10+bodyMod('wis')+(skillOn.Perception?2:0);$('pins').textContent=10+bodyMod('wis')+(skillOn.Insight?2:0);$('pinv').textContent=10+bodyMod('int')+(skillOn.Investigation?2:0);}
+function renderSkills(){const box=$('skills');box.innerHTML='';SKILLS.forEach(s=>{const name=s[0],tot=bodyMod(s[1])+(skillOn[name]?2:0);const row=document.createElement('div');row.className='sk';row.innerHTML='<span class="row"><span class="dot'+(skillOn[name]?' on':'')+'"></span>'+name+'</span><span class="bonus '+(skillOn[name]?'prof':'')+'">'+signed(tot)+'</span>';row.querySelector('.dot').onclick=e=>{e.stopPropagation();skillOn[name]=!skillOn[name];renderSkills();save();};row.querySelector('.bonus').onclick=()=>{const r=d20();say(name+' '+r+' '+signed(tot)+' = '+(r+tot));};box.appendChild(row);});$('pperc').textContent=10+bodyMod('wis')+(skillOn.Perception?2:0);$('pins').textContent=10+bodyMod('wis')+(skillOn.Insight?2:0);$('pinv').textContent=10+bodyMod('int')+(skillOn.Investigation?2:0);}
 function pips(id){return [...$(id).querySelectorAll('.pip')].map(p=>p.classList.contains('on'))}
 function renderPips(id,arr){$(id).innerHTML='';arr.forEach(on=>{const d=document.createElement('div');d.className='pip'+(on?' on':'');d.onclick=()=>{d.classList.toggle('on');save();};$(id).appendChild(d);})}
 function renderDS(id,n,arr){$(id).innerHTML='';for(let i=0;i<n;i++){const d=document.createElement('span');d.className='ds'+((arr&&arr[i])?' on':'');d.onclick=()=>{d.classList.toggle('on');save();};$(id).appendChild(d)}}
-function load(){const s=JSON.parse(localStorage.getItem('ettin')||'{}');if(s.hp!=null)$('hp').textContent=s.hp;if(s.max){$('hpmax').textContent=s.max;$('maxin').value=s.max;}if(s.temp!=null)$('temp').value=s.temp;if(s.notes)$('notes').value=s.notes;if(s.skills)Object.assign(skillOn,s.skills);if(s.insp)$('insp').classList.add('on');renderPips('rage',s.rage||[false,false]);renderPips('sw',s.sw||[false]);renderPips('stone',s.stone||[false,false]);renderDS('dss',3,s.dss);renderDS('dsf',3,s.dsf);show(localStorage.getItem('ettinWho')||'o');}
+function shortRest(){renderPips('sw',[false]);say('Short rest. Second Wind recharged.');save()}
+function longRest(){renderPips('rage',[false,false]);renderPips('sw',[false]);renderPips('stone',[false,false]);renderDS('dss',3,[]);renderDS('dsf',3,[]);fullHeal();say('Long rest. HP and uses restored.')}
+function load(){const s=JSON.parse(localStorage.getItem('ettin')||'{}');if(s.hp!=null)$('hp').textContent=s.hp;if(s.max){$('hpmax').textContent=s.max;$('maxin').value=s.max;}if(s.temp!=null)$('temp').value=s.temp;if(s.notes)$('notes').value=s.notes;if(s.skills)Object.assign(skillOn,s.skills);if(s.insp)$('insp').classList.add('on');renderPips('rage',s.rage||[false,false]);renderPips('sw',s.sw||[false]);renderPips('stone',s.stone||[false,false]);renderDS('dss',3,s.dss);renderDS('dsf',3,s.dsf);show(localStorage.getItem('ettinWho')||'o')}
 function save(){localStorage.setItem('ettin',JSON.stringify({hp:+$('hp').textContent,max:+$('hpmax').textContent,temp:+$('temp').value,notes:$('notes').value,rage:pips('rage'),sw:pips('sw'),stone:pips('stone'),skills:skillOn,insp:$('insp').classList.contains('on'),dss:[...$('dss').querySelectorAll('.ds')].map(x=>x.classList.contains('on')),dsf:[...$('dsf').querySelectorAll('.ds')].map(x=>x.classList.contains('on'))}))}
 function dmg(n){let hp=+$('hp').textContent,t=+$('temp').value;if(t>0){const u=Math.min(t,n);t-=u;n-=u;$('temp').value=t}hp=Math.max(0,hp-n);$('hp').textContent=hp;save()}
 function heal(n){const max=+$('hpmax').textContent;$('hp').textContent=Math.min(max,+$('hp').textContent+n);save()}
 function fullHeal(){$('hp').textContent=$('hpmax').textContent;$('temp').value=0;save()}
 function setMax(){$('hpmax').textContent=$('maxin').value;save()}
 $('notes').addEventListener('input',save);$('temp').addEventListener('change',save);load();
-</script>
-</body>
-</html>
+</script></body></html>
