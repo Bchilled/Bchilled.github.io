@@ -30,7 +30,6 @@ button.act{background:#3a2412}button.danger{background:#9b2c2c}
 .dot{width:16px;height:16px;border:2px solid #3a2412;border-radius:50%;display:inline-block;margin-right:8px;background:#fff}.dot.on{background:#9b2c2c}
 .bonus{font-weight:700}
 h3{font-family:Cinzel,serif;color:#9b2c2c;font-size:.9rem;margin:10px 0 4px}
-.tiny{color:#6a543c;font-size:.78rem}
 .use{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff8e4;border:2px solid #3a2412;padding:8px;margin:6px 0}
 .hide{display:none}textarea{width:100%;min-height:80px;padding:8px;font:inherit;box-sizing:border-box}
 </style></head><body><div class="wrap">
@@ -46,7 +45,7 @@ h3{font-family:Cinzel,serif;color:#9b2c2c;font-size:.9rem;margin:10px 0 4px}
 <button type="button" id="tinventory" onclick="tab('inventory')">Gear</button>
 <button type="button" id="talbum" onclick="tab('album')">Notes</button>
 </div>
-<div class="sheet"><div class="roll" id="rollout">Click Attack, Rage, a skill, or + / -</div>
+<div class="sheet"><div class="roll" id="rollout">Click a skill or weapon. This page does not roll. You roll the dice.</div>
 <div id="pcombat">
 <div class="row3">
 <div class="box hp"><div class="k" id="hplab">OINKER HP</div><div class="v"><span id="hp">23</span>/<span id="hpmax">23</span></div>
@@ -88,8 +87,8 @@ h3{font-family:Cinzel,serif;color:#9b2c2c;font-size:.9rem;margin:10px 0 4px}
 </div></div>
 <script>
 const HEADS={
- o:{name:'OINKER',sub:'Half-giant Ettin Barbarian 2, Hermit',int:8,wis:10,cha:14,cls:'barb',hd:'2d12',gear:'Greatsword +5, 2d6+3 slash. Axe +5, 1d8+3 slash. Hay wig. Purple shell over right eye. Wool body.',story:'Right head and right arm. Came from the Iron Spine hole for sheep.',feats:'<h3>Oinker</h3><p>Action: Attack.</p><p>Bonus: Rage. 2 per long rest. +2 damage after you hit. Weapon hits deal you half.</p><p>Reckless: roll two d20s to hit. Enemies hit you easier.</p><p>Danger Sense: advantage on Dex saves you can see.</p>'},
- b:{name:'BOINKER',sub:'Half-giant Ettin Fighter 2, Hermit',int:12,wis:12,cha:10,cls:'fight',hd:'2d10',gear:'Brick mace +5, 1d6+3 bludgeon. Flail +5, 1d8+3 bludgeon. Black oily helmet over left eye. Wool body.',story:'Left head and left arm. Angry and hungry.',feats:'<h3>Boinker</h3><p>Action: Attack.</p><p>Bonus: Second Wind. Heal 1d10+2. 1 per short rest.</p><p>Action Surge: extra Action. 1 per short rest.</p><p>Great Weapon Fighting: reroll 1 or 2 on two-handed damage.</p>'}
+ o:{name:'OINKER',sub:'Half-giant Ettin Barbarian 2, Hermit',int:8,wis:10,cha:14,cls:'barb',hd:'2d12',gear:'Greatsword +5 to hit, 2d6+3 slash. Axe +5 to hit, 1d8+3 slash. Hay wig. Purple shell over right eye. Wool body.',story:'Right head and right arm. Iron Spine hole. Jobs for coins or sheep.',feats:'<h3>Oinker</h3><p>You roll the dice at the table. This page only shows the bonus.</p><p>Attack: d20 + 5 to hit. Damage is the weapon plus 3.</p><p>Rage: bonus action. +2 damage after a hit. Weapon hits deal you half. 2 per long rest.</p><p>Reckless: roll two d20s to hit, keep the higher. Enemies hit you easier.</p>'},
+ b:{name:'BOINKER',sub:'Half-giant Ettin Fighter 2, Hermit',int:12,wis:12,cha:10,cls:'fight',hd:'2d10',gear:'Brick mace +5 to hit, 1d6+3 bludgeon. Flail +5 to hit, 1d8+3 bludgeon. Black oily helmet over left eye. Wool body.',story:'Left head and left arm. Angry and hungry.',feats:'<h3>Boinker</h3><p>You roll the dice at the table. This page only shows the bonus.</p><p>Attack: d20 + 5 to hit. Damage is the weapon plus 3.</p><p>Second Wind: bonus action. You roll 1d10, add 2, then tap + on HP.</p><p>Action Surge: extra Action this turn. 1 per short rest.</p>'}
 };
 const SKILLS=[['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],['Arcana','int',false],['History','int',false],['Investigation','int',false],['Nature','int',false],['Religion','int',true],['Animal Handling','wis',true],['Insight','wis',false],['Medicine','wis',true],['Perception','wis',true],['Survival','wis',true],['Deception','cha',false],['Intimidation','cha',false],['Performance','cha',false],['Persuasion','cha',false]];
 const $=function(id){return document.getElementById(id)};
@@ -97,8 +96,6 @@ let who='o',skillOn={},gold=40,raging=false,reckless=false,rage=2,sw=1,surge=1;
 let pool={o:{hp:23,max:23,temp:0},b:{hp:20,max:20,temp:0}};
 SKILLS.forEach(function(s){skillOn[s[0]]=s[2]});
 function cur(){return pool[who]}
-function d20(){return 1+Math.floor(Math.random()*20)}
-function die(n){return 1+Math.floor(Math.random()*n)}
 function say(t){$('rollout').textContent=t}
 function mod(s){return Math.floor((s-10)/2)}
 function signed(n){return (n>=0?'+':'')+n}
@@ -128,74 +125,50 @@ function paintHP(){
 function paintActs(){
  var h='';
  if(HEADS[who].cls==='barb'){
-  h+='<div class="use"><div><b>Greatsword</b></div><button type="button" class="act" onclick="atk(\'Greatsword\',6,2,true)">Attack</button></div>';
-  h+='<div class="use"><div><b>Battleaxe</b></div><button type="button" class="act" onclick="atk(\'Battleaxe\',8,1,false)">Attack</button></div>';
+  h+='<div class="use"><div><b>Greatsword</b></div><button type="button" class="act" onclick="showAtk(\'Greatsword\',\'2d6\')">Show</button></div>';
+  h+='<div class="use"><div><b>Battleaxe</b></div><button type="button" class="act" onclick="showAtk(\'Battleaxe\',\'1d8\')">Show</button></div>';
   h+='<div class="use"><div><b>Rage</b></div><button type="button" class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';
   h+='<div class="use"><div><b>Reckless</b></div><button type="button" class="act '+(reckless?'danger':'')+'" onclick="doReck()">'+(reckless?'ON':'off')+'</button></div>';
  } else {
-  h+='<div class="use"><div><b>Brick mace</b></div><button type="button" class="act" onclick="atk(\'Brick mace\',6,1,false)">Attack</button></div>';
-  h+='<div class="use"><div><b>Flail</b></div><button type="button" class="act" onclick="atk(\'Flail\',8,1,false)">Attack</button></div>';
+  h+='<div class="use"><div><b>Brick mace</b></div><button type="button" class="act" onclick="showAtk(\'Brick mace\',\'1d6\')">Show</button></div>';
+  h+='<div class="use"><div><b>Flail</b></div><button type="button" class="act" onclick="showAtk(\'Flail\',\'1d8\')">Show</button></div>';
   h+='<div class="use"><div><b>Second Wind</b></div><button type="button" class="act" onclick="doSW()">'+sw+'/1</button></div>';
   h+='<div class="use"><div><b>Action Surge</b></div><button type="button" class="act" onclick="doSurge()">'+surge+'/1</button></div>';
  }
  $('acts').innerHTML=h;
 }
-function atk(n,sides,count,gwf){
- var a=d20();
- var extra=0;
- if(reckless && HEADS[who].cls==='barb'){
-  extra=d20();
-  if(extra>a) a=extra;
- }
- var hit=a+5;
- var parts=[];
- var dmg=0;
- var i,r;
- for(i=0;i<count;i++){
-  r=die(sides);
-  if(gwf && (r===1 || r===2)) r=die(sides);
-  parts.push(r);
-  dmg+=r;
- }
- dmg+=3;
- if(raging && HEADS[who].cls==='barb') dmg+=2;
- var msg=HEADS[who].name+' attacks with '+n+'.\n';
- msg+='To hit: '+a+' + 5 = '+hit+'. Tell the DM '+hit+'.\n';
- if(extra) msg+='Reckless other roll was '+extra+'.\n';
- msg+='If it hits, damage is '+dmg+' ('+parts.join('+')+' + 3 Strength'+(raging && HEADS[who].cls==='barb'?' + 2 Rage':'')+').';
- say(msg);
+function showAtk(n,wdie){
+ var extra=raging && HEADS[who].cls==='barb' ? ' After a hit also add +2 Rage.' : '';
+ var reck=reckless && HEADS[who].cls==='barb' ? ' Reckless is on: roll two d20s, keep the higher.' : '';
+ say(n+'\nYou roll a d20. Add +5. Tell the DM that total.\nIf the DM says hit, you roll '+wdie+' and add +3 Strength.'+extra+reck);
 }
 function doRage(){
  if(!raging){
   if(rage<=0){say('No Rage left. Long rest first.');return;}
   rage-=1; raging=true;
-  say('Rage is ON. Uses left '+rage+'/2. After you hit, add +2 damage. Weapon hits deal you half. To-hit is still +5.');
+  say('Rage ON. Left '+rage+'/2.\nYou roll as normal. After a hit, add +2 damage. Weapon hits deal you half.');
  } else {
   raging=false;
-  say('Rage is OFF.');
+  say('Rage OFF.');
  }
  paintActs(); save();
 }
 function doReck(){
  reckless=!reckless;
  paintActs(); save();
- if(reckless) say('Reckless ON. Next attack rolls two d20s and keeps the higher. Enemies hit you easier.');
+ if(reckless) say('Reckless ON. When you attack, roll two d20s and keep the higher. Enemies hit you easier.');
  else say('Reckless OFF.');
 }
 function doSW(){
  if(sw<=0){say('Second Wind already used. Short rest first.');return;}
  sw-=1;
- var r=die(10);
- var heal=r+2;
- var before=cur().hp;
- chgHP(heal);
- say('Second Wind. Healed '+heal+' (rolled '+r+' + 2). HP '+before+' to '+cur().hp+'. Uses left 0/1.');
+ say('Second Wind used. Left 0/1.\nYou roll 1d10 and add 2. Then tap + on HP for that number. This page does not roll it.');
  paintActs(); save();
 }
 function doSurge(){
  if(surge<=0){say('Action Surge already used. Short rest first.');return;}
  surge-=1;
- say('Action Surge. You get one more Action now. Click Attack again. Uses left 0/1.');
+ say('Action Surge used. Left 0/1. You may take one extra Action this turn.');
  paintActs(); save();
 }
 function shortRest(){
@@ -227,7 +200,7 @@ function showHead(w){
   var d=document.createElement('div');
   d.className='ab';
   d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';
-  d.onclick=function(){var r=d20();say(a[0]+' check. Rolled '+r+' + '+a[2]+' = '+(r+a[2])+'. Tell the DM '+(r+a[2])+'.');};
+  d.onclick=function(){say(a[0]+' check.\nYou roll a d20. Add '+signed(a[2])+'. Tell the DM that total.\nSave bonus is '+signed(a[3])+'.');};
   $('abs').appendChild(d);
  });
  $('gear').textContent=h.gear;
@@ -245,7 +218,7 @@ function renderSkills(){
   var row=document.createElement('div');
   row.className='sk';
   row.innerHTML='<span><span class="dot'+(skillOn[s[0]]?' on':'')+'"></span>'+s[0]+'</span><span class="bonus">'+signed(tot)+'</span>';
-  row.onclick=function(){var r=d20();say(s[0]+'. Rolled '+r+' + '+tot+' = '+(r+tot)+'. Tell the DM '+(r+tot)+'.');};
+  row.onclick=function(){say(s[0]+'.\nYou roll a d20. Add '+signed(tot)+'. Tell the DM that total.\nThis page does not roll.');};
   box.appendChild(row);
  });
  $('pperc').textContent=10+bodyMod('wis')+(skillOn.Perception?2:0);
@@ -280,10 +253,10 @@ function chgHP(n){
   var left=-n;
   if(p.temp>0){var u=Math.min(p.temp,left);p.temp-=u;left-=u;}
   p.hp=Math.max(0,p.hp-left);
-  say(HEADS[who].name+' took '+(-n)+' damage. HP '+p.hp+' / '+p.max+'.');
+  say(HEADS[who].name+' HP now '+p.hp+' / '+p.max+'.');
  } else {
   p.hp=Math.min(p.max,p.hp+n);
-  say(HEADS[who].name+' healed '+n+'. HP '+p.hp+' / '+p.max+'.');
+  say(HEADS[who].name+' HP now '+p.hp+' / '+p.max+'.');
  }
  paintHP(); save();
 }
