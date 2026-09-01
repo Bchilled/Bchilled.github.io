@@ -1,0 +1,1 @@
+rest buttons moved to Notes tab in next full file if this succeeds
