@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-head="b">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BOINKER</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1c1208;--gold:#c9a45a;--blood:#8a1f1f;--parch:#f4e4bc;--panel:#efe0b0;--dark:#140c08;--line:#6a4a22}
+*{box-sizing:border-box}
+html,body{margin:0;background:#0b0705;color:var(--ink);font-family:"IM Fell English",Georgia,serif}
+.page{max-width:1120px;margin:0 auto;min-height:100vh;background:var(--parch);border:4px double var(--gold);box-shadow:0 0 0 8px var(--dark)}
+.hud{background:linear-gradient(#20140c,#140c08);color:#f3e6c4;padding:10px 12px 8px}
+.hud h1{font-family:Cinzel,serif;margin:0;letter-spacing:.08em;font-size:1.35rem}
+.who-line{color:var(--gold);font-size:.82rem;margin-top:2px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.hud-grid{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:6px;margin-top:8px}
+.stat{background:var(--panel);color:var(--ink);border:2px solid var(--line);text-align:center;padding:6px 4px}
+.stat.hp{border-color:var(--blood)}
+.lbl{font-family:Cinzel,serif;font-size:.55rem;letter-spacing:.08em;text-transform:uppercase;color:#6a4824}
+.num{font-size:1.28rem;font-weight:700;line-height:1.1}
+.plus{display:flex;justify-content:center;gap:4px;margin-top:3px}
+button{font-family:Cinzel,serif;border:1px solid var(--gold);background:#2a1c10;color:#f3e6c4;cursor:pointer}
+button:hover{background:#3b2814}
+button.on{background:var(--blood);color:#fff}
+.plus button{min-width:32px;padding:3px 0}
+.desk-tabs{display:none;grid-template-columns:repeat(5,1fr);gap:4px;background:var(--dark);padding:6px}
+.body{display:block;padding:10px 12px 130px}
+.rail{display:none}
+.card{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;background:var(--panel);border:1px solid var(--line);padding:8px;margin:6px 0}
+.card b{font-family:Cinzel,serif;font-size:.85rem}
+.muted{font-size:.78rem;color:#5a3f22;margin:0}
+.row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #d7be86;cursor:pointer}
+.dot{width:11px;height:11px;border:2px solid #3a2412;border-radius:50%;display:inline-block;margin-right:6px}
+.dot.on{background:var(--blood)}
+.ab{border:2px solid var(--line);background:var(--panel);text-align:center;padding:6px 3px;cursor:pointer}
+.abgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.mod{font-size:1.2rem;font-weight:700}
+.sub{font-size:.68rem;color:#5a3f22}
+.save.yes{color:var(--blood);font-weight:700}
+h3{font-family:Cinzel,serif;color:var(--blood);font-size:.78rem;letter-spacing:.1em;margin:12px 0 4px}
+.hide{display:none}
+input,textarea{font:inherit;width:100%;background:#fff8e0;border:1px solid var(--line);padding:6px}
+textarea{min-height:110px}
+.dock{position:sticky;bottom:0;background:var(--dark);padding:6px 8px calc(8px + env(safe-area-inset-bottom));border-top:2px solid var(--gold)}
+.phone-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.dock button,.desk-tabs button{padding:10px 4px;font-size:.68rem}
+@media(min-width:880px){
+  .desk-tabs{display:grid}
+  .phone-tabs{display:none}
+  .body{display:grid;grid-template-columns:250px 1fr;gap:12px;padding-bottom:92px}
+  .rail{display:block}
+  .phone-scores{display:none}
+  .abgrid.railgrid{grid-template-columns:1fr}
+}
+@media(max-width:879px){
+  .hud-grid{grid-template-columns:1fr 1fr}
+  .stat.hp{grid-column:span 2}
+}
+</style>
+</head>
+<body>
+<div class="page">
+<header class="hud">
+  <h1 id="name">BOINKER</h1>
+  <div class="who-line">
+    <span id="line"></span>
+    <span>Level <button type="button" onclick="lvlChg(-1)">-</button> <b id="lv">2</b> <button type="button" onclick="lvlChg(1)">+</button></span>
+  </div>
+  <div class="hud-grid">
+    <div class="stat hp">
+      <div class="lbl">Hit points</div>
+      <div class="num"><span id="hp">20</span>/<span id="hpMax">20</span></div>
+      <div class="plus"><button type="button" onclick="hp(-1)">-</button><button type="button" onclick="hp(1)">+</button></div>
+    </div>
+    <div class="stat" onclick="explain('ac')"><div class="lbl">Armor class</div><div class="num" id="ac">13</div></div>
+    <div class="stat" onclick="explain('init')"><div class="lbl">Initiative</div><div class="num" id="init">+1</div></div>
+    <div class="stat" onclick="explain('speed')"><div class="lbl">Speed</div><div class="num">30</div></div>
+    <div class="stat" onclick="explain('pp')"><div class="lbl">Passive perception</div><div class="num" id="pp">12</div></div>
+  </div>
+</header>
+<nav class="desk-tabs">
+  <button type="button" class="on" id="t-fight" onclick="tab('fight')">Fight</button>
+  <button type="button" id="t-scores" onclick="tab('scores')">Scores</button>
+  <button type="button" id="t-checks" onclick="tab('checks')">Checks</button>
+  <button type="button" id="t-pack" onclick="tab('pack')">Pack</button>
+  <button type="button" id="t-journal" onclick="tab('journal')">Journal</button>
+</nav>
+<div class="body">
+  <aside class="rail">
+    <h3>Ability scores</h3>
+    <div class="abgrid railgrid" id="railAbs"></div>
+  </aside>
+  <main>
+    <p class="muted" id="say"></p>
+    <section id="p-fight"><div id="acts"></div></section>
+    <section id="p-scores" class="hide">
+      <div class="abgrid phone-scores" id="phoneAbs"></div>
+      <p class="muted">Temp HP <button type="button" onclick="temp(-1)">-</button> <b id="temp">0</b> <button type="button" onclick="temp(1)">+</button>
+      &nbsp; Max HP <button type="button" onclick="maxHp(-1)">-</button> <b id="maxLab">20</b> <button type="button" onclick="maxHp(1)">+</button></p>
+      <p class="muted" id="hdLine"></p>
+      <p class="muted">Large. Darkvision 60 feet. Two heads. Walk 30 feet.</p>
+    </section>
+    <section id="p-checks" class="hide"><div id="checks"></div></section>
+    <section id="p-pack" class="hide">
+      <h3>Worn</h3><ul id="worn"></ul>
+      <h3>Tools</h3>
+      <p class="muted">Leatherworker's tools. Trained. In the pack.</p>
+      <h3>Coins</h3>
+      <p>Gold coins <button type="button" onclick="gold(-1)">-</button> <b id="gp">40</b> <button type="button" onclick="gold(1)">+</button></p>
+      <h3>Bag</h3>
+      <div id="bag"></div>
+      <p><input id="newItem" placeholder="Item name"></p>
+      <p><button type="button" onclick="addItem()">Put in bag</button></p>
+    </section>
+    <section id="p-journal" class="hide">
+      <h3>Notes</h3>
+      <textarea id="notes"></textarea>
+      <p><button type="button" onclick="shortRest()">Short rest</button>
+      <button type="button" onclick="longRest()">Long rest</button></p>
+      <h3>This class, levels 1 to 20</h3>
+      <div id="adv" class="muted"></div>
+    </section>
+  </main>
+</div>
+<div class="dock">
+  <div class="phone-tabs">
+    <button type="button" class="on" id="b-fight" onclick="tab('fight')">Fight</button>
+    <button type="button" id="b-scores" onclick="tab('scores')">Scores</button>
+    <button type="button" id="b-checks" onclick="tab('checks')">Checks</button>
+    <button type="button" id="b-pack" onclick="tab('pack')">Pack</button>
+    <button type="button" id="b-journal" onclick="tab('journal')">Journal</button>
+  </div>
+</div>
+</div>
+<script src="../app.js?v=8"></script>
+</body>
+</html>
