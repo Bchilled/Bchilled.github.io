@@ -1,0 +1,6 @@
+Attack button must say:
+1. Roll a d20.
+2. Add +5. Tell the DM.
+3. If hit, roll the weapon dice listed.
+4. Add +3 Strength (and +2 if Rage is on).
+The page never rolls.
