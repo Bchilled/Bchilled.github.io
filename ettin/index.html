@@ -9,8 +9,8 @@ button.on{background:#9b2c2c;color:#fff}
 .header h1{margin:0;font-size:1.25rem}
 .meta{color:#c9b48a;font-size:.75rem;margin:2px 0 0}
 img{width:100%;border:2px solid #c9a227;display:block;margin:0 0 6px;background:#2a1a10}
-.nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0}
-.nav button{padding:8px 2px;font-size:.7rem}
+.nav{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:6px 0}
+.nav button{padding:8px 2px;font-size:.65rem}
 .sheet{background:#f3e6c9;border:1px solid #3a2412;padding:8px}
 .row3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:6px}
 .box{background:#fff8e4;border:2px solid #3a2412;text-align:center;padding:6px 4px;cursor:help}
@@ -30,17 +30,18 @@ button.act{background:#3a2412}button.danger{background:#9b2c2c}
 .bonus{font-weight:700}
 h3{color:#9b2c2c;font-size:.85rem;margin:8px 0 4px}
 .use{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff8e4;border:1px solid #3a2412;padding:6px;margin:4px 0}
+.tag{font-size:.7rem;color:#6a543c}
 .hide{display:none}textarea{width:100%;min-height:90px;padding:6px;font:inherit;box-sizing:border-box}
 ul.gear{margin:0;padding-left:1.1rem}ul.gear li{margin:4px 0}
 .facts p{margin:.35rem 0;font-size:.9rem}
 </style></head><body><div class="wrap">
 <div class="who"><button type="button" id="btnB" onclick="showHead('b')">BOINKER</button><button type="button" id="btnO" onclick="showHead('o')">OINKER</button></div>
 <div class="header">
-<img alt="Oinker / Boinker" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 120%22%3E%3Crect width=%22400%22 height=%22120%22 fill=%22%232a1a10%22/%3E%3Ccircle cx=%22150%22 cy=%2255%22 r=%2232%22 fill=%22%23e6c2a6%22/%3E%3Ccircle cx=%22250%22 cy=%2255%22 r=%2232%22 fill=%22%23e6c2a6%22/%3E%3Ctext x=%22150%22 y=%2260%22 text-anchor=%22middle%22 font-size=%2211%22 fill=%22%233a2412%22%3EOINKER%3C/text%3E%3Ctext x=%22250%22 y=%2260%22 text-anchor=%22middle%22 font-size=%2211%22 fill=%22%233a2412%22%3EBOINKER%3C/text%3E%3C/svg%3E">
-<h1 id="cname">OINKER</h1><div class="meta" id="csub"></div>
-</div>
+<img alt="Oinker / Boinker" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 100%22%3E%3Crect width=%22400%22 height=%22100%22 fill=%22%232a1a10%22/%3E%3Ccircle cx=%22150%22 cy=%2250%22 r=%2228%22 fill=%22%23e6c2a6%22/%3E%3Ccircle cx=%22250%22 cy=%2250%22 r=%2228%22 fill=%22%23e6c2a6%22/%3E%3Ctext x=%22150%22 y=%2254%22 text-anchor=%22middle%22 font-size=%2210%22 fill=%22%233a2412%22%3EOINKER%3C/text%3E%3Ctext x=%22250%22 y=%2254%22 text-anchor=%22middle%22 font-size=%2210%22 fill=%22%233a2412%22%3EBOINKER%3C/text%3E%3C/svg%3E">
+<h1 id="cname">OINKER</h1><div class="meta" id="csub"></div></div>
 <div class="nav">
 <button type="button" class="on" id="tcombat" onclick="tab('combat')">Combat</button>
+<button type="button" id="tactions" onclick="tab('actions')">Actions</button>
 <button type="button" id="tskills" onclick="tab('skills')">Skills</button>
 <button type="button" id="tinventory" onclick="tab('inventory')">Gear</button>
 <button type="button" id="talbum" onclick="tab('album')">Notes</button>
@@ -48,22 +49,22 @@ ul.gear{margin:0;padding-left:1.1rem}ul.gear li{margin:4px 0}
 <div class="sheet"><div class="roll" id="rollout">Hover a number. Phone: tap it.</div>
 <div id="pcombat">
 <div class="row3">
-<div class="box hp" title="Hit points. - when you take damage. + when you heal."><div class="k" id="hplab">OINKER HP</div><div class="v"><span id="hp">23</span>/<span id="hpmax">23</span></div>
+<div class="box hp" title="Hit points"><div class="k" id="hplab">OINKER HP</div><div class="v"><span id="hp">23</span>/<span id="hpmax">23</span></div>
 <div class="pm"><button type="button" onclick="chgHP(-1)">-</button><button type="button" onclick="chgHP(1)">+</button></div></div>
-<div class="box" title="Temporary HP. Used before real HP."><div class="k">TEMP</div><div class="v" id="tempv">0</div>
+<div class="box" title="Temporary HP"><div class="k">TEMP</div><div class="v" id="tempv">0</div>
 <div class="pm"><button type="button" onclick="chgTemp(-1)">-</button><button type="button" onclick="chgTemp(1)">+</button></div></div>
-<div class="box" title="Maximum HP."><div class="k">MAX</div><div class="v" id="maxv">23</div>
+<div class="box" title="Max HP"><div class="k">MAX</div><div class="v" id="maxv">23</div>
 <div class="pm"><button type="button" onclick="chgMax(-1)">-</button><button type="button" onclick="chgMax(1)">+</button></div></div>
 </div>
 <div class="row3" style="margin-top:6px">
-<div class="box" title="AC 13 = 10 + Dex +1 + Con +2. Unarmored Defense." onmouseenter="say('AC 13 = 10 + Dex +1 + Con +2')"><div class="k">ARMOR</div><div class="v">13</div></div>
-<div class="box" title="Initiative +1 = Dexterity 13." onmouseenter="say('Init +1 = Dex 13')"><div class="k">INIT</div><div class="v">+1</div></div>
-<div class="box" title="Speed 40 feet. Ettin speed." onmouseenter="say('Speed 40 = ettin')"><div class="k">SPEED</div><div class="v">40</div></div>
+<div class="box" title="AC 13 = 10 + Dex +1 + Con +2" onmouseenter="say('AC 13 = 10 + Dex +1 + Con +2')"><div class="k">ARMOR</div><div class="v">13</div></div>
+<div class="box" title="Init +1 = Dex 13" onmouseenter="say('Init +1 = Dex 13')"><div class="k">INIT</div><div class="v">+1</div></div>
+<div class="box" title="Speed 40. Human walk is 30. Ettin monster speed is 40." onmouseenter="say('Speed 40. Human walk is 30. Ettin is 40 because you are a Large giant.')"><div class="k">SPEED</div><div class="v">40</div></div>
 </div>
 <div class="row3" style="margin-top:6px">
-<div class="box" title="Large. Official ettin size." onmouseenter="say('Large = ettin')"><div class="k">SIZE</div><div class="v" style="font-size:1rem">Large</div></div>
-<div class="box" title="Creature type Giant."><div class="k">TYPE</div><div class="v" style="font-size:1rem">Giant</div></div>
-<div class="box" title="Darkvision 60 feet. Ettin trait." onmouseenter="say('Darkvision 60 = ettin')"><div class="k">VISION</div><div class="v" style="font-size:.9rem">Dark 60</div></div>
+<div class="box" title="Large. Human is Medium. Ettin is Large." onmouseenter="say('Size Large. Humans are Medium. Ettin is Large.')"><div class="k">SIZE</div><div class="v" style="font-size:1rem">Large</div></div>
+<div class="box" title="Type Giant"><div class="k">TYPE</div><div class="v" style="font-size:1rem">Giant</div></div>
+<div class="box" title="Darkvision 60. Ettin trait." onmouseenter="say('Darkvision 60. Ettin trait. Humans do not have this.')"><div class="k">VISION</div><div class="v" style="font-size:.9rem">Dark 60</div></div>
 </div>
 <div class="btns">
 <button type="button" class="act" onclick="chgHP(-5)">-5</button>
@@ -73,11 +74,14 @@ ul.gear{margin:0;padding-left:1.1rem}ul.gear li{margin:4px 0}
 </div>
 <div class="abs" id="abs"></div>
 <div class="row3">
-<div class="box" title="Passive Perception. 10 + Wisdom + proficiency if trained." onmouseenter="whyPerc()"><div class="k">P.PERC</div><div class="v" id="pperc">10</div></div>
-<div class="box" title="Passive Insight. 10 + Wisdom." onmouseenter="whyIns()"><div class="k">P.INS</div><div class="v" id="pins">10</div></div>
-<div class="box" title="Hit Dice. Barbarian d12. Fighter d10." onmouseenter="say(HEADS[who].hd+' = class die')"><div class="k">HIT DICE</div><div class="v" style="font-size:1rem" id="hdbox">2d12</div></div>
+<div class="box" title="Passive Perception" onmouseenter="whyPerc()"><div class="k">P.PERC</div><div class="v" id="pperc">10</div></div>
+<div class="box" title="Passive Insight" onmouseenter="whyIns()"><div class="k">P.INS</div><div class="v" id="pins">10</div></div>
+<div class="box" title="Hit Dice" onmouseenter="say(HEADS[who].hd+' = class die')"><div class="k">HIT DICE</div><div class="v" style="font-size:1rem" id="hdbox">2d12</div></div>
 </div>
-<h3>Actions</h3><div id="acts"></div>
+</div>
+<div id="pactions" class="hide">
+<p class="tag">On your turn: move 40 ft and take 1 Action. Bonus Action only if a line says so.</p>
+<div id="acts"></div>
 </div>
 <div id="pskills" class="hide"><h3>Skills</h3><div id="skills"></div></div>
 <div id="pinventory" class="hide"><h3>Gear</h3><ul class="gear" id="gear"></ul>
@@ -85,21 +89,20 @@ ul.gear{margin:0;padding-left:1.1rem}ul.gear li{margin:4px 0}
 <div id="palbum" class="hide">
 <div class="facts">
 <h3>Facts</h3>
-<p>Two heads, one Large body. Background: Hermit. Home: hole in the mountain.</p>
-<p>Hungry year. Left the hole to get a flock of sheep and bring it back. Take jobs for coins or animals. Trade shiny things for livestock.</p>
+<p>Two heads, one Large body. Hermit. Hole in the mountain. Jobs for coins or a flock of sheep.</p>
 <p>Languages: Common, Giant.</p>
 <p id="headfact"></p>
 </div>
 <h3>Write here</h3>
-<textarea id="notes" placeholder="Your session notes. Saved on this device only."></textarea>
+<textarea id="notes" placeholder="Session notes. This device only."></textarea>
 <p><button type="button" onclick="shortRest()">Short rest</button> <button type="button" onclick="longRest()">Long rest</button></p>
 </div>
 </div></div>
 <script>
 const WHY={Athletics:'Barbarian skill',Survival:'Barbarian skill','Animal Handling':'Fighter skill',Perception:'Fighter skill',Medicine:'Hermit background',Religion:'Hermit background'};
 const HEADS={
-o:{name:'OINKER',sub:'Ettin Barbarian 2, Hermit',int:8,wis:10,cha:14,cls:'barb',hd:'2d12',fact:'Oinker: right head, right arm. Joyful. Hay wig, berry makeup, purple shell over the right eye.',gear:['Greatsword  +5 hit / 2d6+3 slash','Battleaxe  +5 hit / 1d8+3 slash','Hay wig','Purple shell over right eye','Leather harness','Lopsided hide loincloth']},
-b:{name:'BOINKER',sub:'Ettin Fighter 2, Hermit',int:12,wis:12,cha:10,cls:'fight',hd:'2d10',fact:'Boinker: left head, left arm. Angry and hungry. Black oily helmet over the left eye.',gear:['Brick mace  +5 hit / 1d6+3 bludgeon','Flail  +5 hit / 1d8+3 bludgeon','Black oily helmet over left eye','Leather harness','Lopsided hide loincloth']}
+o:{name:'OINKER',sub:'Ettin Barbarian 2, Hermit',int:8,wis:10,cha:14,cls:'barb',hd:'2d12',fact:'Oinker: right head and right arm. Joyful.',gear:['Greatsword  +5 hit / 2d6+3','Battleaxe  +5 hit / 1d8+3','Hay wig','Purple shell over right eye','Harness','Loincloth']},
+b:{name:'BOINKER',sub:'Ettin Fighter 2, Hermit',int:12,wis:12,cha:10,cls:'fight',hd:'2d10',fact:'Boinker: left head and left arm. Angry, hungry.',gear:['Brick mace  +5 hit / 1d6+3','Flail  +5 hit / 1d8+3','Black oily helmet over left eye','Harness','Loincloth']}
 };
 const SKILLS=[['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],['Arcana','int',false],['History','int',false],['Investigation','int',false],['Nature','int',false],['Religion','int',true],['Animal Handling','wis',true],['Insight','wis',false],['Medicine','wis',true],['Perception','wis',true],['Survival','wis',true],['Deception','cha',false],['Intimidation','cha',false],['Performance','cha',false],['Persuasion','cha',false]];
 const ABNAME={str:'Str',dex:'Dex',int:'Int',wis:'Wis',cha:'Cha'};
@@ -112,16 +115,35 @@ function say(t){$('rollout').textContent=t}
 function mod(s){return Math.floor((s-10)/2)}
 function signed(n){return (n>=0?'+':'')+n}
 function bodyMod(ab){if(ab==='str')return 3;if(ab==='dex')return 1;if(ab==='int')return mod(HEADS[who].int);if(ab==='wis')return mod(HEADS[who].wis);if(ab==='cha')return mod(HEADS[who].cha);return 0}
-function tab(id){['combat','skills','inventory','album'].forEach(function(x){$('p'+x).className=x===id?'':'hide';$('t'+x).className=x===id?'on':'';})}
+function tab(id){['combat','actions','skills','inventory','album'].forEach(function(x){$('p'+x).className=x===id?'':'hide';$('t'+x).className=x===id?'on':'';})}
 function paintHP(){var p=cur();$('hplab').textContent=HEADS[who].name+' HP';$('hp').textContent=p.hp;$('hpmax').textContent=p.max;$('tempv').textContent=p.temp;$('maxv').textContent=p.max;$('hdbox').textContent=HEADS[who].hd}
-function paintActs(){var h='';if(HEADS[who].cls==='barb'){h+='<div class="use" title="d20+5 to hit. 2d6+3 damage." onmouseenter="showAtk(\'Greatsword\',\'2d6\')"><b>Greatsword</b><button type="button" class="act" onclick="showAtk(\'Greatsword\',\'2d6\')">Why</button></div>';h+='<div class="use" title="d20+5 to hit. 1d8+3 damage." onmouseenter="showAtk(\'Battleaxe\',\'1d8\')"><b>Battleaxe</b><button type="button" class="act" onclick="showAtk(\'Battleaxe\',\'1d8\')">Why</button></div>';h+='<div class="use" title="Bonus action. +2 damage after a hit." onmouseenter="say(\'Rage: bonus action. +2 dmg after a hit. 2 per long rest.\')"><b>Rage</b><button type="button" class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';h+='<div class="use" title="Roll two d20s to hit. Enemies hit you easier." onmouseenter="say(\'Reckless: two d20s to hit.\')"><b>Reckless</b><button type="button" class="act '+(reckless?'danger':'')+'" onclick="doReck()">'+(reckless?'ON':'off')+'</button></div>';}else{h+='<div class="use" title="d20+5 to hit. 1d6+3 damage." onmouseenter="showAtk(\'Brick mace\',\'1d6\')"><b>Brick mace</b><button type="button" class="act" onclick="showAtk(\'Brick mace\',\'1d6\')">Why</button></div>';h+='<div class="use" title="d20+5 to hit. 1d8+3 damage." onmouseenter="showAtk(\'Flail\',\'1d8\')"><b>Flail</b><button type="button" class="act" onclick="showAtk(\'Flail\',\'1d8\')">Why</button></div>';h+='<div class="use" title="Bonus action. Roll 1d10+2 and heal that." onmouseenter="say(\'Second Wind: roll 1d10+2 yourself, tap + HP.\')"><b>Second Wind</b><button type="button" class="act" onclick="doSW()">'+sw+'/1</button></div>';h+='<div class="use" title="Extra Action this turn." onmouseenter="say(\'Action Surge: extra Action this turn.\')"><b>Action Surge</b><button type="button" class="act" onclick="doSurge()">'+surge+'/1</button></div>';}$('acts').innerHTML=h}
-function showAtk(n,w){say(n+': d20 +5 to hit (Str +3, prof +2). Hit: '+w+'+3 Str'+(raging&&HEADS[who].cls==='barb'?' +2 Rage':'')+'.')}
+function row(label,tag,title,btn){return '<div class="use" title="'+title+'" onmouseenter="say(\''+title.replace(/'/g,'')+'\')"><div><b>'+label+'</b> <span class="tag">'+tag+'</span></div>'+btn+'</div>'}
+function paintActs(){
+ var h='<h3>Action</h3>';
+ if(HEADS[who].cls==='barb'){
+  h+='<div class="use" title="Action. d20+5 to hit. 2d6+3 damage." onmouseenter="showAtk(\'Greatsword\',\'2d6\')"><div><b>Greatsword</b> <span class="tag">Action</span></div><button type="button" class="act" onclick="showAtk(\'Greatsword\',\'2d6\')">Why</button></div>';
+  h+='<div class="use" title="Action. d20+5 to hit. 1d8+3 damage." onmouseenter="showAtk(\'Battleaxe\',\'1d8\')"><div><b>Battleaxe</b> <span class="tag">Action</span></div><button type="button" class="act" onclick="showAtk(\'Battleaxe\',\'1d8\')">Why</button></div>';
+  h+='<h3>Bonus Action</h3>';
+  h+='<div class="use" title="Bonus Action. +2 damage after a hit." onmouseenter="say(\'Rage is a Bonus Action. +2 damage after you hit.\')"><div><b>Rage</b> <span class="tag">Bonus</span></div><button type="button" class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';
+  h+='<h3>When you attack</h3>';
+  h+='<div class="use" title="Not an action. Turn on before the attack." onmouseenter="say(\'Reckless: roll two d20s to hit. Not an action.\')"><div><b>Reckless</b> <span class="tag">Toggle</span></div><button type="button" class="act '+(reckless?'danger':'')+'" onclick="doReck()">'+(reckless?'ON':'off')+'</button></div>';
+ } else {
+  h+='<div class="use" title="Action. d20+5 to hit. 1d6+3 damage." onmouseenter="showAtk(\'Brick mace\',\'1d6\')"><div><b>Brick mace</b> <span class="tag">Action</span></div><button type="button" class="act" onclick="showAtk(\'Brick mace\',\'1d6\')">Why</button></div>';
+  h+='<div class="use" title="Action. d20+5 to hit. 1d8+3 damage." onmouseenter="showAtk(\'Flail\',\'1d8\')"><div><b>Flail</b> <span class="tag">Action</span></div><button type="button" class="act" onclick="showAtk(\'Flail\',\'1d8\')">Why</button></div>';
+  h+='<h3>Bonus Action</h3>';
+  h+='<div class="use" title="Bonus Action. Roll 1d10+2 and heal." onmouseenter="say(\'Second Wind is a Bonus Action. Roll 1d10+2 yourself.\')"><div><b>Second Wind</b> <span class="tag">Bonus</span></div><button type="button" class="act" onclick="doSW()">'+sw+'/1</button></div>';
+  h+='<h3>Once per turn</h3>';
+  h+='<div class="use" title="Not an action. Gives you one extra Action." onmouseenter="say(\'Action Surge: extra Action this turn. Not itself an action.\')"><div><b>Action Surge</b> <span class="tag">Extra Action</span></div><button type="button" class="act" onclick="doSurge()">'+surge+'/1</button></div>';
+ }
+ $('acts').innerHTML=h;
+}
+function showAtk(n,w){say(n+' is an Action. d20 +5 to hit (Str +3 + prof +2). If it hits: '+w+'+3 Str'+(raging&&HEADS[who].cls==='barb'?' +2 Rage':'')+'.')}
 function whyPerc(){var w=bodyMod('wis'),p=skillOn.Perception?2:0;say('P.Perc '+(10+w+p)+' = 10 + Wis '+signed(w)+(p?' + prof +2':''))}
 function whyIns(){var w=bodyMod('wis');say('P.Ins '+(10+w)+' = 10 + Wis '+signed(w))}
-function doRage(){if(!raging){if(rage<=0){say('No Rage left');return}rage-=1;raging=true;say('Rage on '+rage+'/2. +2 dmg after a hit.')}else{raging=false;say('Rage off')}paintActs();save()}
-function doReck(){reckless=!reckless;paintActs();save();say(reckless?'Reckless on. Two d20s.':'Reckless off')}
-function doSW(){if(sw<=0){say('Second Wind used');return}sw-=1;say('Second Wind. Roll 1d10+2 yourself, tap + HP.');paintActs();save()}
-function doSurge(){if(surge<=0){say('Surge used');return}surge-=1;say('Action Surge. Extra Action.');paintActs();save()}
+function doRage(){if(!raging){if(rage<=0){say('No Rage left');return}rage-=1;raging=true;say('Rage on '+rage+'/2. Bonus Action used. +2 dmg after a hit.')}else{raging=false;say('Rage off')}paintActs();save()}
+function doReck(){reckless=!reckless;paintActs();save();say(reckless?'Reckless on. Two d20s next attack.':'Reckless off')}
+function doSW(){if(sw<=0){say('Second Wind used');return}sw-=1;say('Second Wind. Bonus Action used. Roll 1d10+2, tap + HP.');paintActs();save()}
+function doSurge(){if(surge<=0){say('Surge used');return}surge-=1;say('Action Surge. Take one extra Action now.');paintActs();save()}
 function shortRest(){if(who==='b'){sw=1;surge=1}raging=false;paintActs();say('Short rest done');save()}
 function longRest(){var p=cur();p.hp=p.max;p.temp=0;if(who==='o'){rage=2;raging=false;reckless=false}else{sw=1;surge=1}paintHP();paintActs();say('Long rest done');save()}
 function showHead(w){who=w;var h=HEADS[w];$('btnO').className=w==='o'?'on':'';$('btnB').className=w==='b'?'on':'';$('cname').textContent=h.name;$('csub').textContent=h.sub;$('abs').innerHTML='';[['STR',17,3,5,1],['DEX',13,1,1,0],['CON',15,2,4,1],['INT',h.int,mod(h.int),mod(h.int),0],['WIS',h.wis,mod(h.wis),mod(h.wis),0],['CHA',h.cha,mod(h.cha),mod(h.cha),0]].forEach(function(a){var t=a[0]+' '+a[1]+' = '+signed(a[2])+(a[4]?'  Save '+signed(a[3])+' = '+signed(a[2])+' + prof +2':'  Save = mod only');var d=document.createElement('div');d.className='ab';d.title=t;d.onmouseenter=function(){say(t)};d.onclick=function(){say(t)};d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';$('abs').appendChild(d)});$('gear').innerHTML=h.gear.map(function(x){return '<li>'+x+'</li>'}).join('');$('headfact').textContent=h.fact;paintHP();paintActs();renderSkills();paintInv();localStorage.setItem('ettinWho',w);save()}
