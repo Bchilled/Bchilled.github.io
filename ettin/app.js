@@ -1,50 +1,244 @@
-const WHY={Athletics:'Strength +3 and trained +2 from Barbarian.',Survival:'Wisdom and trained +2 from Barbarian.','Animal Handling':'Wisdom and trained +2 from Fighter.',Perception:'Wisdom and trained +2 from Fighter.',Medicine:'Wisdom and trained +2 from Hermit.',Religion:'Intelligence and trained +2 from Hermit.'};
-const HEADS={o:{name:'OINKER',sub:'Half-giant Ettin Barbarian 2, Hermit',int:8,wis:10,cha:14,cls:'barb',hd:'2d12',fact:'Right head and right arm. Hay wig, sloppy berry stain, purple scale shell over the right eye. Soft wool body. Grins at everything.',gear:['Greatsword (right hand)','Battleaxe on harness','Hay wig','Purple shell over right eye','Leather harness','Shared hide loincloth / half-bra']},b:{name:'BOINKER',sub:'Half-giant Ettin Fighter 2, Hermit',int:12,wis:12,cha:10,cls:'fight',hd:'2d10',fact:'Left head and left arm. Black oily helmet over the left eye. Sparse hairs. Hungry and angry. Wants sheep for the hole.',gear:['Brick mace / rod (left hand)','Flail on harness','Black oily helmet over left eye','Leather harness','Shared hide loincloth']}};
-const SKILLS=[['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],['Arcana','int',false],['History','int',false],['Investigation','int',false],['Nature','int',false],['Religion','int',true],['Animal Handling','wis',true],['Insight','wis',false],['Medicine','wis',true],['Perception','wis',true],['Survival','wis',true],['Deception','cha',false],['Intimidation','cha',false],['Performance','cha',false],['Persuasion','cha',false]];
-const $=function(id){return document.getElementById(id)};
-let who='o',gold=40,raging=false,reckless=false,rage=2,sw=1,surge=1,bag=[],oLv=2,bLv=2;
+const BODY={str:17,dex:13,con:15};
+const HEADS={
+  o:{name:'OINKER',cls:'Barbarian',side:'Right head, right arm',int:8,wis:10,cha:14,hp:23,die:12,
+     worn:['Greatsword','Battleaxe on harness','Hay wig','Purple shell over right eye','Leather harness','Shared hide loincloth']},
+  b:{name:'BOINKER',cls:'Fighter',side:'Left head, left arm',int:12,wis:12,cha:10,hp:20,die:10,
+     worn:['Brick mace','Flail on harness','Black oily helmet over left eye','Leather harness','Shared hide loincloth']}
+};
+const CHECKS=[
+  ['Strength','Athletics',true,'Barbarian'],
+  ['Dexterity','Acrobatics',false,''],
+  ['Dexterity','Sleight of Hand',false,''],
+  ['Dexterity','Stealth',false,''],
+  ['Intelligence','Arcana',false,''],
+  ['Intelligence','History',false,''],
+  ['Intelligence','Investigation',false,''],
+  ['Intelligence','Nature',false,''],
+  ['Intelligence','Religion',true,'Hermit'],
+  ['Wisdom','Animal Handling',true,'Fighter'],
+  ['Wisdom','Insight',false,''],
+  ['Wisdom','Medicine',true,'Hermit'],
+  ['Wisdom','Perception',true,'Fighter'],
+  ['Wisdom','Survival',true,'Barbarian'],
+  ['Charisma','Deception',false,''],
+  ['Charisma','Intimidation',false,''],
+  ['Charisma','Performance',false,''],
+  ['Charisma','Persuasion',false,'']
+];
+const $=id=>document.getElementById(id);
+let who='o', goldN=40, bag=[], notes='', oLv=2, bLv=2, rage=2, raging=false, reckless=false, sw=1, surge=1;
 let pool={o:{hp:23,max:23,temp:0},b:{hp:20,max:20,temp:0}};
-const skillOn={};SKILLS.forEach(function(s){skillOn[s[0]]=s[2]});
-function cur(){return pool[who]}
-function say(t){$('rollout').textContent=t}
-function mod(s){return Math.floor((s-10)/2)}
+function mod(score){return Math.floor((score-10)/2)}
 function signed(n){return (n>=0?'+':'')+n}
-function bodyMod(ab){if(ab==='str')return 3;if(ab==='dex')return 1;if(ab==='int')return mod(HEADS[who].int);if(ab==='wis')return mod(HEADS[who].wis);if(ab==='cha')return mod(HEADS[who].cha);return 0}
-function tab(id){['combat','actions','skills','inventory','album'].forEach(function(x){$('p'+x).className=x===id?'':'hide';$('t'+x).className=x===id?'on':'';})}
-function snap(){return {v:1,pool:pool,notes:$('notes').value,gold:gold,rage:rage,sw:sw,surge:surge,raging:raging,reckless:reckless,bag:bag,oLv:oLv,bLv:bLv,updated:Date.now()}}
-function encodeSave(obj){return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
-function decodeSave(str){str=(str||'').replace(/-/g,'+').replace(/_/g,'/');while(str.length%4)str+='=';return JSON.parse(decodeURIComponent(escape(atob(str))))}
-function applySave(s,src){if(!s||typeof s!=='object')return;if(s.pool){if(s.pool.o)Object.assign(pool.o,s.pool.o);if(s.pool.b)Object.assign(pool.b,s.pool.b)}if(s.notes!=null)$('notes').value=s.notes;if(s.gold!=null)gold=s.gold;if(s.bag)bag=s.bag;if(s.oLv)oLv=s.oLv;if(s.bLv)bLv=s.bLv;if(s.rage!=null)rage=s.rage;if(s.sw!=null)sw=s.sw;if(s.surge!=null)surge=s.surge;if(s.raging!=null)raging=s.raging;if(s.reckless!=null)reckless=s.reckless;HEADS.o.hd=oLv+'d12';HEADS.b.hd=bLv+'d10';HEADS.o.sub='Half-giant Ettin Barbarian '+oLv+', Hermit';HEADS.b.sub='Half-giant Ettin Fighter '+bLv+', Hermit';$('syncnote').textContent='Loaded from '+src+'.';}
-function save(){var data=snap();try{localStorage.setItem('ettinLegal',JSON.stringify(data))}catch(e){}try{history.replaceState(null,'','#'+encodeSave(data))}catch(e){}}
-function paintHP(){var p=cur();$('hplab').textContent=HEADS[who].name+' HP';$('hp').textContent=p.hp;$('hpmax').textContent=p.max;$('tempv').textContent=p.temp;$('maxv').textContent=p.max;$('hdbox').textContent=HEADS[who].hd}
-function paintActs(){var h='<h3>Action \u00b7 Attack</h3>';if((who==='o'&&oLv>=5)||(who==='b'&&bLv>=5))h+='<p class="tag">Extra Attack: two swings on the Attack action.</p>';if(HEADS[who].cls==='barb'){h+='<div class="use"><div><b>Greatsword</b><div class="tag">Hit +5 = Str +3 + prof +2 \u00b7 Dmg 2d6+3</div></div><button type="button" class="act" onclick="showAtk(\'Greatsword\',\'2d6\')">How</button></div>';h+='<div class="use"><div><b>Battleaxe</b><div class="tag">Hit +5 = Str +3 + prof +2 \u00b7 Dmg 1d8+3</div></div><button type="button" class="act" onclick="showAtk(\'Battleaxe\',\'1d8\')">How</button></div>';h+='<h3>Bonus action</h3><div class="use"><div><b>Rage</b><div class="tag">Start rage. +2 melee damage while it lasts.</div></div><button type="button" class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';h+='<h3>Special</h3><div class="use"><div><b>Reckless Attack</b><div class="tag">This turn roll two d20s to hit. Enemies also roll two at you.</div></div><button type="button" class="act '+(reckless?'danger':'')+'" onclick="doReck()">'+(reckless?'ON':'off')+'</button></div>';}else{h+='<div class="use"><div><b>Brick mace</b><div class="tag">Hit +5 = Str +3 + prof +2 \u00b7 Dmg 1d12+3</div></div><button type="button" class="act" onclick="showAtk(\'Brick mace\',\'1d12\')">How</button></div>';h+='<div class="use"><div><b>Flail</b><div class="tag">Hit +5 = Str +3 + prof +2 \u00b7 Dmg 1d8+3</div></div><button type="button" class="act" onclick="showAtk(\'Flail\',\'1d8\')">How</button></div>';h+='<h3>Bonus action</h3><div class="use"><div><b>Second Wind</b><div class="tag">Heal 1d10+fighter level. Then short rest.</div></div><button type="button" class="act" onclick="doSW()">'+sw+'/1</button></div>';h+='<h3>Special</h3><div class="use"><div><b>Action Surge</b><div class="tag">One extra Action this turn. Then short rest.</div></div><button type="button" class="act" onclick="doSurge()">'+surge+'/1</button></div>';}$('acts').innerHTML=h;}
-function showAtk(n,w){var extra=(raging&&HEADS[who].cls==='barb')?'\nIf Rage is on, add +2 more to damage.':'';say(n+' attack\n1. Say you Attack.\n2. Roll a d20.\n3. Add +5 (Strength +3 and proficiency +2).\n4. Tell the DM that total.\n5. If it hits, roll '+w+' and add +3 Strength.'+extra);}
-function whyPerc(){var w=bodyMod('wis'),p=skillOn.Perception?2:0;say('Passive Perception '+(10+w+p)+'.\n10 + Wisdom '+signed(w)+(p?' + trained +2.':'')+'\nThe DM uses this when you are not searching.')}
-function doRage(){if(!raging){if(rage<=0){say('No Rage left until a long rest.');return}rage-=1;raging=true;say('Rage on. After a melee hit, add +2 damage.')}else{raging=false;say('Rage off')}paintActs();save()}
-function doReck(){reckless=!reckless;paintActs();save();say(reckless?'Reckless on. Roll two d20s to hit. Keep the higher.':'Reckless off')}
-function doSW(){if(sw<=0){say('Second Wind already used. Short rest gives it back.');return}sw-=1;say('Second Wind. Roll 1d10 + fighter level ('+bLv+'). Then tap Healed.');paintActs();save()}
-function doSurge(){if(surge<=0){say('Action Surge already used. Short rest gives it back.');return}surge-=1;say('Action Surge. Take one extra Action now.');paintActs();save()}
-function shortRest(){if(!confirm('Short rest about one hour? Second Wind and Action Surge refill.'))return;sw=1;surge=1;raging=false;paintActs();say('Short rest done.');save()}
-function longRest(){if(!confirm('Long rest? Both heads fill HP. Rage, Second Wind, Action Surge refill.'))return;pool.o.hp=pool.o.max;pool.o.temp=0;pool.b.hp=pool.b.max;pool.b.temp=0;rage=2;raging=false;reckless=false;sw=1;surge=1;paintHP();paintActs();say('Long rest done.');save()}
-function nextText(cls,lv){var n=lv+1,hp=cls==='barb'?9:8,g='';if(cls==='barb'){if(n===3)g='Choose a Primal Path.';else if([4,8,12,16,19].indexOf(n)>=0)g='Ability Score Increase or a feat.';else if(n===5)g='Extra Attack and Fast Movement.';else g='See the barbarian table.';}else{if(n===3)g='Choose a Fighter Archetype.';else if([4,6,8,12,14,16,19].indexOf(n)>=0)g='Ability Score Increase or a feat.';else if(n===5)g='Extra Attack.';else g='See the fighter table.';}return 'Next is level '+n+'. About +'+hp+' HP. '+g}
-function showNext(){var t=HEADS[who].name+' is level '+(who==='o'?oLv:bLv)+'. '+nextText(HEADS[who].cls,who==='o'?oLv:bLv);$('nextbox').textContent=t;say(t)}
-function track(d,w){if(w==='o'){oLv=Math.max(1,Math.min(20,oLv+d));HEADS.o.hd=oLv+'d12';HEADS.o.sub='Half-giant Ettin Barbarian '+oLv+', Hermit';}else{bLv=Math.max(1,Math.min(20,bLv+d));HEADS.b.hd=bLv+'d10';HEADS.b.sub='Half-giant Ettin Fighter '+bLv+', Hermit';}$('olvl').textContent=oLv;$('blvl').textContent=bLv;if(w===who){$('csub').textContent=HEADS[w].sub;paintHP();paintActs()}save()}
-function paintBag(){var h='';bag.forEach(function(it,i){h+='<div class="use"><div><b>'+it.name+'</b> x'+it.qty+'</div><span><button type="button" class="act" onclick="useItem('+i+')">Use</button> <button type="button" class="act" onclick="chgItem('+i+',-1)">-</button> <button type="button" class="act" onclick="chgItem('+i+',1)">+</button></span></div>'});if(!bag.length)h='<p class="tag">Bag empty.</p>';$('bag').innerHTML=h}
-function addItem(){var n=($('newitem').value||'').trim();if(!n){say('Type a name first.');return}var f=null;bag.forEach(function(x){if(x.name.toLowerCase()===n.toLowerCase())f=x});if(f)f.qty+=1;else bag.push({name:n,qty:1});$('newitem').value='';paintBag();save();say('Added '+n)}
-function chgItem(i,n){bag[i].qty=Math.max(0,bag[i].qty+n);if(bag[i].qty===0)bag.splice(i,1);paintBag();save()}
-function useItem(i){var n=bag[i].name;bag[i].qty-=1;if(bag[i].qty<=0)bag.splice(i,1);paintBag();save();var m='Used 1 '+n+'. Tell the DM.';if(/potion|heal/i.test(n))m+=' Roll the potion dice, then tap Healed.';say(m)}
-function showHead(w){who=w;var h=HEADS[w];$('btnO').className=w==='o'?'on':'';$('btnB').className=w==='b'?'on':'';$('cname').textContent=h.name;$('csub').textContent=h.sub;$('flavor').textContent=h.fact;$('abs').innerHTML='';[['STR',17,3,5,1,'+3 from 17 Strength. Save +5 because both classes train Strength (+2 proficiency).'],['DEX',13,1,1,0,'+1 from 13 Dexterity. Save +1. Not trained.'],['CON',15,2,4,1,'+2 from 15 Constitution. Save +4 because both classes train Constitution (+2 proficiency).'],['INT',h.int,mod(h.int),mod(h.int),0,h.name+' Intelligence '+h.int+'. Modifier '+signed(mod(h.int))+'. Save is the same.'],['WIS',h.wis,mod(h.wis),mod(h.wis),0,h.name+' Wisdom '+h.wis+'. Modifier '+signed(mod(h.wis))+'. Save is the same.'],['CHA',h.cha,mod(h.cha),mod(h.cha),0,h.name+' Charisma '+h.cha+'. Modifier '+signed(mod(h.cha))+'. Save is the same.']].forEach(function(a){var d=document.createElement('div');d.className='ab';d.title=a[5];d.onclick=function(){say(a[5]+' Roll d20 and add the save number.')};d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';$('abs').appendChild(d)});$('gear').innerHTML=h.gear.map(function(x){return '<li>'+x+'</li>'}).join('');$('headfact').textContent=h.fact;$('olvl').textContent=oLv;$('blvl').textContent=bLv;paintHP();paintActs();renderSkills();paintInv();paintBag();try{localStorage.setItem('ettinWho',w)}catch(e){}save();}
-function renderSkills(){var box=$('skills');box.innerHTML='';SKILLS.forEach(function(s){var ab=bodyMod(s[1]),tr=skillOn[s[0]],tot=ab+(tr?2:0);var src=s[0]+' '+signed(tot)+'. '+s[1].toUpperCase()+' '+signed(ab)+(tr?' + proficiency +2.':' not trained.')+(WHY[s[0]]?' '+WHY[s[0]]:'')+' Roll d20. Tell the DM your roll '+signed(tot)+'.';var row=document.createElement('div');row.className='sk';row.title=src;row.onclick=function(){say(src)};row.innerHTML='<span><span class="dot'+(tr?' on':'')+'"></span>'+s[0]+'<span class="why">'+(tr?(WHY[s[0]]||'Trained +2'):s[1].toUpperCase()+' only')+'</span></span><span>'+signed(tot)+'</span>';box.appendChild(row)});$('pperc').textContent=10+bodyMod('wis')+(skillOn.Perception?2:0);$('pins').textContent=10+bodyMod('wis')+(skillOn.Insight?2:0)}
-function paintInv(){$('gold').textContent=gold}
-function chgGold(n){gold=Math.max(0,gold+n);paintInv();save()}
-function chgHP(n){var p=cur();if(n<0){var left=-n;if(p.temp>0){var u=Math.min(p.temp,left);p.temp-=u;left-=u}p.hp=Math.max(0,p.hp-left)}else p.hp=Math.min(p.max,p.hp+n);say(HEADS[who].name+' HP '+p.hp+'/'+p.max+' (this head only)');paintHP();save()}
-function chgTemp(n){cur().temp=Math.max(0,cur().temp+n);paintHP();save()}
-function chgMax(n){var p=cur();p.max=Math.max(1,p.max+n);if(p.hp>p.max)p.hp=p.max;paintHP();save()}
-function fullHeal(){var p=cur();p.hp=p.max;p.temp=0;paintHP();save();say(HEADS[who].name+' HP full')}
-function copyLink(){save();var url=location.origin+location.pathname+'#'+encodeSave(snap());if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(function(){say('Table link copied. Send it. Your buddy opens that link and sees your HP and notes.')}).catch(function(){$('sharebox').value=url;tab('album');say('Copy blocked. Link is in Notes. Send that whole text.')})}else{$('sharebox').value=url;tab('album');say('Link is in Notes. Send that whole text.')}}
-function copyCode(){var code=encodeSave(snap());$('sharebox').value=code;tab('album');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(code).then(function(){say('Table code copied. Buddy pastes it in Notes and taps Load pasted code.')}).catch(function(){say('Code is in the Notes box. Copy it.')})}else say('Code is in the Notes box. Copy it.')}
-function loadCode(){var raw=($('sharebox').value||'').trim();if(!raw){say('Paste a table code or a full table link first.');return}try{if(raw.indexOf('#')>=0)raw=raw.split('#').pop();applySave(decodeSave(raw),'table code');showHead(who);save();say('Table loaded for both heads.')}catch(e){say('That code did not read. Copy it again.')}}
-function load(){var fromHash=null,fromLocal=null,fromOld=null;try{if(location.hash&&location.hash.length>8)fromHash=decodeSave(location.hash.slice(1))}catch(e){}try{fromLocal=JSON.parse(localStorage.getItem('ettinLegal')||'null')}catch(e){}try{fromOld=JSON.parse(localStorage.getItem('ettinSplit')||'null')}catch(e){}if(fromHash)applySave(fromHash,'table link');else if(fromLocal)applySave(fromLocal,'this phone');else if(fromOld)applySave(fromOld,'old phone save');var start='o';try{start=localStorage.getItem('ettinWho')||'o'}catch(e){}showHead(start)}
-$('notes').oninput=save;
-$('newitem').onkeydown=function(e){if(e.key==='Enter')addItem()};
+function lv(){return who==='o'?oLv:bLv}
+function pb(){const l=lv();return l>=17?6:l>=13?5:l>=9?4:l>=5?3:2}
+function scoreOf(ab){
+  if(ab==='Strength')return BODY.str;
+  if(ab==='Dexterity')return BODY.dex;
+  if(ab==='Constitution')return BODY.con;
+  if(ab==='Intelligence')return HEADS[who].int;
+  if(ab==='Wisdom')return HEADS[who].wis;
+  return HEADS[who].cha;
+}
+function say(t){$('say').textContent=t||''}
+function hit(){return mod(BODY.str)+pb()}
+function ac(){return 10+mod(BODY.dex)+mod(BODY.con)}
+function trained(name){return CHECKS.some(c=>c[1]===name&&c[2])}
+function tab(id){
+  ['fight','scores','checks','pack','journal'].forEach(x=>{
+    const p=$('p-'+x); if(p)p.className=x===id?'':'hide';
+    const a=$('t-'+x), b=$('b-'+x);
+    if(a)a.className=x===id?'on':'';
+    if(b)b.className=x===id?'on':'';
+  });
+}
+function save(){
+  const data={pool,goldN,bag,notes:$('notes').value,oLv,bLv,rage,raging,reckless,sw,surge,who};
+  try{localStorage.setItem('ettinV2',JSON.stringify(data))}catch(e){}
+}
+function load(){
+  try{
+    const s=JSON.parse(localStorage.getItem('ettinV2')||'null');
+    if(!s)return;
+    if(s.pool){if(s.pool.o)Object.assign(pool.o,s.pool.o);if(s.pool.b)Object.assign(pool.b,s.pool.b)}
+    if(s.goldN!=null)goldN=s.goldN;
+    if(s.bag)bag=s.bag;
+    if(s.notes!=null)notes=s.notes;
+    if(s.oLv)oLv=s.oLv; if(s.bLv)bLv=s.bLv;
+    if(s.rage!=null)rage=s.rage; if(s.raging!=null)raging=s.raging;
+    if(s.reckless!=null)reckless=s.reckless;
+    if(s.sw!=null)sw=s.sw; if(s.surge!=null)surge=s.surge;
+    if(s.who)who=s.who;
+  }catch(e){}
+}
+function explain(kind){
+  if(kind==='ac') say('Armor Class '+ac()+'. 10 + Dexterity '+signed(mod(BODY.dex))+' + Constitution '+signed(mod(BODY.con))+'. Unarmored Defense from Barbarian. An enemy must meet or beat this number to hit.');
+  if(kind==='init') say('Initiative '+signed(mod(BODY.dex))+'. Only Dexterity from score '+BODY.dex+'. When a fight starts, roll a d20, add Dexterity '+signed(mod(BODY.dex))+', tell the DM that total. Write it down for this fight. It is not a pool you spend.');
+  if(kind==='speed') say('Speed 30 feet. That is how far this body walks on its turn.');
+  if(kind==='pp'){
+    const w=mod(HEADS[who].wis), t=trained('Perception')?pb():0;
+    say('Passive Perception '+(10+w+t)+'. 10 + Wisdom '+signed(w)+(t?' + training '+signed(t)+' from Fighter.':'')+' The DM uses this when you are not searching.');
+  }
+  if(kind==='hd') say('Hit Dice '+lv()+'d'+HEADS[who].die+'. One die per class level. Barbarian uses d12. Fighter uses d10. On a short rest you may roll some of these, add Constitution '+signed(mod(BODY.con))+', and heal that many hit points if the DM allows it.');
+}
+function paintHUD(){
+  const h=HEADS[who], p=pool[who];
+  $('name').textContent=h.name;
+  $('line').textContent=h.cls+' '+lv()+' \u00b7 Hermit \u00b7 '+h.side;
+  $('lv').textContent=lv();
+  $('hp').textContent=p.hp; $('hpMax').textContent=p.max;
+  $('ac').textContent=ac();
+  $('init').textContent=signed(mod(BODY.dex));
+  const w=mod(h.wis), t=trained('Perception')?pb():0;
+  $('pp').textContent=10+w+t;
+  $('temp').textContent=p.temp;
+  $('maxLab').textContent=p.max;
+  $('hdLine').textContent='Hit Dice '+lv()+'d'+h.die+'. Tap to read.';
+  $('hdLine').onclick=()=>explain('hd');
+  $('gp').textContent=goldN;
+  $('notes').value=notes;
+}
+function paintScores(){
+  const blocks=[['STR',BODY.str,true],['DEX',BODY.dex,false],['CON',BODY.con,true],['INT',HEADS[who].int,false],['WIS',HEADS[who].wis,false],['CHA',HEADS[who].cha,false]];
+  function box(a){
+    const m=mod(a[1]), sav=m+(a[2]?pb():0);
+    const el=document.createElement('div');
+    el.className='ab';
+    el.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(m)+'</div><div class="sub">score '+a[1]+'</div><div class="sub save'+(a[2]?' yes':'')+'">save '+signed(sav)+'</div>';
+    el.onclick=()=>{
+      let t=a[0]+' score '+a[1]+' gives '+signed(m)+'.';
+      if(a[2]) t+=' A save adds training '+signed(pb())+' because Barbarian and Fighter both train Strength and Constitution. Save is '+signed(sav)+'.';
+      else t+=' This save is not trained. Roll d20 and add '+signed(m)+'.';
+      t+=' A save is rolled when something happens to you: poison, a shove, a spell you try to resist.';
+      say(t);
+    };
+    return el;
+  }
+  ['railAbs','phoneAbs'].forEach(id=>{const root=$(id); if(!root)return; root.innerHTML=''; blocks.forEach(a=>root.appendChild(box(a)));});
+}
+function atk(name,dice){
+  say(name+'\nAction.\n1. Roll a d20.\n2. Add Strength '+signed(mod(BODY.str))+' and weapon training '+signed(pb())+'. Those parts are '+signed(hit())+' right now.\n3. Tell the DM that total.\n4. If it hits, roll '+dice+' and add Strength '+signed(mod(BODY.str))+(raging&&who==='o'?' and Rage +2.':'')+(reckless&&who==='o'?'\nReckless is on: roll two d20s in step 1, keep the higher. Enemies do the same against you.':''));
+}
+function paintActs(){
+  const root=$('acts');
+  const str=signed(mod(BODY.str)), train=signed(pb()), tot=signed(hit());
+  const dmg=str+(raging&&who==='o'?' and Rage +2':'');
+  function card(title,detail,btn,fn,cls){
+    return '<div class="card"><div><b>'+title+'</b><p class="muted">'+detail+'</p></div><button type="button" class="'+(cls||'')+'" onclick="'+fn+'">'+btn+'</button></div>';
+  }
+  let html='<h3>Action</h3>';
+  if(who==='o'){
+    html+=card('Greatsword','Melee. d20 + Strength '+str+' + training '+train+' = '+tot+' now. Damage 2d6 + Strength '+dmg+'.','Attack','atk(\'Greatsword\',\'2d6\')');
+    html+=card('Battleaxe','Melee. Same to-hit parts as the greatsword. Damage 1d8 + Strength '+dmg+'.','Attack','atk(\'Battleaxe\',\'1d8\')');
+  }else{
+    html+=card('Brick mace','Melee. d20 + Strength '+str+' + training '+train+' = '+tot+' now. Damage 1d12 + Strength '+str+'.','Attack','atk(\'Brick mace\',\'1d12\')');
+    html+=card('Flail','Melee. Same to-hit parts as the mace. Damage 1d8 + Strength '+str+'.','Attack','atk(\'Flail\',\'1d8\')');
+  }
+  html+=card('Shove','Action. Roll Athletics. Strength '+str+(trained('Athletics')?' + training '+train:'')+'. Target contests. On a win you push 5 feet or knock it prone.','Do it','common(\'Shove\')');
+  html+=card('Grapple','Action. Roll Athletics against the target\'s Athletics or Acrobatics. On a win you grab it.','Do it','common(\'Grapple\')');
+  html+='<h3>Bonus action</h3>';
+  if(who==='o'){
+    html+=card('Rage', raging?'On. Melee damage +2. Resistance to bludgeoning, piercing, slashing. Uses left this long rest: '+rage+' of 2.':'Bonus action to start. Uses left this long rest: '+rage+' of 2.', raging?'End':'Start','toggleRage()',raging?'on':'');
+  }else{
+    html+=card('Second Wind','Bonus action. Roll 1d10 + fighter level ('+bLv+'). Heal that many hit points. Uses left: '+sw+' of 1. Returns after a short rest.','Use','useSW()');
+  }
+  html+='<h3>On your turn</h3>';
+  if(who==='o'){
+    html+=card('Reckless Attack',reckless?'On. Two d20s to hit, keep the higher. Enemies do the same to you this turn.':'When you Attack this turn, roll two d20s and keep the higher. Enemies do the same against you.',reckless?'On':'Off','toggleReck()',reckless?'on':'');
+  }else{
+    html+=card('Action Surge','Take one extra Action now. Uses left: '+surge+' of 1. Returns after a short rest.','Use','useSurge()');
+  }
+  html+=card('Jump','Part of movement. Strength 17. The DM sets the check if the jump is hard.','Tell DM','common(\'Jump\')');
+  html+=card('Dash','Action. Walk another 30 feet this turn.','Tell DM','common(\'Dash\')');
+  root.innerHTML=html;
+}
+function common(n){
+  if(n==='Shove'||n==='Grapple'){
+    const tot=mod(BODY.str)+(trained('Athletics')?pb():0);
+    say(n+'. Action.\nRoll a d20.\nAdd Strength '+signed(mod(BODY.str))+(trained('Athletics')?' and Athletics training '+signed(pb())+'.':'')+' Those parts are '+signed(tot)+' now.\nTell the DM that total.');
+    return;
+  }
+  if(n==='Jump') say('Jump. Use some of your 30 feet of movement. Tell the DM how far. If it is a hard jump, the DM may ask for Athletics.');
+  if(n==='Dash') say('Dash. Spend your Action. Walk another 30 feet this turn.');
+}
+function toggleRage(){
+  if(!raging){if(rage<=0){say('No Rage left until a long rest.');return;} rage-=1; raging=true; say('Rage started. Melee damage +2. Uses left this long rest: '+rage+' of 2.');}
+  else {raging=false; say('Rage ended.');}
+  paintActs(); save();
+}
+function toggleReck(){reckless=!reckless; paintActs(); save(); say(reckless?'Reckless on.':'Reckless off.');}
+function useSW(){if(sw<=0){say('Second Wind already used. It returns after a short rest.');return;} sw-=1; say('Second Wind. Roll 1d10 + '+bLv+'. Then tap + on Hit Points for the result.'); paintActs(); save();}
+function useSurge(){if(surge<=0){say('Action Surge already used. It returns after a short rest.');return;} surge-=1; say('Action Surge. Take one extra Action now.'); paintActs(); save();}
+function paintChecks(){
+  const root=$('checks'); root.innerHTML='';
+  let last='';
+  CHECKS.forEach(c=>{
+    if(c[0]!==last){const h=document.createElement('h3'); h.textContent=c[0]; root.appendChild(h); last=c[0];}
+    const m=mod(scoreOf(c[0])), add=c[2]?pb():0, tot=m+add;
+    const row=document.createElement('div'); row.className='row';
+    row.innerHTML='<span><span class="dot'+(c[2]?' on':'')+'"></span>'+c[1]+'<br><span class="muted">'+c[0]+' '+signed(m)+(c[2]?' + training '+signed(add)+' from '+c[3]:' not trained')+'</span></span><b>'+signed(tot)+'</b>';
+    row.onclick=()=>say(c[1]+'.\nRoll a d20.\nAdd '+c[0]+' '+signed(m)+(c[2]?' and training '+signed(add)+' from '+c[3]+'.':'')+'\nThose parts are '+signed(tot)+' right now.\nTell the DM that total.');
+    root.appendChild(row);
+  });
+}
+function esc(s){return String(s).replace(/[&<>"']/g,ch=>({'&':'&','<':'<','>':'>','"':'"',"'":'&#39;'}[ch]))}
+function paintPack(){
+  $('worn').innerHTML=HEADS[who].worn.map(x=>'<li>'+esc(x)+'</li>').join('');
+  $('bag').innerHTML=bag.length?bag.map((it,i)=>'<div class="card"><div><b>'+esc(it.name)+'</b> \u00d7'+it.qty+'</div><span><button type="button" onclick="useItem('+i+')">Use</button> <button type="button" onclick="qty('+i+',-1)">-</button> <button type="button" onclick="qty('+i+',1)">+</button></span></div>').join(''):'<p class="muted">Bag empty.</p>';
+  $('gp').textContent=goldN;
+}
+function addItem(){
+  const n=($('newItem').value||'').trim(); if(!n){say('Type a name first.');return;}
+  const f=bag.find(x=>x.name.toLowerCase()===n.toLowerCase());
+  if(f)f.qty+=1; else bag.push({name:n,qty:1});
+  $('newItem').value=''; paintPack(); save();
+}
+function qty(i,n){bag[i].qty=Math.max(0,bag[i].qty+n); if(!bag[i].qty)bag.splice(i,1); paintPack(); save();}
+function useItem(i){const n=bag[i].name; qty(i,-1); say('Used 1 '+n+'. Tell the DM.');}
+function hp(n){
+  const p=pool[who];
+  if(n<0){let d=-n; if(p.temp>0){const u=Math.min(p.temp,d); p.temp-=u; d-=u;} p.hp=Math.max(0,p.hp-d);}
+  else p.hp=Math.min(p.max,p.hp+n);
+  paintHUD(); save();
+}
+function temp(n){pool[who].temp=Math.max(0,pool[who].temp+n); paintHUD(); save();}
+function maxHp(n){const p=pool[who]; p.max=Math.max(1,p.max+n); if(p.hp>p.max)p.hp=p.max; paintHUD(); save();}
+function gold(n){goldN=Math.max(0,goldN+n); paintPack(); save();}
+function lvlChg(d){
+  if(who==='o')oLv=Math.max(1,Math.min(20,oLv+d)); else bLv=Math.max(1,Math.min(20,bLv+d));
+  paintAll(); save();
+}
+function nextLevel(){
+  const n=lv()+1, barb=who==='o';
+  let g='About +'+(barb?9:8)+' hit points (average die + Constitution '+signed(mod(BODY.con))+').';
+  if(barb){
+    if(n===3)g+=' Choose a Primal Path.';
+    else if([4,8,12,16,19].includes(n))g+=' Ability Score Increase or a feat.';
+    else if(n===5)g+=' Extra Attack. Fast Movement: speed becomes 40 from the class.';
+  }else{
+    if(n===3)g+=' Choose a Martial Archetype.';
+    else if([4,6,8,12,14,16,19].includes(n))g+=' Ability Score Increase or a feat.';
+    else if(n===5)g+=' Extra Attack.';
+  }
+  say(HEADS[who].name+' next is level '+n+'. '+g);
+}
+function shortRest(){
+  if(!confirm('Short rest? About one hour. Second Wind and Action Surge return. Hit Dice you spend yourself.'))return;
+  sw=1; surge=1; raging=false; paintAll(); save(); say('Short rest finished.');
+}
+function longRest(){
+  if(!confirm('Long rest? Both heads fill hit points. Rage, Second Wind, and Action Surge return.'))return;
+  pool.o.hp=pool.o.max; pool.o.temp=0; pool.b.hp=pool.b.max; pool.b.temp=0;
+  rage=2; raging=false; reckless=false; sw=1; surge=1; paintAll(); save(); say('Long rest finished.');
+}
+function head(w){who=w; paintAll(); save();}
+function paintAll(){
+  $('btnO').className=who==='o'?'on':'';
+  $('btnB').className=who==='b'?'on':'';
+  paintHUD(); paintScores(); paintActs(); paintChecks(); paintPack();
+}
+$('notes').addEventListener('input',()=>{notes=$('notes').value;save();});
+$('newItem').addEventListener('keydown',e=>{if(e.key==='Enter')addItem();});
 load();
+if($('notes'))$('notes').value=notes;
+paintAll();
