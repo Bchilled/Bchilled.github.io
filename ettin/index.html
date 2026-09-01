@@ -4,28 +4,28 @@ body{font-family:Georgia,serif;background:#121418;color:#1c1208;padding:8px;marg
 .wrap{max-width:440px;margin:0 auto}
 button{border:1px solid #c9a227;background:#2a2e34;color:#f3e6c9;padding:8px 6px;cursor:pointer}
 button.on{background:#9b2c2c;color:#fff}
-.who,.rest{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
 .header{background:#16181c;color:#f3e6c9;padding:8px;border:1px solid #3a3f47}
 .header h1{margin:0;font-size:1.25rem}
-.meta{color:#c9b48a;font-size:.75rem;margin:2px 0 6px}
+.meta{color:#c9b48a;font-size:.75rem;margin:2px 0 0}
 img{width:100%;border:2px solid #c9a227;display:block;margin:0 0 6px;background:#2a1a10}
 .nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0}
 .nav button{padding:8px 2px;font-size:.7rem}
 .sheet{background:#f3e6c9;border:1px solid #3a2412;padding:8px}
 .row3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:6px}
-.box{background:#fff8e4;border:2px solid #3a2412;text-align:center;padding:6px 4px}
+.box{background:#fff8e4;border:2px solid #3a2412;text-align:center;padding:6px 4px;cursor:help}
 .k{font-size:.6rem;color:#6a543c}
 .v{font-size:1.3rem;font-weight:700}
-.hp{border-color:#9b2c2c}
+.hp{border-color:#9b2c2c;cursor:default}
 .pm{display:flex;justify-content:center;gap:6px;margin-top:4px}
 .pm button{min-width:40px;font-size:1.1rem;padding:4px 0;background:#3a2412}
 .btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0}
 button.act{background:#3a2412}button.danger{background:#9b2c2c}
 .abs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}
-.ab{background:#fff8e4;border:2px solid #3a2412;text-align:center;padding:4px 2px;cursor:pointer}
+.ab{background:#fff8e4;border:2px solid #3a2412;text-align:center;padding:4px 2px;cursor:help}
 .mod{font-size:1.25rem;font-weight:700}.sc,.sv{font-size:.7rem;color:#6a543c}.sv.p{color:#9b2c2c;font-weight:700}
 .roll{text-align:left;color:#3a2412;font-size:.85rem;background:#fff8e4;border:1px solid #9b2c2c;padding:6px;margin-bottom:6px;line-height:1.25}
-.sk{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #ead7b0;cursor:pointer}
+.sk{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #ead7b0;cursor:help}
 .dot{width:14px;height:14px;border:2px solid #3a2412;border-radius:50%;display:inline-block;margin-right:8px;background:#fff}.dot.on{background:#9b2c2c}
 .bonus{font-weight:700}
 h3{color:#9b2c2c;font-size:.85rem;margin:8px 0 4px}
@@ -38,32 +38,32 @@ ul.gear{margin:0;padding-left:1.1rem}ul.gear li{margin:4px 0}
 <div class="header">
 <img alt="Oinker / Boinker" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 120%22%3E%3Crect width=%22400%22 height=%22120%22 fill=%22%232a1a10%22/%3E%3Ccircle cx=%22150%22 cy=%2255%22 r=%2232%22 fill=%22%23e6c2a6%22/%3E%3Ccircle cx=%22250%22 cy=%2255%22 r=%2232%22 fill=%22%23e6c2a6%22/%3E%3Ctext x=%22150%22 y=%2260%22 text-anchor=%22middle%22 font-size=%2211%22 fill=%22%233a2412%22%3EOINKER%3C/text%3E%3Ctext x=%22250%22 y=%2260%22 text-anchor=%22middle%22 font-size=%2211%22 fill=%22%233a2412%22%3EBOINKER%3C/text%3E%3C/svg%3E">
 <h1 id="cname">OINKER</h1><div class="meta" id="csub"></div>
-<div class="rest"><button type="button" onclick="shortRest()">Short Rest</button><button type="button" onclick="longRest()">Long Rest</button></div></div>
+</div>
 <div class="nav">
 <button type="button" class="on" id="tcombat" onclick="tab('combat')">Combat</button>
 <button type="button" id="tskills" onclick="tab('skills')">Skills</button>
 <button type="button" id="tinventory" onclick="tab('inventory')">Gear</button>
 <button type="button" id="talbum" onclick="tab('album')">Notes</button>
 </div>
-<div class="sheet"><div class="roll" id="rollout">Tap a number for the breakdown.</div>
+<div class="sheet"><div class="roll" id="rollout">Hover a number. Phone: tap it.</div>
 <div id="pcombat">
 <div class="row3">
-<div class="box hp"><div class="k" id="hplab">OINKER HP</div><div class="v"><span id="hp">23</span>/<span id="hpmax">23</span></div>
+<div class="box hp" title="Hit points. - when you take damage. + when you heal."><div class="k" id="hplab">OINKER HP</div><div class="v"><span id="hp">23</span>/<span id="hpmax">23</span></div>
 <div class="pm"><button type="button" onclick="chgHP(-1)">-</button><button type="button" onclick="chgHP(1)">+</button></div></div>
-<div class="box"><div class="k">TEMP</div><div class="v" id="tempv">0</div>
+<div class="box" title="Temporary HP. Used before real HP."><div class="k">TEMP</div><div class="v" id="tempv">0</div>
 <div class="pm"><button type="button" onclick="chgTemp(-1)">-</button><button type="button" onclick="chgTemp(1)">+</button></div></div>
-<div class="box"><div class="k">MAX</div><div class="v" id="maxv">23</div>
+<div class="box" title="Maximum HP."><div class="k">MAX</div><div class="v" id="maxv">23</div>
 <div class="pm"><button type="button" onclick="chgMax(-1)">-</button><button type="button" onclick="chgMax(1)">+</button></div></div>
 </div>
 <div class="row3" style="margin-top:6px">
-<div class="box" onclick="say('AC 13 = 10 + Dex +1 + Con +2')"><div class="k">ARMOR</div><div class="v">13</div></div>
-<div class="box" onclick="say('Init +1 = Dex 13')"><div class="k">INIT</div><div class="v">+1</div></div>
-<div class="box" onclick="say('Speed 40 = ettin')"><div class="k">SPEED</div><div class="v">40</div></div>
+<div class="box" title="AC 13 = 10 + Dex +1 + Con +2. Unarmored Defense." onmouseenter="say('AC 13 = 10 + Dex +1 + Con +2')"><div class="k">ARMOR</div><div class="v">13</div></div>
+<div class="box" title="Initiative +1 = Dexterity 13." onmouseenter="say('Init +1 = Dex 13')"><div class="k">INIT</div><div class="v">+1</div></div>
+<div class="box" title="Speed 40 feet. Ettin speed." onmouseenter="say('Speed 40 = ettin')"><div class="k">SPEED</div><div class="v">40</div></div>
 </div>
 <div class="row3" style="margin-top:6px">
-<div class="box" onclick="say('Large = ettin')"><div class="k">SIZE</div><div class="v" style="font-size:1rem">Large</div></div>
-<div class="box"><div class="k">TYPE</div><div class="v" style="font-size:1rem">Giant</div></div>
-<div class="box" onclick="say('Darkvision 60 = ettin')"><div class="k">VISION</div><div class="v" style="font-size:.9rem">Dark 60</div></div>
+<div class="box" title="Large. Official ettin size." onmouseenter="say('Large = ettin')"><div class="k">SIZE</div><div class="v" style="font-size:1rem">Large</div></div>
+<div class="box" title="Creature type Giant."><div class="k">TYPE</div><div class="v" style="font-size:1rem">Giant</div></div>
+<div class="box" title="Darkvision 60 feet. Ettin trait." onmouseenter="say('Darkvision 60 = ettin')"><div class="k">VISION</div><div class="v" style="font-size:.9rem">Dark 60</div></div>
 </div>
 <div class="btns">
 <button type="button" class="act" onclick="chgHP(-5)">-5</button>
@@ -73,9 +73,9 @@ ul.gear{margin:0;padding-left:1.1rem}ul.gear li{margin:4px 0}
 </div>
 <div class="abs" id="abs"></div>
 <div class="row3">
-<div class="box" onclick="whyPerc()"><div class="k">P.PERC</div><div class="v" id="pperc">10</div></div>
-<div class="box" onclick="whyIns()"><div class="k">P.INS</div><div class="v" id="pins">10</div></div>
-<div class="box" onclick="say(HEADS[who].hd+' = class die')"><div class="k">HIT DICE</div><div class="v" style="font-size:1rem" id="hdbox">2d12</div></div>
+<div class="box" title="Passive Perception. 10 + Wisdom + proficiency if trained." onmouseenter="whyPerc()"><div class="k">P.PERC</div><div class="v" id="pperc">10</div></div>
+<div class="box" title="Passive Insight. 10 + Wisdom." onmouseenter="whyIns()"><div class="k">P.INS</div><div class="v" id="pins">10</div></div>
+<div class="box" title="Hit Dice. Barbarian d12. Fighter d10." onmouseenter="say(HEADS[who].hd+' = class die')"><div class="k">HIT DICE</div><div class="v" style="font-size:1rem" id="hdbox">2d12</div></div>
 </div>
 <h3>Actions</h3><div id="acts"></div>
 </div>
@@ -92,6 +92,7 @@ ul.gear{margin:0;padding-left:1.1rem}ul.gear li{margin:4px 0}
 </div>
 <h3>Write here</h3>
 <textarea id="notes" placeholder="Your session notes. Saved on this device only."></textarea>
+<p><button type="button" onclick="shortRest()">Short rest</button> <button type="button" onclick="longRest()">Long rest</button></p>
 </div>
 </div></div>
 <script>
@@ -113,7 +114,7 @@ function signed(n){return (n>=0?'+':'')+n}
 function bodyMod(ab){if(ab==='str')return 3;if(ab==='dex')return 1;if(ab==='int')return mod(HEADS[who].int);if(ab==='wis')return mod(HEADS[who].wis);if(ab==='cha')return mod(HEADS[who].cha);return 0}
 function tab(id){['combat','skills','inventory','album'].forEach(function(x){$('p'+x).className=x===id?'':'hide';$('t'+x).className=x===id?'on':'';})}
 function paintHP(){var p=cur();$('hplab').textContent=HEADS[who].name+' HP';$('hp').textContent=p.hp;$('hpmax').textContent=p.max;$('tempv').textContent=p.temp;$('maxv').textContent=p.max;$('hdbox').textContent=HEADS[who].hd}
-function paintActs(){var h='';if(HEADS[who].cls==='barb'){h+='<div class="use"><b>Greatsword</b><button type="button" class="act" onclick="showAtk(\'Greatsword\',\'2d6\')">Why</button></div>';h+='<div class="use"><b>Battleaxe</b><button type="button" class="act" onclick="showAtk(\'Battleaxe\',\'1d8\')">Why</button></div>';h+='<div class="use"><b>Rage</b><button type="button" class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';h+='<div class="use"><b>Reckless</b><button type="button" class="act '+(reckless?'danger':'')+'" onclick="doReck()">'+(reckless?'ON':'off')+'</button></div>';}else{h+='<div class="use"><b>Brick mace</b><button type="button" class="act" onclick="showAtk(\'Brick mace\',\'1d6\')">Why</button></div>';h+='<div class="use"><b>Flail</b><button type="button" class="act" onclick="showAtk(\'Flail\',\'1d8\')">Why</button></div>';h+='<div class="use"><b>Second Wind</b><button type="button" class="act" onclick="doSW()">'+sw+'/1</button></div>';h+='<div class="use"><b>Action Surge</b><button type="button" class="act" onclick="doSurge()">'+surge+'/1</button></div>';}$('acts').innerHTML=h}
+function paintActs(){var h='';if(HEADS[who].cls==='barb'){h+='<div class="use" title="d20+5 to hit. 2d6+3 damage." onmouseenter="showAtk(\'Greatsword\',\'2d6\')"><b>Greatsword</b><button type="button" class="act" onclick="showAtk(\'Greatsword\',\'2d6\')">Why</button></div>';h+='<div class="use" title="d20+5 to hit. 1d8+3 damage." onmouseenter="showAtk(\'Battleaxe\',\'1d8\')"><b>Battleaxe</b><button type="button" class="act" onclick="showAtk(\'Battleaxe\',\'1d8\')">Why</button></div>';h+='<div class="use" title="Bonus action. +2 damage after a hit." onmouseenter="say(\'Rage: bonus action. +2 dmg after a hit. 2 per long rest.\')"><b>Rage</b><button type="button" class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';h+='<div class="use" title="Roll two d20s to hit. Enemies hit you easier." onmouseenter="say(\'Reckless: two d20s to hit.\')"><b>Reckless</b><button type="button" class="act '+(reckless?'danger':'')+'" onclick="doReck()">'+(reckless?'ON':'off')+'</button></div>';}else{h+='<div class="use" title="d20+5 to hit. 1d6+3 damage." onmouseenter="showAtk(\'Brick mace\',\'1d6\')"><b>Brick mace</b><button type="button" class="act" onclick="showAtk(\'Brick mace\',\'1d6\')">Why</button></div>';h+='<div class="use" title="d20+5 to hit. 1d8+3 damage." onmouseenter="showAtk(\'Flail\',\'1d8\')"><b>Flail</b><button type="button" class="act" onclick="showAtk(\'Flail\',\'1d8\')">Why</button></div>';h+='<div class="use" title="Bonus action. Roll 1d10+2 and heal that." onmouseenter="say(\'Second Wind: roll 1d10+2 yourself, tap + HP.\')"><b>Second Wind</b><button type="button" class="act" onclick="doSW()">'+sw+'/1</button></div>';h+='<div class="use" title="Extra Action this turn." onmouseenter="say(\'Action Surge: extra Action this turn.\')"><b>Action Surge</b><button type="button" class="act" onclick="doSurge()">'+surge+'/1</button></div>';}$('acts').innerHTML=h}
 function showAtk(n,w){say(n+': d20 +5 to hit (Str +3, prof +2). Hit: '+w+'+3 Str'+(raging&&HEADS[who].cls==='barb'?' +2 Rage':'')+'.')}
 function whyPerc(){var w=bodyMod('wis'),p=skillOn.Perception?2:0;say('P.Perc '+(10+w+p)+' = 10 + Wis '+signed(w)+(p?' + prof +2':''))}
 function whyIns(){var w=bodyMod('wis');say('P.Ins '+(10+w)+' = 10 + Wis '+signed(w))}
@@ -123,8 +124,8 @@ function doSW(){if(sw<=0){say('Second Wind used');return}sw-=1;say('Second Wind.
 function doSurge(){if(surge<=0){say('Surge used');return}surge-=1;say('Action Surge. Extra Action.');paintActs();save()}
 function shortRest(){if(who==='b'){sw=1;surge=1}raging=false;paintActs();say('Short rest done');save()}
 function longRest(){var p=cur();p.hp=p.max;p.temp=0;if(who==='o'){rage=2;raging=false;reckless=false}else{sw=1;surge=1}paintHP();paintActs();say('Long rest done');save()}
-function showHead(w){who=w;var h=HEADS[w];$('btnO').className=w==='o'?'on':'';$('btnB').className=w==='b'?'on':'';$('cname').textContent=h.name;$('csub').textContent=h.sub;$('abs').innerHTML='';[['STR',17,3,5,1],['DEX',13,1,1,0],['CON',15,2,4,1],['INT',h.int,mod(h.int),mod(h.int),0],['WIS',h.wis,mod(h.wis),mod(h.wis),0],['CHA',h.cha,mod(h.cha),mod(h.cha),0]].forEach(function(a){var d=document.createElement('div');d.className='ab';d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';d.onclick=function(){say(a[0]+' '+a[1]+' = '+signed(a[2])+(a[4]?'  Save '+signed(a[3])+' = '+signed(a[2])+' + prof +2':'  Save = mod only'))};$('abs').appendChild(d)});$('gear').innerHTML=h.gear.map(function(x){return '<li>'+x+'</li>'}).join('');$('headfact').textContent=h.fact;paintHP();paintActs();renderSkills();paintInv();localStorage.setItem('ettinWho',w);save()}
-function renderSkills(){var box=$('skills');box.innerHTML='';SKILLS.forEach(function(s){var ab=bodyMod(s[1]),tr=skillOn[s[0]],tot=ab+(tr?2:0);var row=document.createElement('div');row.className='sk';row.innerHTML='<span><span class="dot'+(tr?' on':'')+'"></span>'+s[0]+'</span><span class="bonus">'+signed(tot)+'</span>';row.onclick=function(){say(s[0]+' '+signed(tot)+' = '+ABNAME[s[1]]+' '+signed(ab)+(tr?' + prof +2 ('+WHY[s[0]]+')':' + 0 not trained'))};box.appendChild(row)});$('pperc').textContent=10+bodyMod('wis')+(skillOn.Perception?2:0);$('pins').textContent=10+bodyMod('wis')+(skillOn.Insight?2:0)}
+function showHead(w){who=w;var h=HEADS[w];$('btnO').className=w==='o'?'on':'';$('btnB').className=w==='b'?'on':'';$('cname').textContent=h.name;$('csub').textContent=h.sub;$('abs').innerHTML='';[['STR',17,3,5,1],['DEX',13,1,1,0],['CON',15,2,4,1],['INT',h.int,mod(h.int),mod(h.int),0],['WIS',h.wis,mod(h.wis),mod(h.wis),0],['CHA',h.cha,mod(h.cha),mod(h.cha),0]].forEach(function(a){var t=a[0]+' '+a[1]+' = '+signed(a[2])+(a[4]?'  Save '+signed(a[3])+' = '+signed(a[2])+' + prof +2':'  Save = mod only');var d=document.createElement('div');d.className='ab';d.title=t;d.onmouseenter=function(){say(t)};d.onclick=function(){say(t)};d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';$('abs').appendChild(d)});$('gear').innerHTML=h.gear.map(function(x){return '<li>'+x+'</li>'}).join('');$('headfact').textContent=h.fact;paintHP();paintActs();renderSkills();paintInv();localStorage.setItem('ettinWho',w);save()}
+function renderSkills(){var box=$('skills');box.innerHTML='';SKILLS.forEach(function(s){var ab=bodyMod(s[1]),tr=skillOn[s[0]],tot=ab+(tr?2:0);var t=s[0]+' '+signed(tot)+' = '+ABNAME[s[1]]+' '+signed(ab)+(tr?' + prof +2 ('+WHY[s[0]]+')':' + 0 not trained');var row=document.createElement('div');row.className='sk';row.title=t;row.onmouseenter=function(){say(t)};row.onclick=function(){say(t)};row.innerHTML='<span><span class="dot'+(tr?' on':'')+'"></span>'+s[0]+'</span><span class="bonus">'+signed(tot)+'</span>';box.appendChild(row)});$('pperc').textContent=10+bodyMod('wis')+(skillOn.Perception?2:0);$('pins').textContent=10+bodyMod('wis')+(skillOn.Insight?2:0)}
 function paintInv(){$('gold').textContent=gold}
 function chgGold(n){gold=Math.max(0,gold+n);paintInv();save()}
 function load(){var s={};try{s=JSON.parse(localStorage.getItem('ettinLegal')||'{}')}catch(e){}if(s.pool){if(s.pool.o)Object.assign(pool.o,s.pool.o);if(s.pool.b)Object.assign(pool.b,s.pool.b)}pool.o.max=23;if(pool.o.hp>23)pool.o.hp=23;pool.b.max=20;if(pool.b.hp>20)pool.b.hp=20;if(s.notes)$('notes').value=s.notes;if(s.gold!=null)gold=s.gold;if(s.rage!=null)rage=s.rage;if(s.sw!=null)sw=s.sw;if(s.surge!=null)surge=s.surge;if(s.raging)raging=s.raging;if(s.reckless)reckless=s.reckless;showHead(localStorage.getItem('ettinWho')||'o')}
