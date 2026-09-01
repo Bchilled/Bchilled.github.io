@@ -108,11 +108,7 @@ textarea{min-height:110px}
       <h3>Tools</h3>
       <p class="muted">Leatherworker's tools. Trained. In the pack. Used to cut, stitch, and repair hide and leather. Roll d20 + Dexterity +1 + training +2 when the DM asks for leatherwork.</p>
       <h3>Coins</h3>
-      <p>Gold coins
-        <button type="button" onclick="gold(-1)">-</button>
-        <b id="gp">40</b>
-        <button type="button" onclick="gold(1)">+</button>
-      </p>
+      <p>Gold coins <button type="button" onclick="gold(-1)">-</button> <b id="gp">40</b> <button type="button" onclick="gold(1)">+</button></p>
       <p class="muted">Copper, silver, electrum, and platinum exist in the rules. You are only carrying gold coins.</p>
       <h3>Bag</h3>
       <div id="bag"></div>
@@ -120,14 +116,12 @@ textarea{min-height:110px}
       <p><button type="button" onclick="addItem()">Put in bag</button></p>
     </section>
     <section id="p-journal" class="hide">
-      <h3>Portrait</h3>
-      <div class="album"><img src="us.jpg" alt="Oinker image-left is body-right. Boinker image-right is body-left."></div>
-      <p class="muted">Front view. Image left = Oinker, right head and right arm. Image right = Boinker, left head and left arm.</p>
       <h3>Notes</h3>
       <textarea id="notes"></textarea>
       <p><button type="button" onclick="shortRest()">Short rest</button>
-      <button type="button" onclick="longRest()">Long rest</button>
-      <button type="button" onclick="nextLevel()">Next level</button></p>
+      <button type="button" onclick="longRest()">Long rest</button></p>
+      <h3>This class, levels 1 to 20</h3>
+      <div id="adv" class="muted"></div>
     </section>
   </main>
 </div>
@@ -145,6 +139,6 @@ textarea{min-height:110px}
   </div>
 </div>
 </div>
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>
