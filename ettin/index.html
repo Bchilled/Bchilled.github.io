@@ -86,12 +86,6 @@ button.act{background:#3a2412}button.danger{background:var(--blood)}
 <div class="sheet">
   <div class="roll" id="rollout">Tap a number. You roll the dice. This page only shows what to add and where that number comes from.</div>
   <div id="pcombat">
-    <div class="btns">
-      <button type="button" class="act" onclick="chgHP(-5)">Took 5</button>
-      <button type="button" class="act danger" onclick="chgHP(-10)">Took 10</button>
-      <button type="button" class="act" onclick="chgHP(5)">Healed 5</button>
-      <button type="button" class="act" onclick="fullHeal()">Healed full</button>
-    </div>
     <div class="abs" id="abs"></div>
     <div class="glance" style="grid-template-columns:repeat(3,1fr)">
       <div class="box"><div class="k">Temp HP</div><div class="v" id="tempv">0</div><div class="pm"><button type="button" onclick="chgTemp(-1)">-</button><button type="button" onclick="chgTemp(1)">+</button></div></div>
