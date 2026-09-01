@@ -30,8 +30,9 @@ button.act{background:#3a2412}button.danger{background:#9b2c2c}
 .bonus{font-weight:700}
 h3{color:#9b2c2c;font-size:.85rem;margin:8px 0 4px}
 .use{display:flex;justify-content:space-between;align-items:center;gap:8px;background:#fff8e4;border:1px solid #3a2412;padding:6px;margin:4px 0}
-.hide{display:none}textarea{width:100%;min-height:70px;padding:6px;font:inherit;box-sizing:border-box}
+.hide{display:none}textarea{width:100%;min-height:90px;padding:6px;font:inherit;box-sizing:border-box}
 ul.gear{margin:0;padding-left:1.1rem}ul.gear li{margin:4px 0}
+.facts p{margin:.35rem 0;font-size:.9rem}
 </style></head><body><div class="wrap">
 <div class="who"><button type="button" id="btnB" onclick="showHead('b')">BOINKER</button><button type="button" id="btnO" onclick="showHead('o')">OINKER</button></div>
 <div class="header">
@@ -81,13 +82,23 @@ ul.gear{margin:0;padding-left:1.1rem}ul.gear li{margin:4px 0}
 <div id="pskills" class="hide"><h3>Skills</h3><div id="skills"></div></div>
 <div id="pinventory" class="hide"><h3>Gear</h3><ul class="gear" id="gear"></ul>
 <p>Money <button type="button" class="act" onclick="chgGold(-1)">-</button> <span id="gold">40</span> gp <button type="button" class="act" onclick="chgGold(1)">+</button></p></div>
-<div id="palbum" class="hide"><h3>Notes</h3><div id="story"></div><textarea id="notes"></textarea></div>
+<div id="palbum" class="hide">
+<div class="facts">
+<h3>Facts</h3>
+<p>Two heads, one Large body. Background: Hermit. Home: hole in the mountain.</p>
+<p>Hungry year. Left the hole to get a flock of sheep and bring it back. Take jobs for coins or animals. Trade shiny things for livestock.</p>
+<p>Languages: Common, Giant.</p>
+<p id="headfact"></p>
+</div>
+<h3>Write here</h3>
+<textarea id="notes" placeholder="Your session notes. Saved on this device only."></textarea>
+</div>
 </div></div>
 <script>
 const WHY={Athletics:'Barbarian skill',Survival:'Barbarian skill','Animal Handling':'Fighter skill',Perception:'Fighter skill',Medicine:'Hermit background',Religion:'Hermit background'};
 const HEADS={
-o:{name:'OINKER',sub:'Ettin Barbarian 2, Hermit',int:8,wis:10,cha:14,cls:'barb',hd:'2d12',story:'Right head, right arm.',gear:['Greatsword  +5 hit / 2d6+3 slash','Battleaxe  +5 hit / 1d8+3 slash','Hay wig','Purple shell over right eye','Leather harness','Lopsided hide loincloth']},
-b:{name:'BOINKER',sub:'Ettin Fighter 2, Hermit',int:12,wis:12,cha:10,cls:'fight',hd:'2d10',story:'Left head, left arm.',gear:['Brick mace  +5 hit / 1d6+3 bludgeon','Flail  +5 hit / 1d8+3 bludgeon','Black oily helmet over left eye','Leather harness','Lopsided hide loincloth']}
+o:{name:'OINKER',sub:'Ettin Barbarian 2, Hermit',int:8,wis:10,cha:14,cls:'barb',hd:'2d12',fact:'Oinker: right head, right arm. Joyful. Hay wig, berry makeup, purple shell over the right eye.',gear:['Greatsword  +5 hit / 2d6+3 slash','Battleaxe  +5 hit / 1d8+3 slash','Hay wig','Purple shell over right eye','Leather harness','Lopsided hide loincloth']},
+b:{name:'BOINKER',sub:'Ettin Fighter 2, Hermit',int:12,wis:12,cha:10,cls:'fight',hd:'2d10',fact:'Boinker: left head, left arm. Angry and hungry. Black oily helmet over the left eye.',gear:['Brick mace  +5 hit / 1d6+3 bludgeon','Flail  +5 hit / 1d8+3 bludgeon','Black oily helmet over left eye','Leather harness','Lopsided hide loincloth']}
 };
 const SKILLS=[['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],['Arcana','int',false],['History','int',false],['Investigation','int',false],['Nature','int',false],['Religion','int',true],['Animal Handling','wis',true],['Insight','wis',false],['Medicine','wis',true],['Perception','wis',true],['Survival','wis',true],['Deception','cha',false],['Intimidation','cha',false],['Performance','cha',false],['Persuasion','cha',false]];
 const ABNAME={str:'Str',dex:'Dex',int:'Int',wis:'Wis',cha:'Cha'};
@@ -112,7 +123,7 @@ function doSW(){if(sw<=0){say('Second Wind used');return}sw-=1;say('Second Wind.
 function doSurge(){if(surge<=0){say('Surge used');return}surge-=1;say('Action Surge. Extra Action.');paintActs();save()}
 function shortRest(){if(who==='b'){sw=1;surge=1}raging=false;paintActs();say('Short rest done');save()}
 function longRest(){var p=cur();p.hp=p.max;p.temp=0;if(who==='o'){rage=2;raging=false;reckless=false}else{sw=1;surge=1}paintHP();paintActs();say('Long rest done');save()}
-function showHead(w){who=w;var h=HEADS[w];$('btnO').className=w==='o'?'on':'';$('btnB').className=w==='b'?'on':'';$('cname').textContent=h.name;$('csub').textContent=h.sub;$('abs').innerHTML='';[['STR',17,3,5,1],['DEX',13,1,1,0],['CON',15,2,4,1],['INT',h.int,mod(h.int),mod(h.int),0],['WIS',h.wis,mod(h.wis),mod(h.wis),0],['CHA',h.cha,mod(h.cha),mod(h.cha),0]].forEach(function(a){var d=document.createElement('div');d.className='ab';d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';d.onclick=function(){say(a[0]+' '+a[1]+' = '+signed(a[2])+(a[4]?'  Save '+signed(a[3])+' = '+signed(a[2])+' + prof +2':'  Save = mod only'))};$('abs').appendChild(d)});$('gear').innerHTML=h.gear.map(function(x){return '<li>'+x+'</li>'}).join('');$('story').textContent=h.story;paintHP();paintActs();renderSkills();paintInv();localStorage.setItem('ettinWho',w);save()}
+function showHead(w){who=w;var h=HEADS[w];$('btnO').className=w==='o'?'on':'';$('btnB').className=w==='b'?'on':'';$('cname').textContent=h.name;$('csub').textContent=h.sub;$('abs').innerHTML='';[['STR',17,3,5,1],['DEX',13,1,1,0],['CON',15,2,4,1],['INT',h.int,mod(h.int),mod(h.int),0],['WIS',h.wis,mod(h.wis),mod(h.wis),0],['CHA',h.cha,mod(h.cha),mod(h.cha),0]].forEach(function(a){var d=document.createElement('div');d.className='ab';d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';d.onclick=function(){say(a[0]+' '+a[1]+' = '+signed(a[2])+(a[4]?'  Save '+signed(a[3])+' = '+signed(a[2])+' + prof +2':'  Save = mod only'))};$('abs').appendChild(d)});$('gear').innerHTML=h.gear.map(function(x){return '<li>'+x+'</li>'}).join('');$('headfact').textContent=h.fact;paintHP();paintActs();renderSkills();paintInv();localStorage.setItem('ettinWho',w);save()}
 function renderSkills(){var box=$('skills');box.innerHTML='';SKILLS.forEach(function(s){var ab=bodyMod(s[1]),tr=skillOn[s[0]],tot=ab+(tr?2:0);var row=document.createElement('div');row.className='sk';row.innerHTML='<span><span class="dot'+(tr?' on':'')+'"></span>'+s[0]+'</span><span class="bonus">'+signed(tot)+'</span>';row.onclick=function(){say(s[0]+' '+signed(tot)+' = '+ABNAME[s[1]]+' '+signed(ab)+(tr?' + prof +2 ('+WHY[s[0]]+')':' + 0 not trained'))};box.appendChild(row)});$('pperc').textContent=10+bodyMod('wis')+(skillOn.Perception?2:0);$('pins').textContent=10+bodyMod('wis')+(skillOn.Insight?2:0)}
 function paintInv(){$('gold').textContent=gold}
 function chgGold(n){gold=Math.max(0,gold+n);paintInv();save()}
