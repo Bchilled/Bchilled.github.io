@@ -105,10 +105,19 @@ textarea{min-height:110px}
     <section id="p-checks" class="hide"><div id="checks"></div></section>
     <section id="p-pack" class="hide">
       <h3>Worn</h3><ul id="worn"></ul>
-      <h3>Bag</h3><div id="bag"></div>
-      <p><input id="newItem" placeholder="Add an item"></p>
-      <p><button type="button" onclick="addItem()">Add</button>
-      Shared gold <button type="button" onclick="gold(-1)">-</button> <b id="gp">40</b> <button type="button" onclick="gold(1)">+</button></p>
+      <h3>Tools</h3>
+      <p class="muted">Leatherworker's tools. Trained. In the pack. Used to cut, stitch, and repair hide and leather. Roll d20 + Dexterity +1 + training +2 when the DM asks for leatherwork.</p>
+      <h3>Coins</h3>
+      <p>Gold coins
+        <button type="button" onclick="gold(-1)">-</button>
+        <b id="gp">40</b>
+        <button type="button" onclick="gold(1)">+</button>
+      </p>
+      <p class="muted">Copper, silver, electrum, and platinum exist in the rules. You are only carrying gold coins.</p>
+      <h3>Bag</h3>
+      <div id="bag"></div>
+      <p><input id="newItem" placeholder="Item name"></p>
+      <p><button type="button" onclick="addItem()">Put in bag</button></p>
     </section>
     <section id="p-journal" class="hide">
       <h3>Portrait</h3>
@@ -136,6 +145,6 @@ textarea{min-height:110px}
   </div>
 </div>
 </div>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
