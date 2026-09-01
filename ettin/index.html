@@ -1,1 +1,151 @@
-<placeholder>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Boinker & Oinker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#24160c;--gold:#c4a35a;--blood:#7c1e1e;--parch:#f3e2b8;--skin:#efe0b0}
+*{box-sizing:border-box}
+body{margin:0;background:#0d0906;color:var(--ink);font-family:"IM Fell English",Georgia,serif}
+.wrap{max-width:980px;margin:0 auto}
+.frame{min-height:100vh;background:var(--parch);border:3px double var(--gold)}
+.top{background:#1a1008;color:#f3e2b8;padding:8px 10px 6px}
+.top h1{font-family:Cinzel,serif;margin:0;font-size:1.15rem;letter-spacing:.05em}
+.meta{color:var(--gold);font-size:.78rem}
+.glance{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:6px}
+.box{background:#efe0b0;color:#24160c;border:2px solid #5a3a18;text-align:center;padding:5px 2px}
+.box.hp{border-color:var(--blood);grid-column:span 2}
+.k{font-family:Cinzel,serif;font-size:.52rem;letter-spacing:.07em;text-transform:uppercase;color:#6a4a28}
+.v{font-size:1.2rem;font-weight:700;line-height:1.1}
+.pm{display:flex;justify-content:center;gap:4px;margin-top:3px}
+button{font-family:Cinzel,serif;border:1px solid var(--gold);background:#2a1c10;color:#f3e2b8;padding:8px 6px;cursor:pointer}
+button:hover{background:#3a2814}
+button.on{background:var(--blood);color:#fff}
+.pm button{min-width:32px;padding:3px 0}
+.sheet{padding:8px 10px 120px}
+.navtop{display:none;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px 8px;background:#1a1008}
+.dock{position:sticky;bottom:0;background:#1a1008;padding:6px 8px calc(8px + env(safe-area-inset-bottom));border-top:2px solid var(--gold)}
+.heads{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px}
+.navbot{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.navbot button,.navtop button{padding:10px 2px;font-size:.68rem}
+@media(min-width:801px){
+  .navtop{display:grid}
+  .navbot{display:none}
+  .sheet{padding-bottom:88px}
+}
+@media(max-width:700px){
+  .glance{grid-template-columns:repeat(3,1fr)}
+  .box.hp{grid-column:span 3}
+}
+.roll{min-height:40px;background:#fff6d8;border:1px solid var(--blood);padding:7px;margin:6px 0;white-space:pre-wrap;font-size:.88rem}
+.abs{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin:6px 0}
+@media(max-width:700px){.abs{grid-template-columns:repeat(3,1fr)}}
+.ab{background:var(--skin);border:2px solid #5a3a18;text-align:center;padding:5px 2px;cursor:pointer}
+.mod{font-size:1.15rem;font-weight:700}.sc,.sv{font-size:.66rem;color:#6a4a28}.sv.p{color:var(--blood);font-weight:700}
+.sk{display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid #d2b87a;cursor:pointer;gap:8px}
+.why{display:block;font-size:.72rem;color:#6a4a28}
+.dot{width:12px;height:12px;border:2px solid #3a2412;border-radius:50%;display:inline-block;margin-right:7px;vertical-align:middle}.dot.on{background:var(--blood)}
+h3{font-family:Cinzel,serif;color:var(--blood);font-size:.78rem;letter-spacing:.08em;margin:10px 0 4px}
+.use{display:flex;justify-content:space-between;align-items:center;gap:6px;background:var(--skin);border:1px solid #5a3a18;padding:7px;margin:5px 0;flex-wrap:wrap}
+.tag{font-size:.78rem;color:#6a4a28}
+.hide{display:none}
+textarea,input{font:inherit;box-sizing:border-box}
+textarea{width:100%;min-height:90px;background:#fff8e0;border:1px solid #5a3a18;padding:6px}
+input.line{width:100%;padding:6px;background:#fff8e0;border:1px solid #5a3a18;margin:4px 0}
+ul.gear{margin:0;padding-left:1.2rem}
+.btns{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+button.act{background:#3a2412}button.danger{background:var(--blood)}
+</style>
+</head>
+<body>
+<div class="wrap"><div class="frame">
+<div class="top">
+  <h1 id="cname">OINKER</h1>
+  <div class="meta" id="csub">Half-giant Ettin Barbarian 2, Hermit</div>
+  <div class="glance">
+    <div class="box hp">
+      <div class="k" id="hplab">Hit Points</div>
+      <div class="v"><span id="hp">23</span>/<span id="hpmax">23</span></div>
+      <div class="pm"><button type="button" onclick="chgHP(-1)">-</button><button type="button" onclick="chgHP(1)">+</button></div>
+    </div>
+    <div class="box" onclick="explainAC()"><div class="k">Armor Class</div><div class="v" id="acv">13</div></div>
+    <div class="box" onclick="explainInit()"><div class="k">Initiative</div><div class="v" id="initv">+1</div></div>
+    <div class="box" onclick="explainSpeed()"><div class="k">Speed</div><div class="v" id="spdv">30</div></div>
+    <div class="box" onclick="whyPerc()"><div class="k">Passive Perception</div><div class="v" id="pperc">12</div></div>
+  </div>
+</div>
+<div class="navtop">
+  <button type="button" class="on" id="tcombat" onclick="tab('combat')">Combat</button>
+  <button type="button" id="tactions" onclick="tab('actions')">Actions</button>
+  <button type="button" id="tskills" onclick="tab('skills')">Skills</button>
+  <button type="button" id="tinventory" onclick="tab('inventory')">Gear</button>
+  <button type="button" id="talbum" onclick="tab('album')">Notes</button>
+</div>
+<div class="sheet">
+  <div class="roll" id="rollout">Tap a number. You roll the dice. This page only shows what to add and where that number comes from.</div>
+  <div id="pcombat">
+    <div class="btns">
+      <button type="button" class="act" onclick="chgHP(-5)">Took 5</button>
+      <button type="button" class="act danger" onclick="chgHP(-10)">Took 10</button>
+      <button type="button" class="act" onclick="chgHP(5)">Healed 5</button>
+      <button type="button" class="act" onclick="fullHeal()">Healed full</button>
+    </div>
+    <div class="abs" id="abs"></div>
+    <div class="glance" style="grid-template-columns:repeat(3,1fr)">
+      <div class="box"><div class="k">Temp HP</div><div class="v" id="tempv">0</div><div class="pm"><button type="button" onclick="chgTemp(-1)">-</button><button type="button" onclick="chgTemp(1)">+</button></div></div>
+      <div class="box"><div class="k">Max HP</div><div class="v" id="maxv">23</div><div class="pm"><button type="button" onclick="chgMax(-1)">-</button><button type="button" onclick="chgMax(1)">+</button></div></div>
+      <div class="box" onclick="say(hdLine()+'. Short-rest healing dice. Not an attack.')"><div class="k">Hit Dice</div><div class="v" style="font-size:1.05rem" id="hdbox">2d12</div></div>
+    </div>
+    <p class="tag">Large · Darkvision 60 ft · Passive Insight <span id="pins">10</span></p>
+  </div>
+  <div id="pactions" class="hide"><div id="acts"></div></div>
+  <div id="pskills" class="hide"><h3>Skill checks</h3><div id="skills"></div></div>
+  <div id="pinventory" class="hide">
+    <h3>On the body</h3><ul class="gear" id="gear"></ul>
+    <h3>Bag</h3><div id="bag"></div>
+    <p><input class="line" id="newitem" placeholder="potion, rope, sheep..."></p>
+    <p><button type="button" class="act" onclick="addItem()">Add to bag</button></p>
+    <p>Shared gold <button type="button" class="act" onclick="chgGold(-1)">-</button> <span id="gold">40</span> gp <button type="button" class="act" onclick="chgGold(1)">+</button></p>
+  </div>
+  <div id="palbum" class="hide">
+    <h3>This head</h3>
+    <p id="headfact"></p>
+    <p>Oinker barbarian <button type="button" class="act" onclick="track(-1,'o')">-</button> <b id="olvl">2</b> <button type="button" class="act" onclick="track(1,'o')">+</button></p>
+    <p>Boinker fighter <button type="button" class="act" onclick="track(-1,'b')">-</button> <b id="blvl">2</b> <button type="button" class="act" onclick="track(1,'b')">+</button></p>
+    <p><button type="button" class="act" onclick="showNext()">What does the next level give?</button></p>
+    <p class="tag" id="nextbox">Both heads are level 2 now.</p>
+    <h3>Share with the other phone</h3>
+    <p class="tag" id="syncnote">Same URL is not enough. Copy a table link after changes.</p>
+    <div class="btns">
+      <button type="button" class="act" onclick="copyLink()">Copy table link</button>
+      <button type="button" class="act" onclick="copyCode()">Copy table code</button>
+      <button type="button" class="act" onclick="loadCode()">Load pasted code</button>
+    </div>
+    <textarea id="sharebox" placeholder="Paste a table code or a full table link, then tap Load pasted code"></textarea>
+    <h3>Session notes</h3>
+    <textarea id="notes" placeholder="Hole in the mountain. Want a flock of sheep."></textarea>
+    <p><button type="button" class="act" onclick="shortRest()">Short rest</button>
+    <button type="button" class="act" onclick="longRest()">Long rest</button></p>
+    <h3>Backstory</h3>
+    <p class="tag">Hermit philosophers from a mountain hole. After a hungry year they came to town for sheep, or coin that can buy sheep. Oinker is joyful. Boinker is angry and hungry. Alignment: Chaotic Neutral. Languages: Common, Giant.</p>
+  </div>
+</div>
+<div class="dock">
+  <div class="heads">
+    <button type="button" id="btnB" onclick="showHead('b')">BOINKER<br><span class="tag">left head · left arm</span></button>
+    <button type="button" id="btnO" onclick="showHead('o')">OINKER<br><span class="tag">right head · right arm</span></button>
+  </div>
+  <div class="navbot">
+    <button type="button" class="on" id="bcombat" onclick="tab('combat')">Combat</button>
+    <button type="button" id="bactions" onclick="tab('actions')">Actions</button>
+    <button type="button" id="bskills" onclick="tab('skills')">Skills</button>
+    <button type="button" id="binventory" onclick="tab('inventory')">Gear</button>
+    <button type="button" id="balbum" onclick="tab('album')">Notes</button>
+  </div>
+</div>
+</div></div>
+<script src="app.js"></script>
+</body>
+</html>
