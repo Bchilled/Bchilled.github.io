@@ -1,37 +1,53 @@
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Boinker & Oinker</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
 <style>
-body{font-family:Georgia,serif;background:#121418;color:#1c1208;padding:8px;margin:0}
-.wrap{max-width:440px;margin:0 auto}
-button{border:1px solid #c9a227;background:#2a2e34;color:#f3e6c9;padding:8px 6px;cursor:pointer}
-button.on{background:#9b2c2c;color:#fff}
-.who{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
-.header{background:#16181c;color:#f3e6c9;padding:8px;border:1px solid #3a3f47}
-.header h1{margin:0;font-size:1.25rem}.meta{color:#c9b48a;font-size:.75rem}
-.nav{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:6px 0}
-.nav button{padding:8px 2px;font-size:.65rem}
-.sheet{background:#f3e6c9;border:1px solid #3a2412;padding:8px}
-.row3{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:6px}
-.box{background:#fff8e4;border:2px solid #3a2412;text-align:center;padding:6px 4px}
-.k{font-size:.6rem;color:#6a543c}.v{font-size:1.3rem;font-weight:700}
-.hp{border-color:#9b2c2c}
-.pm{display:flex;justify-content:center;gap:6px;margin-top:4px}
-.pm button{min-width:40px;background:#3a2412}
-.btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0}
-button.act{background:#3a2412}button.danger{background:#9b2c2c}
-.abs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0}
-.ab{background:#fff8e4;border:2px solid #3a2412;text-align:center;padding:4px;cursor:help}
-.mod{font-size:1.25rem;font-weight:700}.sc,.sv{font-size:.7rem;color:#6a543c}.sv.p{color:#9b2c2c;font-weight:700}
-.roll{color:#3a2412;font-size:.85rem;background:#fff8e4;border:1px solid #9b2c2c;padding:6px;margin-bottom:6px;white-space:pre-wrap}
-.sk{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #ead7b0}
-.dot{width:14px;height:14px;border:2px solid #3a2412;border-radius:50%;display:inline-block;margin-right:8px}.dot.on{background:#9b2c2c}
-h3{color:#9b2c2c;font-size:.85rem;margin:8px 0 4px}
-.use{display:flex;justify-content:space-between;align-items:center;gap:6px;background:#fff8e4;border:1px solid #3a2412;padding:6px;margin:4px 0;flex-wrap:wrap}
-.tag{font-size:.75rem;color:#6a543c}
-.hide{display:none}textarea,input{font:inherit;box-sizing:border-box}textarea{width:100%;min-height:70px}
-input#newitem{width:58%;padding:6px}ul.gear{margin:0;padding-left:1.1rem}
-</style></head><body><div class="wrap">
+:root{--ink:#24160c;--gold:#c4a35a;--blood:#7c1e1e;--parch:#f3e2b8;--skin:#efe0b0;--wood:#140c08}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#2a1a10,#0d0906 70%);color:var(--ink);font-family:"IM Fell English",Georgia,serif}
+.wrap{max-width:980px;margin:0 auto;padding:10px}
+.frame{border:3px double var(--gold);box-shadow:0 0 0 6px #1a1008,0 12px 40px #000;background:#1a1008;padding:8px}
+.who{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+button{font-family:Cinzel,serif;border:1px solid var(--gold);background:#2a1c10;color:#f3e2b8;padding:9px 8px;cursor:pointer}
+button:hover{background:#3a2814}
+button.on{background:var(--blood);color:#fff}
+.header{background:linear-gradient(#2b1b12,#1a1008);color:#f3e2b8;padding:10px 12px;border:1px solid #5a4020}
+.header h1{font-family:Cinzel,serif;margin:0;font-size:1.45rem;letter-spacing:.06em}
+.meta{color:var(--gold);font-size:.82rem;margin-top:2px}
+.flavor{font-style:italic;color:#d7c49a;font-size:.9rem;margin-top:4px}
+.nav{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:8px 0}
+.nav button{padding:10px 2px;font-size:.72rem}
+.sheet{background:var(--parch);background-image:linear-gradient(180deg,rgba(255,255,255,.18),transparent 40%);border:2px solid #6a4a20;padding:10px}
+.glance{display:grid;grid-template-columns:1.4fr repeat(4,1fr);gap:6px}
+@media(max-width:700px){.glance{grid-template-columns:1.3fr 1fr 1fr}.g2{grid-column:span 1}}
+.box{background:var(--skin);border:2px solid #5a3a18;text-align:center;padding:7px 4px}
+.box.hp{border-color:var(--blood);background:#f7e6c4}
+.k{font-family:Cinzel,serif;font-size:.58rem;letter-spacing:.08em;color:#6a4a28;text-transform:uppercase}
+.v{font-size:1.35rem;font-weight:700;line-height:1.1}
+.pm{display:flex;justify-content:center;gap:5px;margin-top:4px}
+.pm button{min-width:36px;padding:4px 0;background:#3a2412}
+.btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:8px 0}
+button.act{background:#3a2412}button.danger{background:var(--blood)}
+.abs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:8px 0}
+@media(max-width:700px){.abs{grid-template-columns:repeat(3,1fr)}}
+.ab{background:var(--skin);border:2px solid #5a3a18;text-align:center;padding:6px 2px;cursor:pointer}
+.mod{font-size:1.25rem;font-weight:700}.sc,.sv{font-size:.68rem;color:#6a4a28}.sv.p{color:var(--blood);font-weight:700}
+.roll{min-height:52px;color:var(--ink);font-size:.92rem;background:#fff6d8;border:1px solid var(--blood);padding:8px;margin-bottom:8px;white-space:pre-wrap}
+.desk{display:grid;grid-template-columns:1fr;gap:8px}
+@media(min-width:860px){.desk{grid-template-columns:1.15fr .85fr}}
+.sk{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #d2b87a;cursor:pointer}
+.dot{width:13px;height:13px;border:2px solid #3a2412;border-radius:50%;display:inline-block;margin-right:8px}.dot.on{background:var(--blood)}
+h3{font-family:Cinzel,serif;color:var(--blood);font-size:.8rem;letter-spacing:.08em;margin:10px 0 4px}
+.use{display:flex;justify-content:space-between;align-items:center;gap:6px;background:var(--skin);border:1px solid #5a3a18;padding:7px;margin:5px 0;flex-wrap:wrap}
+.tag{font-size:.78rem;color:#6a4a28}
+.hide{display:none}textarea,input{font:inherit;box-sizing:border-box}textarea{width:100%;min-height:70px;background:#fff8e0;border:1px solid #5a3a18}
+input#newitem{width:58%;padding:6px;background:#fff8e0;border:1px solid #5a3a18}ul.gear{margin:0;padding-left:1.1rem}
+</style></head><body><div class="wrap"><div class="frame">
 <div class="who"><button type="button" id="btnB" onclick="showHead('b')">BOINKER</button><button type="button" id="btnO" onclick="showHead('o')">OINKER</button></div>
-<div class="header"><h1 id="cname">OINKER</h1><div class="meta" id="csub"></div></div>
+<div class="header">
+<h1 id="cname">OINKER</h1>
+<div class="meta" id="csub"></div>
+<div class="flavor" id="flavor"></div>
+</div>
 <div class="nav">
 <button type="button" class="on" id="tcombat" onclick="tab('combat')">Combat</button>
 <button type="button" id="tactions" onclick="tab('actions')">Actions</button>
@@ -39,20 +55,16 @@ input#newitem{width:58%;padding:6px}ul.gear{margin:0;padding-left:1.1rem}
 <button type="button" id="tinventory" onclick="tab('inventory')">Gear</button>
 <button type="button" id="talbum" onclick="tab('album')">Notes</button>
 </div>
-<div class="sheet"><div class="roll" id="rollout">Tap a number. You roll the dice.</div>
+<div class="sheet">
+<div class="roll" id="rollout">What the DM usually asks is in the top row.</div>
 <div id="pcombat">
-<div class="row3">
-<div class="box hp"><div class="k" id="hplab">HP</div><div class="v"><span id="hp">23</span>/<span id="hpmax">23</span></div>
+<div class="glance">
+<div class="box hp"><div class="k" id="hplab">Hit Points</div><div class="v"><span id="hp">23</span>/<span id="hpmax">23</span></div>
 <div class="pm"><button type="button" onclick="chgHP(-1)">-</button><button type="button" onclick="chgHP(1)">+</button></div></div>
-<div class="box"><div class="k">TEMP</div><div class="v" id="tempv">0</div>
-<div class="pm"><button type="button" onclick="chgTemp(-1)">-</button><button type="button" onclick="chgTemp(1)">+</button></div></div>
-<div class="box"><div class="k">MAX</div><div class="v" id="maxv">23</div>
-<div class="pm"><button type="button" onclick="chgMax(-1)">-</button><button type="button" onclick="chgMax(1)">+</button></div></div>
-</div>
-<div class="row3" style="margin-top:6px">
-<div class="box" onclick="say('Armor Class 13. Enemy needs 13 to hit. 10+Dex+1+Con+2.')"><div class="k">Armor Class</div><div class="v">13</div></div>
-<div class="box" onclick="say('Initiative. Roll d20, add +1, tell the DM. Who goes first.')"><div class="k">Initiative</div><div class="v">+1</div></div>
-<div class="box" onclick="say('Speed 40. Human 30. Ettin body 40.')"><div class="k">Speed</div><div class="v">40</div></div>
+<div class="box" onclick="say('Armor Class 13. The enemy d20+bonus must reach 13 to hit. 10 + Dex +1 + Con +2.')"><div class="k">Armor Class</div><div class="v">13</div></div>
+<div class="box" onclick="say('Initiative. Start of fight: roll d20, add +1, tell the DM.')"><div class="k">Initiative</div><div class="v">+1</div></div>
+<div class="box" onclick="say('Speed 40 feet each turn. Human walk is 30. Ettin body is 40.')"><div class="k">Speed</div><div class="v">40</div></div>
+<div class="box g2" onclick="whyPerc()"><div class="k">Pass. Perception</div><div class="v" id="pperc">10</div></div>
 </div>
 <div class="btns">
 <button type="button" class="act" onclick="chgHP(-5)">Took 5</button>
@@ -60,14 +72,22 @@ input#newitem{width:58%;padding:6px}ul.gear{margin:0;padding-left:1.1rem}
 <button type="button" class="act" onclick="chgHP(5)">Healed 5</button>
 <button type="button" class="act" onclick="fullHeal()">Healed full</button>
 </div>
+<div class="desk">
+<div>
 <div class="abs" id="abs"></div>
-<div class="row3">
-<div class="box" onclick="whyPerc()"><div class="k">Passive Perception</div><div class="v" id="pperc">10</div></div>
-<div class="box" onclick="whyIns()"><div class="k">Passive Insight</div><div class="v" id="pins">10</div></div>
-<div class="box" onclick="say(HEADS[who].hd+'. Short rest heal dice. Not an attack.')"><div class="k">Hit Dice</div><div class="v" style="font-size:1rem" id="hdbox">2d12</div></div>
+<div class="glance" style="grid-template-columns:repeat(3,1fr)">
+<div class="box"><div class="k">Temp HP</div><div class="v" id="tempv">0</div><div class="pm"><button type="button" onclick="chgTemp(-1)">-</button><button type="button" onclick="chgTemp(1)">+</button></div></div>
+<div class="box"><div class="k">Max HP</div><div class="v" id="maxv">23</div><div class="pm"><button type="button" onclick="chgMax(-1)">-</button><button type="button" onclick="chgMax(1)">+</button></div></div>
+<div class="box" onclick="say(HEADS[who].hd+'. Short rest healing dice. Not an attack.')"><div class="k">Hit Dice</div><div class="v" style="font-size:1.05rem" id="hdbox">2d12</div></div>
+</div>
+<p class="tag">Half-giant · Large · Darkvision 60 · Passive Insight <span id="pins">10</span></p>
+</div>
+<div>
+<p class="tag">Open Actions to swing. This column is the body.</p>
 </div>
 </div>
-<div id="pactions" class="hide"><p class="tag">Attack action: pick one melee weapon.</p><div id="acts"></div></div>
+</div>
+<div id="pactions" class="hide"><p class="tag">Your Action is Attack. Pick one melee weapon.</p><div id="acts"></div></div>
 <div id="pskills" class="hide"><h3>Skill checks</h3><div id="skills"></div></div>
 <div id="pinventory" class="hide">
 <h3>Worn</h3><ul class="gear" id="gear"></ul>
@@ -80,14 +100,14 @@ input#newitem{width:58%;padding:6px}ul.gear{margin:0;padding-left:1.1rem}
 <p>Oinker barbarian <button type="button" class="act" onclick="track(-1,'o')">-</button> <b id="olvl">2</b> <button type="button" class="act" onclick="track(1,'o')">+</button></p>
 <p>Boinker fighter <button type="button" class="act" onclick="track(-1,'b')">-</button> <b id="blvl">2</b> <button type="button" class="act" onclick="track(1,'b')">+</button></p>
 <p><button type="button" class="act" onclick="showNext()">What does the next level give?</button></p>
-<p class="tag" id="nextbox">Next level lists HP, path/specialty, and new actions. + only tracks the number unless you also raise Max HP.</p>
-<textarea id="notes" placeholder="Subclass, feats, session notes"></textarea>
+<p class="tag" id="nextbox">Track the number, or tap next level for the choice list through 20.</p>
+<textarea id="notes" placeholder="Path, feat, session notes"></textarea>
 <p><button type="button" style="font-size:.75rem" onclick="shortRest()">Short rest</button>
 <button type="button" style="font-size:.75rem" onclick="longRest()">Long rest</button></p>
-</div></div></div>
+</div></div></div></div>
 <script>
 const WHY={Athletics:'Barbarian',Survival:'Barbarian','Animal Handling':'Fighter',Perception:'Fighter',Medicine:'Hermit',Religion:'Hermit'};
-const HEADS={o:{name:'OINKER',sub:'Half-giant Ettin Barbarian 2, Hermit',int:8,wis:10,cha:14,cls:'barb',hd:'2d12',fact:'Right head, right arm.',gear:['Greatsword','Battleaxe','Hay wig','Purple shell','Harness','Loincloth']},b:{name:'BOINKER',sub:'Half-giant Ettin Fighter 2, Hermit',int:12,wis:12,cha:10,cls:'fight',hd:'2d10',fact:'Left head, left arm.',gear:['Brick mace','Flail','Black helmet','Harness','Loincloth']}};
+const HEADS={o:{name:'OINKER',sub:'Half-giant Ettin Barbarian 2, Hermit',int:8,wis:10,cha:14,cls:'barb',hd:'2d12',fact:'Right head and right arm. Hay wig, berry stain, purple shell over the right eye. Soft wool body. Grins at everything.',gear:['Greatsword','Battleaxe','Hay wig','Purple shell','Harness','Loincloth']},b:{name:'BOINKER',sub:'Half-giant Ettin Fighter 2, Hermit',int:12,wis:12,cha:10,cls:'fight',hd:'2d10',fact:'Left head and left arm. Black oily helmet over the left eye. Hungry and angry. Wants sheep for the hole in the mountain.',gear:['Brick mace','Flail','Black helmet','Harness','Loincloth']}};
 const SKILLS=[['Athletics','str',true],['Acrobatics','dex',false],['Sleight of Hand','dex',false],['Stealth','dex',false],['Arcana','int',false],['History','int',false],['Investigation','int',false],['Nature','int',false],['Religion','int',true],['Animal Handling','wis',true],['Insight','wis',false],['Medicine','wis',true],['Perception','wis',true],['Survival','wis',true],['Deception','cha',false],['Intimidation','cha',false],['Performance','cha',false],['Persuasion','cha',false]];
 const ABNAME={str:'Str',dex:'Dex',int:'Int',wis:'Wis',cha:'Cha'};
 const $=function(id){return document.getElementById(id)};
@@ -101,54 +121,24 @@ function signed(n){return (n>=0?'+':'')+n}
 function bodyMod(ab){if(ab==='str')return 3;if(ab==='dex')return 1;if(ab==='int')return mod(HEADS[who].int);if(ab==='wis')return mod(HEADS[who].wis);if(ab==='cha')return mod(HEADS[who].cha);return 0}
 function tab(id){['combat','actions','skills','inventory','album'].forEach(function(x){$('p'+x).className=x===id?'':'hide';$('t'+x).className=x===id?'on':'';})}
 function paintHP(){var p=cur();$('hplab').textContent=HEADS[who].name+' HP';$('hp').textContent=p.hp;$('hpmax').textContent=p.max;$('tempv').textContent=p.temp;$('maxv').textContent=p.max;$('hdbox').textContent=HEADS[who].hd}
-function paintActs(){var h='<h3>Melee attacks</h3>';if((who==='o'&&oLv>=5)||(who==='b'&&bLv>=5))h+='<p class="tag">Extra Attack: two weapon swings when you take Attack.</p>';if(HEADS[who].cls==='barb'){h+='<div class="use"><div><b>Greatsword</b><div class="tag">To Hit +5. Damage 2d6+3</div></div><button type="button" class="act" onclick="showAtk(\'Greatsword\',\'2d6\')">How</button></div>';h+='<div class="use"><div><b>Battleaxe</b><div class="tag">To Hit +5. Damage 1d8+3</div></div><button type="button" class="act" onclick="showAtk(\'Battleaxe\',\'1d8\')">How</button></div>';h+='<h3>Bonus actions</h3><div class="use"><div><b>Rage</b></div><button type="button" class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';h+='<h3>Other</h3><div class="use"><div><b>Reckless Attack</b></div><button type="button" class="act '+(reckless?'danger':'')+'" onclick="doReck()">'+(reckless?'ON':'off')+'</button></div>';}else{h+='<div class="use"><div><b>Brick mace</b><div class="tag">To Hit +5. Damage 1d6+3</div></div><button type="button" class="act" onclick="showAtk(\'Brick mace\',\'1d6\')">How</button></div>';h+='<div class="use"><div><b>Flail</b><div class="tag">To Hit +5. Damage 1d8+3</div></div><button type="button" class="act" onclick="showAtk(\'Flail\',\'1d8\')">How</button></div>';h+='<h3>Bonus actions</h3><div class="use"><div><b>Second Wind</b></div><button type="button" class="act" onclick="doSW()">'+sw+'/1</button></div>';h+='<h3>Other</h3><div class="use"><div><b>Action Surge</b></div><button type="button" class="act" onclick="doSurge()">'+surge+'/1</button></div>';}$('acts').innerHTML=h}
+function paintActs(){var h='<h3>Melee attacks</h3>';if((who==='o'&&oLv>=5)||(who==='b'&&bLv>=5))h+='<p class="tag">Extra Attack: two swings on the Attack action.</p>';if(HEADS[who].cls==='barb'){h+='<div class="use"><div><b>Greatsword</b><div class="tag">To Hit +5 · Damage 2d6+3</div></div><button type="button" class="act" onclick="showAtk(\'Greatsword\',\'2d6\')">How</button></div>';h+='<div class="use"><div><b>Battleaxe</b><div class="tag">To Hit +5 · Damage 1d8+3</div></div><button type="button" class="act" onclick="showAtk(\'Battleaxe\',\'1d8\')">How</button></div>';h+='<h3>Bonus actions</h3><div class="use"><div><b>Rage</b></div><button type="button" class="act '+(raging?'danger':'')+'" onclick="doRage()">'+rage+'/2</button></div>';h+='<h3>Other</h3><div class="use"><div><b>Reckless Attack</b></div><button type="button" class="act '+(reckless?'danger':'')+'" onclick="doReck()">'+(reckless?'ON':'off')+'</button></div>';}else{h+='<div class="use"><div><b>Brick mace</b><div class="tag">To Hit +5 · Damage 1d6+3</div></div><button type="button" class="act" onclick="showAtk(\'Brick mace\',\'1d6\')">How</button></div>';h+='<div class="use"><div><b>Flail</b><div class="tag">To Hit +5 · Damage 1d8+3</div></div><button type="button" class="act" onclick="showAtk(\'Flail\',\'1d8\')">How</button></div>';h+='<h3>Bonus actions</h3><div class="use"><div><b>Second Wind</b></div><button type="button" class="act" onclick="doSW()">'+sw+'/1</button></div>';h+='<h3>Other</h3><div class="use"><div><b>Action Surge</b></div><button type="button" class="act" onclick="doSurge()">'+surge+'/1</button></div>';}$('acts').innerHTML=h}
 function showAtk(n,w){var x=(raging&&HEADS[who].cls==='barb')?'\n5. Add +2 Rage.':'';say(n+'\n1. Attack action.\n2. Roll a d20.\n3. Add +5. Tell the DM.\n4. If hit, roll '+w+', add +3.'+x)}
-function whyPerc(){var w=bodyMod('wis'),p=skillOn.Perception?2:0;say('Passive Perception '+(10+w+p)+' = 10 + Wis '+signed(w)+(p?' + prof +2':''))}
-function whyIns(){var w=bodyMod('wis');say('Passive Insight '+(10+w)+' = 10 + Wis '+signed(w))}
+function whyPerc(){var w=bodyMod('wis'),p=skillOn.Perception?2:0;say('Passive Perception '+(10+w+p)+'. The DM uses this when you are not searching.')}
+function whyIns(){var w=bodyMod('wis');say('Passive Insight '+(10+w)+'.')}
 function doRage(){if(!raging){if(rage<=0){say('No Rage');return}rage-=1;raging=true;say('Rage on. +2 damage after a hit.')}else{raging=false;say('Rage off')}paintActs();save()}
 function doReck(){reckless=!reckless;paintActs();save();say(reckless?'Reckless on. Two d20s.':'Reckless off')}
 function doSW(){if(sw<=0){say('Second Wind used');return}sw-=1;say('Second Wind. Roll 1d10+2. Tap Healed.');paintActs();save()}
 function doSurge(){if(surge<=0){say('Surge used');return}surge-=1;say('Action Surge. One more Attack action.');paintActs();save()}
 function shortRest(){if(!confirm('Short rest?'))return;if(who==='b'){sw=1;surge=1}raging=false;paintActs();say('Short rest');save()}
 function longRest(){if(!confirm('Long rest? HP fills.'))return;var p=cur();p.hp=p.max;p.temp=0;if(who==='o'){rage=2;raging=false;reckless=false}else{sw=1;surge=1}paintHP();paintActs();say('Long rest');save()}
-function nextText(cls,lv){
- var n=lv+1, hp=cls==='barb'?9:8;
- var g='';
- if(cls==='barb'){
-  if(n===3)g='CHOOSE Primal Path: Berserker, Totem, Zealot, Ancestral Guardian, Storm Herald, Wild Magic.';
-  else if([4,8,12,16,19].indexOf(n)>=0)g='CHOOSE +2 Strength, +2 Constitution, +1/+1, or a feat.';
-  else if(n===5)g='Extra Attack (two swings). Fast Movement.';
-  else if(n===6||n===10||n===14)g='Path feature.';
-  else if(n===7)g='Feral Instinct.';
-  else if(n===9)g='Brutal Critical.';
-  else if(n===11)g='Relentless Rage.';
-  else if(n===13)g='Brutal Critical 2.';
-  else if(n===15)g='Persistent Rage.';
-  else if(n===17)g='Brutal Critical 3. 6 Rages.';
-  else if(n===18)g='Indomitable Might.';
-  else if(n===20)g='Primal Champion. Unlimited Rage.';
-  else g='See barbarian table. Epic after 20: ask DM.';
- } else {
-  if(n===3)g='CHOOSE Martial Archetype: Champion, Battle Master, Eldritch Knight, Samurai, Cavalier, Rune Knight.';
-  else if([4,6,8,12,14,16,19].indexOf(n)>=0)g='CHOOSE +2 Strength, +2 Constitution, +1/+1, or a feat.';
-  else if(n===5)g='Extra Attack (two swings).';
-  else if(n===7||n===10||n===15||n===18)g='Archetype feature.';
-  else if(n===9)g='Indomitable 1/day.';
-  else if(n===11)g='Extra Attack (three swings).';
-  else if(n===13)g='Indomitable 2/day.';
-  else if(n===17)g='Action Surge twice. Indomitable 3.';
-  else if(n===20)g='Extra Attack (four swings).';
-  else g='See fighter table. Epic after 20: ask DM.';
- }
- return 'Next: level '+n+'. Average HP +'+hp+' (or roll hit die +2). '+g;
-}
-function showNext(){var t=HEADS[who].name+' is level '+(who==='o'?oLv:bLv)+'. '+nextText(HEADS[who].cls, who==='o'?oLv:bLv);$('nextbox').textContent=t;say(t)}
-function track(d,w){if(w==='o'){oLv=Math.max(1,Math.min(30,oLv+d));HEADS.o.hd=oLv+'d12';HEADS.o.sub='Half-giant Ettin Barbarian '+oLv+', Hermit';}else{bLv=Math.max(1,Math.min(30,bLv+d));HEADS.b.hd=bLv+'d10';HEADS.b.sub='Half-giant Ettin Fighter '+bLv+', Hermit';}$('olvl').textContent=oLv;$('blvl').textContent=bLv;if(w===who){$('csub').textContent=HEADS[w].sub;paintHP();paintActs()}save();say((w==='o'?'Oinker':'Boinker')+' tracked at level '+(w==='o'?oLv:bLv)+'. Raise Max HP yourself if the DM awarded it.');}
-function paintBag(){var h='';bag.forEach(function(it,i){h+='<div class="use"><div><b>'+it.name+'</b> x'+it.qty+'</div><span><button type="button" class="act" onclick="useItem('+i+')">Use</button> <button type="button" class="act" onclick="chgItem('+i+',-1)">-</button> <button type="button" class="act" onclick="chgItem('+i+',1)">+</button></span></div>'});if(!bag.length)h='<p class="tag">Empty. Type a name, Add.</p>';$('bag').innerHTML=h}
+function nextText(cls,lv){var n=lv+1,hp=cls==='barb'?9:8,g='';if(cls==='barb'){if(n===3)g='CHOOSE Primal Path: Berserker, Totem, Zealot, Ancestral Guardian, Storm Herald, Wild Magic.';else if([4,8,12,16,19].indexOf(n)>=0)g='CHOOSE +2 Str, +2 Con, +1/+1, or a feat.';else if(n===5)g='Extra Attack. Fast Movement.';else if(n===20)g='Primal Champion.';else g='See barbarian table, or epic after 20.';}else{if(n===3)g='CHOOSE Archetype: Champion, Battle Master, Eldritch Knight, Samurai, Cavalier, Rune Knight.';else if([4,6,8,12,14,16,19].indexOf(n)>=0)g='CHOOSE +2 Str, +2 Con, +1/+1, or a feat.';else if(n===5)g='Extra Attack.';else if(n===20)g='Four attacks.';else g='See fighter table, or epic after 20.';}return 'Next level '+n+'. HP +'+hp+' average. '+g}
+function showNext(){var t=HEADS[who].name+' level '+(who==='o'?oLv:bLv)+'. '+nextText(HEADS[who].cls,who==='o'?oLv:bLv);$('nextbox').textContent=t;say(t)}
+function track(d,w){if(w==='o'){oLv=Math.max(1,Math.min(30,oLv+d));HEADS.o.hd=oLv+'d12';HEADS.o.sub='Half-giant Ettin Barbarian '+oLv+', Hermit';}else{bLv=Math.max(1,Math.min(30,bLv+d));HEADS.b.hd=bLv+'d10';HEADS.b.sub='Half-giant Ettin Fighter '+bLv+', Hermit';}$('olvl').textContent=oLv;$('blvl').textContent=bLv;if(w===who){$('csub').textContent=HEADS[w].sub;paintHP();paintActs()}save()}
+function paintBag(){var h='';bag.forEach(function(it,i){h+='<div class="use"><div><b>'+it.name+'</b> x'+it.qty+'</div><span><button type="button" class="act" onclick="useItem('+i+')">Use</button> <button type="button" class="act" onclick="chgItem('+i+',-1)">-</button> <button type="button" class="act" onclick="chgItem('+i+',1)">+</button></span></div>'});if(!bag.length)h='<p class="tag">Empty. Add a potion or rope.</p>';$('bag').innerHTML=h}
 function addItem(){var n=($('newitem').value||'').trim();if(!n){say('Type a name');return}var f=null;bag.forEach(function(x){if(x.name.toLowerCase()===n.toLowerCase())f=x});if(f)f.qty+=1;else bag.push({name:n,qty:1});$('newitem').value='';paintBag();save();say('Added '+n)}
 function chgItem(i,n){bag[i].qty=Math.max(0,bag[i].qty+n);if(bag[i].qty===0)bag.splice(i,1);paintBag();save()}
-function useItem(i){var n=bag[i].name;bag[i].qty-=1;if(bag[i].qty<=0)bag.splice(i,1);paintBag();save();var m='Used 1 '+n+'. Tell the DM.';if(/potion|heal/i.test(n))m+=' Roll potion dice. Tap Healed.';say(m)}
-function showHead(w){who=w;var h=HEADS[w];$('btnO').className=w==='o'?'on':'';$('btnB').className=w==='b'?'on':'';$('cname').textContent=h.name;$('csub').textContent=h.sub;$('abs').innerHTML='';[['STR',17,3,5,1],['DEX',13,1,1,0],['CON',15,2,4,1],['INT',h.int,mod(h.int),mod(h.int),0],['WIS',h.wis,mod(h.wis),mod(h.wis),0],['CHA',h.cha,mod(h.cha),mod(h.cha),0]].forEach(function(a){var t=a[0]+' '+a[1]+' mod '+signed(a[2])+'. Save '+signed(a[3])+'. Roll d20 + save when the DM asks.';var d=document.createElement('div');d.className='ab';d.onclick=function(){say(t)};d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';$('abs').appendChild(d)});$('gear').innerHTML=h.gear.map(function(x){return '<li>'+x+'</li>'}).join('');$('headfact').textContent=h.fact;if($('olvl')){$('olvl').textContent=oLv;$('blvl').textContent=bLv}paintHP();paintActs();renderSkills();paintInv();paintBag();localStorage.setItem('ettinWho',w);save()}
+function useItem(i){var n=bag[i].name;bag[i].qty-=1;if(bag[i].qty<=0)bag.splice(i,1);paintBag();save();var m='Used 1 '+n+'. Tell the DM.';if(/potion|heal/i.test(n))m+=' Roll potion dice, then Healed.';say(m)}
+function showHead(w){who=w;var h=HEADS[w];$('btnO').className=w==='o'?'on':'';$('btnB').className=w==='b'?'on':'';$('cname').textContent=h.name;$('csub').textContent=h.sub;$('flavor').textContent=h.fact;$('abs').innerHTML='';[['STR',17,3,5,1],['DEX',13,1,1,0],['CON',15,2,4,1],['INT',h.int,mod(h.int),mod(h.int),0],['WIS',h.wis,mod(h.wis),mod(h.wis),0],['CHA',h.cha,mod(h.cha),mod(h.cha),0]].forEach(function(a){var t=a[0]+' '+a[1]+' modifier '+signed(a[2])+'. Save '+signed(a[3])+'. When the DM says saving throw, d20 + that save.';var d=document.createElement('div');d.className='ab';d.onclick=function(){say(t)};d.innerHTML='<div>'+a[0]+'</div><div class="mod">'+signed(a[2])+'</div><div class="sc">'+a[1]+'</div><div class="sv'+(a[4]?' p':'')+'">save '+signed(a[3])+'</div>';$('abs').appendChild(d)});$('gear').innerHTML=h.gear.map(function(x){return '<li>'+x+'</li>'}).join('');$('headfact').textContent=h.fact;if($('olvl')){$('olvl').textContent=oLv;$('blvl').textContent=bLv}paintHP();paintActs();renderSkills();paintInv();paintBag();localStorage.setItem('ettinWho',w);save()}
 function renderSkills(){var box=$('skills');box.innerHTML='';SKILLS.forEach(function(s){var ab=bodyMod(s[1]),tr=skillOn[s[0]],tot=ab+(tr?2:0);var t=s[0]+' '+signed(tot)+'. Roll d20 and add that.';var row=document.createElement('div');row.className='sk';row.onclick=function(){say(t)};row.innerHTML='<span><span class="dot'+(tr?' on':'')+'"></span>'+s[0]+'</span><span>'+signed(tot)+'</span>';box.appendChild(row)});$('pperc').textContent=10+bodyMod('wis')+(skillOn.Perception?2:0);$('pins').textContent=10+bodyMod('wis')+(skillOn.Insight?2:0)}
 function paintInv(){$('gold').textContent=gold}
 function chgGold(n){gold=Math.max(0,gold+n);paintInv();save()}
