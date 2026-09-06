@@ -36,7 +36,6 @@ button.on{background:var(--blood);color:#fff}
 .abgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .mod{font-size:1.2rem;font-weight:700}
 .sub{font-size:.68rem;color:#5a3f22}
-.save.yes{color:var(--blood);font-weight:700}
 h3{font-family:Cinzel,serif;color:var(--blood);font-size:.78rem;letter-spacing:.1em;margin:12px 0 4px}
 .hide{display:none}
 input,textarea{font:inherit;width:100%;background:#fff8e0;border:1px solid var(--line);padding:6px}
@@ -44,18 +43,8 @@ textarea{min-height:110px}
 .dock{position:sticky;bottom:0;background:var(--dark);padding:6px 8px calc(8px + env(safe-area-inset-bottom));border-top:2px solid var(--gold)}
 .phone-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .dock button,.desk-tabs button{padding:10px 4px;font-size:.68rem}
-@media(min-width:880px){
-  .desk-tabs{display:grid}
-  .phone-tabs{display:none}
-  .body{display:grid;grid-template-columns:250px 1fr;gap:12px;padding-bottom:92px}
-  .rail{display:block}
-  .phone-scores{display:none}
-  .abgrid.railgrid{grid-template-columns:1fr}
-}
-@media(max-width:879px){
-  .hud-grid{grid-template-columns:1fr 1fr}
-  .stat.hp{grid-column:span 2}
-}
+@media(min-width:880px){.desk-tabs{display:grid}.phone-tabs{display:none}.body{display:grid;grid-template-columns:250px 1fr;gap:12px;padding-bottom:92px}.rail{display:block}.phone-scores{display:none}.abgrid.railgrid{grid-template-columns:1fr}}
+@media(max-width:879px){.hud-grid{grid-template-columns:1fr 1fr}.stat.hp{grid-column:span 2}}
 </style>
 </head>
 <body>
@@ -86,10 +75,7 @@ textarea{min-height:110px}
   <button type="button" id="t-journal" onclick="tab('journal')">Journal</button>
 </nav>
 <div class="body">
-  <aside class="rail">
-    <h3>Ability scores</h3>
-    <div class="abgrid railgrid" id="railAbs"></div>
-  </aside>
+  <aside class="rail"><h3>Ability scores</h3><div class="abgrid railgrid" id="railAbs"></div></aside>
   <main>
     <p class="muted" id="say"></p>
     <section id="p-fight"><div id="acts"></div></section>
@@ -117,8 +103,6 @@ textarea{min-height:110px}
       <textarea id="notes"></textarea>
       <p><button type="button" onclick="shortRest()">Short rest</button>
       <button type="button" onclick="longRest()">Long rest</button></p>
-      <h3>This class, levels 1 to 20</h3>
-      <div id="adv" class="muted"></div>
     </section>
   </main>
 </div>
@@ -132,6 +116,6 @@ textarea{min-height:110px}
   </div>
 </div>
 </div>
-<script src="../app.js?v=8"></script>
+<script src="../app.js?v=10"></script>
 </body>
 </html>
