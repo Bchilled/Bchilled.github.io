@@ -30,8 +30,6 @@ button.on{background:var(--blood);color:#fff}
 .card b{font-family:Cinzel,serif;font-size:.85rem}
 .muted{font-size:.78rem;color:#5a3f22;margin:0}
 .row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #d7be86;cursor:pointer}
-.dot{width:11px;height:11px;border:2px solid #3a2412;border-radius:50%;display:inline-block;margin-right:6px}
-.dot.on{background:var(--blood)}
 .ab{border:2px solid var(--line);background:var(--panel);text-align:center;padding:6px 3px;cursor:pointer}
 .abgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .mod{font-size:1.2rem;font-weight:700}
@@ -89,18 +87,15 @@ textarea{min-height:110px}
     <section id="p-checks" class="hide"><div id="checks"></div></section>
     <section id="p-pack" class="hide">
       <h3>Worn</h3><ul id="worn"></ul>
-      <h3>Tools</h3>
-      <p class="muted">Leatherworker's tools. Trained. In the pack.</p>
+      <h3>Tools</h3><p class="muted">Leatherworker's tools. Trained. In the pack.</p>
       <h3>Coins</h3>
       <p>Gold coins <button type="button" onclick="gold(-1)">-</button> <b id="gp">40</b> <button type="button" onclick="gold(1)">+</button></p>
-      <h3>Bag</h3>
-      <div id="bag"></div>
+      <h3>Bag</h3><div id="bag"></div>
       <p><input id="newItem" placeholder="Item name"></p>
       <p><button type="button" onclick="addItem()">Put in bag</button></p>
     </section>
     <section id="p-journal" class="hide">
-      <h3>Notes</h3>
-      <textarea id="notes"></textarea>
+      <h3>Notes</h3><textarea id="notes"></textarea>
       <p><button type="button" onclick="shortRest()">Short rest</button>
       <button type="button" onclick="longRest()">Long rest</button></p>
     </section>
@@ -116,6 +111,7 @@ textarea{min-height:110px}
   </div>
 </div>
 </div>
-<script src="../app.js?v=10"></script>
+<script src="../app.js?v=12"></script>
+<script src="../reset.js?v=2"></script>
 </body>
 </html>
