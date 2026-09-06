@@ -49,16 +49,9 @@ textarea{min-height:110px}
 <div class="page">
 <header class="hud">
   <h1 id="name">BOINKER</h1>
-  <div class="who-line">
-    <span id="line"></span>
-    <span>Level <button type="button" onclick="lvlChg(-1)">-</button> <b id="lv">2</b> <button type="button" onclick="lvlChg(1)">+</button></span>
-  </div>
+  <div class="who-line"><span id="line"></span><span>Level <button type="button" onclick="lvlChg(-1)">-</button> <b id="lv">2</b> <button type="button" onclick="lvlChg(1)">+</button></span></div>
   <div class="hud-grid">
-    <div class="stat hp">
-      <div class="lbl">Hit points</div>
-      <div class="num"><span id="hp">20</span>/<span id="hpMax">20</span></div>
-      <div class="plus"><button type="button" onclick="hp(-1)">-</button><button type="button" onclick="hp(1)">+</button></div>
-    </div>
+    <div class="stat hp"><div class="lbl">Hit points</div><div class="num"><span id="hp">20</span>/<span id="hpMax">20</span></div><div class="plus"><button type="button" onclick="hp(-1)">-</button><button type="button" onclick="hp(1)">+</button></div></div>
     <div class="stat" onclick="explain('ac')"><div class="lbl">Armor class</div><div class="num" id="ac">13</div></div>
     <div class="stat" onclick="explain('init')"><div class="lbl">Initiative</div><div class="num" id="init">+1</div></div>
     <div class="stat" onclick="explain('speed')"><div class="lbl">Speed</div><div class="num">30</div></div>
@@ -101,17 +94,15 @@ textarea{min-height:110px}
     </section>
   </main>
 </div>
-<div class="dock">
-  <div class="phone-tabs">
-    <button type="button" class="on" id="b-fight" onclick="tab('fight')">Fight</button>
-    <button type="button" id="b-scores" onclick="tab('scores')">Scores</button>
-    <button type="button" id="b-checks" onclick="tab('checks')">Checks</button>
-    <button type="button" id="b-pack" onclick="tab('pack')">Pack</button>
-    <button type="button" id="b-journal" onclick="tab('journal')">Journal</button>
-  </div>
-</div>
+<div class="dock"><div class="phone-tabs">
+  <button type="button" class="on" id="b-fight" onclick="tab('fight')">Fight</button>
+  <button type="button" id="b-scores" onclick="tab('scores')">Scores</button>
+  <button type="button" id="b-checks" onclick="tab('checks')">Checks</button>
+  <button type="button" id="b-pack" onclick="tab('pack')">Pack</button>
+  <button type="button" id="b-journal" onclick="tab('journal')">Journal</button>
+</div></div>
 </div>
 <script src="../app.js?v=12"></script>
+<script src="../choices.js?v=1"></script>
 <script src="../reset.js?v=2"></script>
-</body>
-</html>
+</body></html>

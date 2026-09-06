@@ -49,16 +49,9 @@ textarea{min-height:110px}
 <div class="page">
 <header class="hud">
   <h1 id="name">Hmmmable Syrup</h1>
-  <div class="who-line">
-    <span id="line"></span>
-    <span>Level <button type="button" onclick="lvlChg(-1)">-</button> <b id="lv">1</b> <button type="button" onclick="lvlChg(1)">+</button></span>
-  </div>
+  <div class="who-line"><span id="line"></span><span>Level <button type="button" onclick="lvlChg(-1)">-</button> <b id="lv">1</b> <button type="button" onclick="lvlChg(1)">+</button></span></div>
   <div class="hud-grid">
-    <div class="stat hp">
-      <div class="lbl">Hit points</div>
-      <div class="num"><span id="hp">12</span>/<span id="hpMax">12</span></div>
-      <div class="plus"><button type="button" onclick="hp(-1)">-</button><button type="button" onclick="hp(1)">+</button></div>
-    </div>
+    <div class="stat hp"><div class="lbl">Hit points</div><div class="num"><span id="hp">12</span>/<span id="hpMax">12</span></div><div class="plus"><button type="button" onclick="hp(-1)">-</button><button type="button" onclick="hp(1)">+</button></div></div>
     <div class="stat" onclick="explain('ac')"><div class="lbl">Armor class</div><div class="num" id="ac">14</div></div>
     <div class="stat" onclick="explain('init')"><div class="lbl">Initiative</div><div class="num" id="init">+1</div></div>
     <div class="stat" onclick="explain('speed')"><div class="lbl">Speed</div><div class="num">30</div></div>
@@ -82,7 +75,7 @@ textarea{min-height:110px}
       <p class="muted">Temp HP <button type="button" onclick="temp(-1)">-</button> <b id="temp">0</b> <button type="button" onclick="temp(1)">+</button>
       &nbsp; Max HP <button type="button" onclick="maxHp(-1)">-</button> <b id="maxLab">12</b> <button type="button" onclick="maxHp(1)">+</button></p>
       <p class="muted" id="hdLine"></p>
-      <p class="muted">Small Halfling. Brave: advantage vs frightened. Luck: reroll a 1. Nimble: move through a bigger creature's space. Hide behind a larger creature. Languages: Common and Druidic.</p>
+      <p class="muted">Small Halfling. Brave. Luck. Nimble. Hide behind a larger creature. Common and Druidic.</p>
     </section>
     <section id="p-checks" class="hide"><div id="checks"></div></section>
     <section id="p-pack" class="hide">
@@ -95,23 +88,20 @@ textarea{min-height:110px}
       <p><button type="button" onclick="addItem()">Put in bag</button></p>
     </section>
     <section id="p-journal" class="hide">
-      <h3>Notes</h3>
-      <textarea id="notes"></textarea>
+      <h3>Notes</h3><textarea id="notes"></textarea>
       <p><button type="button" onclick="shortRest()">Short rest</button>
       <button type="button" onclick="longRest()">Long rest</button></p>
     </section>
   </main>
 </div>
-<div class="dock">
-  <div class="phone-tabs">
-    <button type="button" class="on" id="b-fight" onclick="tab('fight')">Fight</button>
-    <button type="button" id="b-scores" onclick="tab('scores')">Scores</button>
-    <button type="button" id="b-checks" onclick="tab('checks')">Checks</button>
-    <button type="button" id="b-pack" onclick="tab('pack')">Pack</button>
-    <button type="button" id="b-journal" onclick="tab('journal')">Journal</button>
-  </div>
-</div>
+<div class="dock"><div class="phone-tabs">
+  <button type="button" class="on" id="b-fight" onclick="tab('fight')">Fight</button>
+  <button type="button" id="b-scores" onclick="tab('scores')">Scores</button>
+  <button type="button" id="b-checks" onclick="tab('checks')">Checks</button>
+  <button type="button" id="b-pack" onclick="tab('pack')">Pack</button>
+  <button type="button" id="b-journal" onclick="tab('journal')">Journal</button>
+</div></div>
 </div>
 <script src="app.js?v=1"></script>
-</body>
-</html>
+<script src="choices.js?v=1"></script>
+</body></html>
