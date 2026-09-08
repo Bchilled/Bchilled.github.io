@@ -1,188 +1,22 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>The Island — Design Review</title>
+<title>The Island</title>
 <style>
-:root {
-  --bg:#0f1419; --panel:#1a222c; --text:#e7ecf1; --muted:#9aa7b5;
-  --good:#2f9e44; --bad:#e03131; --accent:#4dabf7; --line:#2a3542;
-  --card:#121820;
-}
-* { box-sizing:border-box; }
-body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background:var(--bg); color:var(--text); }
-.app { display:grid; grid-template-columns: 1fr min(380px, 100%); min-height:100vh; }
-@media (max-width:900px) {
-  .app { grid-template-columns:1fr; }
-  .sidebar { position:sticky; bottom:0; max-height:45vh; border-left:none; border-top:1px solid var(--line); }
-}
-main { padding:1.25rem 1.5rem 4rem; overflow:auto; }
-.sidebar { background:var(--panel); border-left:1px solid var(--line); display:flex; flex-direction:column; max-height:100vh; }
-.side-head { padding:1rem 1rem 0.5rem; border-bottom:1px solid var(--line); }
-.side-head h2 { margin:0 0 0.35rem; font-size:1.05rem; }
-.side-head p { margin:0; color:var(--muted); font-size:0.85rem; }
-.stats { display:flex; gap:0.5rem; margin-top:0.75rem; flex-wrap:wrap; }
-.pill { font-size:0.75rem; padding:0.2rem 0.5rem; border-radius:999px; background:var(--card); color:var(--muted); }
-.pill strong { color:var(--text); }
-.list { overflow:auto; flex:1; padding:0.5rem; }
-.item { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:0.75rem; margin-bottom:0.5rem; }
-.item.good { border-color:var(--good); }
-.item.bad { border-color:var(--bad); }
-.item .id { font-size:0.7rem; color:var(--accent); letter-spacing:0.04em; }
-.item .title { font-weight:600; margin:0.15rem 0 0.35rem; }
-.item .sec { font-size:0.75rem; color:var(--muted); margin-bottom:0.5rem; }
-.btns { display:flex; gap:0.4rem; }
-button { cursor:pointer; border:1px solid var(--line); background:#243041; color:var(--text);
-  border-radius:8px; padding:0.4rem 0.65rem; font-weight:600; }
-button.g:hover, .item.good button.g { background:var(--good); border-color:var(--good); }
-button.b:hover, .item.bad button.b { background:var(--bad); border-color:var(--bad); }
-button.ghost { background:transparent; font-weight:500; color:var(--muted); }
-.side-foot { padding:0.75rem; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:0.4rem; }
-.lede { color:var(--muted); line-height:1.5; max-width:42rem; }
-.loop { line-height:1.7; }
-.callout { margin-top:1.25rem; padding:0.9rem 1rem; border-left:3px solid var(--accent);
-  background:var(--panel); border-radius:0 8px 8px 0; max-width:42rem; }
-.section { margin:2rem 0 1rem; padding-top:1rem; border-top:1px solid var(--line); max-width:42rem; }
-.section h2 { margin:0 0 0.5rem; font-size:1.15rem; }
-.card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:1rem; margin:0.75rem 0; max-width:42rem; }
-.card h3 { margin:0 0 0.35rem; font-size:1rem; }
-.card .meta { font-size:0.8rem; color:var(--accent); }
-.card p { margin:0.4rem 0; color:var(--muted); line-height:1.45; }
-.card .opts { font-size:0.85rem; color:var(--text); }
-.note { font-size:0.8rem; color:var(--muted); }
-textarea { width:100%; min-height:64px; margin-top:0.5rem; border-radius:8px; border:1px solid var(--line);
-  background:var(--bg); color:var(--text); padding:0.5rem; font:inherit; }
+body{font-family:system-ui,sans-serif;background:#0f1419;color:#e7ecf1;margin:0;padding:2rem;line-height:1.5}
+a{color:#4dabf7}
+.card{max-width:36rem;background:#1a222c;border-radius:12px;padding:1.25rem 1.5rem}
 </style>
 </head>
 <body>
-<div class="app">
-  <main id="main"></main>
-  <aside class="sidebar">
-    <div class="side-head">
-      <h2>Checklist</h2>
-      <p>Mark each item Good or Bad. Saved on this device.</p>
-      <div class="stats">
-        <span class="pill">Good <strong id="nGood">0</strong></span>
-        <span class="pill">Bad <strong id="nBad">0</strong></span>
-        <span class="pill">Open <strong id="nOpen">0</strong></span>
-      </div>
-    </div>
-    <div class="list" id="list"></div>
-    <div class="side-foot">
-      <button type="button" id="exportBtn">Copy results for Carlon</button>
-      <button type="button" class="ghost" id="clearBtn">Reset all marks</button>
-      <p class="note" id="exportMsg"></p>
-    </div>
-  </aside>
+<div class="card">
+<h1>The Island</h1>
+<p>PC-first survival game. Design review is <strong>GitHub Issues</strong> (two-way) — not a one-way HTML form.</p>
+<p><a href="https://github.com/Bchilled/theisland/issues?q=is%3Aissue+is%3Aopen+label%3Aneeds-brent">Open tickets waiting on Brent</a></p>
+<p><a href="https://github.com/Bchilled/theisland/issues">All issues</a></p>
+<p>Comment on an issue to answer. Attach pics there. Carlon reads and updates labels.</p>
 </div>
-<script>
-const ITEMS = [{"id": "D01", "section": "Top locks", "title": "Default difficulty", "body": "Easy / Medium / Hard / Roll \u2014 which is the default when someone hits New Game?", "choices": "Easy | Medium | Hard | Roll"}, {"id": "D02", "section": "Top locks", "title": "Inspiration refresh", "body": "One Inspiration reroll per run (harsher) or one per day (slightly softer).", "choices": "1 per run | 1 per day"}, {"id": "D03", "section": "Top locks", "title": "MVP climate", "body": "First shippable island climate. Jungle and mostly-rock are the leading options.", "choices": "jungle | mostly rock | other"}, {"id": "D04", "section": "Top locks", "title": "Show keep-roll DC before rolling?", "body": "On wash-up, does the player see the difficulty class before the keep roll?", "choices": "yes | no | hard mode only"}, {"id": "D05", "section": "Top locks", "title": "Camera", "body": "Presentation for the 2D PC prototype.", "choices": "top-down | isometric"}, {"id": "D06", "section": "Top locks", "title": "MVP win condition", "body": "MVP can be days-survived only (death = lose). Rescue/settle later.", "choices": "days only | stub a win"}, {"id": "NG1", "section": "New game", "title": "Stat assignment", "body": "How does the player get D&D-mapped stats at create?", "choices": "point buy | roll | fixed array"}, {"id": "NG2", "section": "New game", "title": "Failed keep-roll result", "body": "Item fails keep on the beach \u2014 gone forever, or leave scrap parts?", "choices": "gone | scrap"}, {"id": "NG3", "section": "New game", "title": "Must pick exactly 5 items?", "body": "Starting loadout is five items. Can they take fewer?", "choices": "exactly 5 | allow fewer"}, {"id": "NG4", "section": "New game", "title": "See keep-DC before picking items?", "body": "In the item picker, is keep difficulty visible up front?", "choices": "yes | no"}, {"id": "NG5", "section": "New game", "title": "Difficulty changes keep DCs?", "body": "Do Easy/Hard shift keep-roll difficulty?", "choices": "yes | no"}, {"id": "CD1", "section": "Day loop", "title": "Night actions", "body": "Can the player act at night? With penalties?", "choices": "yes with penalties | no | yes free"}, {"id": "CD2", "section": "Day loop", "title": "Action queue", "body": "One action at a time, or queue several?", "choices": "one at a time | queue"}, {"id": "CD3", "section": "Day loop", "title": "Storm interrupt", "body": "Does a storm interrupt the current action?", "choices": "yes | no"}, {"id": "ACT_MOVE", "section": "MVP actions", "title": "Move tile", "body": "Include move to adjacent tile in MVP?", "choices": "yes | no"}, {"id": "ACT_FORAGE", "section": "MVP actions", "title": "Forage", "body": "Include forage plant food in MVP?", "choices": "yes | no"}, {"id": "ACT_SCAVENGE", "section": "MVP actions", "title": "Scavenge beach", "body": "Include scavenge flotsam in MVP?", "choices": "yes | no"}, {"id": "ACT_WATER", "section": "MVP actions", "title": "Drink / treat water", "body": "Raw drink + some treat/boil path in MVP?", "choices": "yes | no"}, {"id": "ACT_EAT", "section": "MVP actions", "title": "Eat", "body": "Include eat action in MVP?", "choices": "yes | no"}, {"id": "ACT_SLEEP", "section": "MVP actions", "title": "Sleep / rest", "body": "Include sleep/rest in MVP?", "choices": "yes | no"}, {"id": "ACT_SHELTER", "section": "MVP actions", "title": "Shelter build", "body": "Include build/improve shelter in MVP?", "choices": "yes | no"}, {"id": "ACT_FIRE", "section": "MVP actions", "title": "Make fire", "body": "Include make fire in MVP?", "choices": "yes | no"}, {"id": "ACT_CRAFT", "section": "MVP actions", "title": "Craft / bind", "body": "Include craft/bind attempts in MVP? (recipes stay spoilers in docs)", "choices": "yes | no"}, {"id": "ACT_HYGIENE", "section": "MVP actions", "title": "Hygiene / wounds", "body": "Include tend hygiene/wounds in MVP?", "choices": "yes | no"}, {"id": "ACT_CHRON", "section": "MVP actions", "title": "Chronicle mark", "body": "Manual Chronicle screenshot mark in MVP?", "choices": "yes | no"}, {"id": "ND1", "section": "Needs / death", "title": "Soft warnings before death", "body": "Warn the player before a need becomes lethal?", "choices": "yes | no"}, {"id": "ND2", "section": "Needs / death", "title": "Morale lethal?", "body": "Can morale kill, or only debuff?", "choices": "debuff only | can kill"}, {"id": "ND3", "section": "Needs / death", "title": "Energy pass-out", "body": "Empty energy: skip hours, or death risk?", "choices": "skip hours | death risk"}, {"id": "ND4", "section": "Needs / death", "title": "MVP disease", "body": "One infection path for MVP (e.g. bad water / dysentery).", "choices": "dysentery-like | other | defer"}, {"id": "CR1", "section": "Crafting", "title": "Experiment cost", "body": "Trying an unknown combine: free, costs bind mat, or time only? (no recipe spoilers)", "choices": "free | bind mat | time only"}, {"id": "CR2", "section": "Crafting", "title": "Fail destroys mats?", "body": "Failed experiment \u2014 destroy materials?", "choices": "yes | no | partial"}, {"id": "CR3", "section": "Crafting", "title": "Stations early", "body": "Need flat rock / fire early, or hands-only first?", "choices": "hands-only first | stations early"}, {"id": "CR4", "section": "Crafting", "title": "Discover feedback", "body": "On recipe discover: toast, journal only, or both?", "choices": "toast | journal | both"}, {"id": "MP1", "section": "Map", "title": "Fog of war", "body": "Unexplored shroud on the map?", "choices": "yes | no"}, {"id": "MP2", "section": "Map", "title": "Swim in MVP", "body": "Allow swimming in MVP?", "choices": "yes | no"}, {"id": "MP3", "section": "Map", "title": "Ridge climb check", "body": "Climbing ridges always needs a STR check?", "choices": "yes | no"}, {"id": "WT1", "section": "Weather", "title": "Weather cadence", "body": "Roll weather per day or per day-segment?", "choices": "per day | per segment"}, {"id": "WT2", "section": "Weather", "title": "Mid-day weather change", "body": "Can weather change during the day?", "choices": "yes | no"}, {"id": "WT3", "section": "Weather", "title": "Flood in MVP", "body": "Flood stub now or later?", "choices": "later | MVP stub"}, {"id": "PILLAR", "section": "Studio check", "title": "PC-first product", "body": "Game is PC desktop first; site is review/blog/downloads \u2014 not phone game.", "choices": "agree | revisit"}, {"id": "PORTAL", "section": "Studio check", "title": "This review portal shape", "body": "Main content + side checklist Good/Bad is how you want to sign off design items.", "choices": "agree | change UX"}, {"id": "TONE1", "section": "Tone / psychology", "title": "Audio leads danger", "body": "Danger should be heard (even subtly) before the player fully realizes \u2014 color/UI confirm after.", "choices": "agree | softer | rethink"}, {"id": "TONE2", "section": "Tone / psychology", "title": "Crisis = red pulse + aggressive audio", "body": "Storms, bleed-out, heat death, starvation peaks: reddish filters, pulsing, aggressive sound.", "choices": "agree | tune intensity"}, {"id": "TONE3", "section": "Tone / psychology", "title": "Safe = upbeat splendor", "body": "When things are well: happy upbeat music and clear pleasant color so safety feels good, not just 'not dying'.", "choices": "agree | different safe mood"}, {"id": "TONE4", "section": "Tone / psychology", "title": "Pre-threat subliminal bed", "body": "Quiet dissonance / rising noise floor before bars go critical \u2014 psychological early warning.", "choices": "yes early | only when critical"}, {"id": "TONE5", "section": "Tone / psychology", "title": "Per-crisis accent", "body": "Shared danger language, but heat/bleed/storm/cold/starve each get a distinct audio-visual accent.", "choices": "yes accents | one danger mode"}, {"id": "TONE6", "section": "Tone / psychology", "title": "Accessibility with pulse", "body": "Slow pulse (not strobe) + non-color cues so red isn\u2019t the only danger signal.", "choices": "agree"}];
-const OVERVIEW = "\n<h1>The Island \u2014 Design review</h1>\n<p class=\"lede\">PC-first survival game. You mark each checklist item <strong>Good</strong> or <strong>Bad</strong> in the side panel. Bad = needs a creative call or rewrite. Nothing gets programmed until the related items are Good.</p>\n<h2>Whole loop (summary)</h2>\n<ol class=\"loop\">\n<li>New Game \u2192 difficulty / map size</li>\n<li>Character \u2192 pick 5 items \u2192 keep-rolls on beach</li>\n<li>Core day loop: needs + weather \u2192 choose action \u2192 pay time/energy \u2192 checks \u2192 alive?</li>\n<li>Death \u2192 days survived + Chronicle stills</li>\n</ol>\n<p>Win paths (rescue / settle) are post-MVP. Recipes stay spoilers in all docs.</p>\n<div class=\"callout\">Your role: creative + decisions + testing. Carlon: GitHub, deploy, tickets, builds.</div>\n";
-const KEY = "theisland-review-v1";
-
-function load() {
-  try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { return {}; }
-}
-function save(state) { localStorage.setItem(KEY, JSON.stringify(state)); }
-
-function render() {
-  const state = load();
-  const main = document.getElementById("main");
-  let html = OVERVIEW;
-  let section = "";
-  for (const it of ITEMS) {
-    if (it.section !== section) {
-      section = it.section;
-      html += `<div class="section" id="sec-${section.replace(/\s+/g,"-")}"><h2>${section}</h2></div>`;
-    }
-    const st = state[it.id] || {};
-    html += `<article class="card" id="c-${it.id}">
-      <div class="meta">${it.id}</div>
-      <h3>${it.title}</h3>
-      <p>${it.body}</p>
-      <div class="opts">Options: ${it.choices}</div>
-      <label class="note">Your note (optional)</label>
-      <textarea data-id="${it.id}" placeholder="Creative call, tweak, problem…">${st.note || ""}</textarea>
-    </article>`;
-  }
-  main.innerHTML = html;
-
-  const list = document.getElementById("list");
-  list.innerHTML = ITEMS.map(it => {
-    const st = state[it.id] || {};
-    const cls = st.v === "good" ? "good" : st.v === "bad" ? "bad" : "";
-    return `<div class="item ${cls}" data-id="${it.id}">
-      <div class="id">${it.id}</div>
-      <div class="title">${it.title}</div>
-      <div class="sec">${it.section}</div>
-      <div class="btns">
-        <button type="button" class="g" data-v="good">Good</button>
-        <button type="button" class="b" data-v="bad">Bad</button>
-        <button type="button" class="ghost" data-jump="1">View</button>
-      </div>
-    </div>`;
-  }).join("");
-
-  let g=0,b=0,o=0;
-  for (const it of ITEMS) {
-    const v = (state[it.id]||{}).v;
-    if (v==="good") g++; else if (v==="bad") b++; else o++;
-  }
-  document.getElementById("nGood").textContent = g;
-  document.getElementById("nBad").textContent = b;
-  document.getElementById("nOpen").textContent = o;
-
-  list.querySelectorAll("button[data-v]").forEach(btn => {
-    btn.onclick = () => {
-      const id = btn.closest(".item").dataset.id;
-      const state = load();
-      state[id] = state[id] || {};
-      state[id].v = btn.dataset.v;
-      save(state);
-      render();
-    };
-  });
-  list.querySelectorAll("button[data-jump]").forEach(btn => {
-    btn.onclick = () => {
-      const id = btn.closest(".item").dataset.id;
-      document.getElementById("c-"+id)?.scrollIntoView({behavior:"smooth", block:"start"});
-    };
-  });
-  main.querySelectorAll("textarea").forEach(ta => {
-    ta.onchange = ta.onblur = () => {
-      const state = load();
-      state[ta.dataset.id] = state[ta.dataset.id] || {};
-      state[ta.dataset.id].note = ta.value;
-      save(state);
-    };
-  });
-}
-
-document.getElementById("exportBtn").onclick = async () => {
-  const state = load();
-  const lines = ["The Island design review export", ""];
-  for (const it of ITEMS) {
-    const st = state[it.id] || {};
-    lines.push(`${it.id}\t${st.v || "open"}\t${it.title}\t${(st.note||"").replace(/\t|\n/g," ")}`);
-  }
-  const text = lines.join("\n");
-  try {
-    await navigator.clipboard.writeText(text);
-    document.getElementById("exportMsg").textContent = "Copied. Paste that to Carlon in chat.";
-  } catch {
-    document.getElementById("exportMsg").textContent = "Clipboard blocked — select/copy manually from a note.";
-    prompt("Copy this:", text);
-  }
-};
-document.getElementById("clearBtn").onclick = () => {
-  if (confirm("Reset all Good/Bad marks and notes on this device?")) {
-    localStorage.removeItem(KEY);
-    render();
-  }
-};
-render();
-</script>
 </body>
 </html>
