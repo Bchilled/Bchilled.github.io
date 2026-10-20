@@ -3,7 +3,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PAC — Style Test</title>
 <!--
-  PAC STYLE TEST — v0.2.0 (Claude, 2026-10-20)
+  PAC STYLE TEST — v0.4.0 (towers, light pools, contrast, slower leveling, plated floor texture, close-up gear view, Ms. Pac in the same style) (Claude, 2026-10-20)
   What Brent asked to see (19:24–19:29):
    - far camera, Pac small, lots of map on screen
    - one THICK lane with dividers and odd stuff in between
@@ -27,7 +27,7 @@
        text-shadow:0 0 18px #ffb400;opacity:0;transition:opacity .3s;pointer-events:none;letter-spacing:2px}
 </style></head><body>
 <div id="hud"></div><div id="say"></div><div id="lvl">LEVEL UP</div>
-<div id="help">WASD / arrows / click to move · gamepad · 1 crude · 2 quality · 3 epic · 0 no gear</div>
+<div id="help">WASD / arrows / click to move · gamepad · hold TAB or right-mouse = close-up · 1 crude · 2 quality · 3 epic · 0 no gear · C swap Pac / Ms. Pac</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 "use strict";
@@ -42,11 +42,11 @@ renderer.setSize(innerWidth, innerHeight);
 document.body.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x020308);
-scene.fog = new THREE.Fog(0x020308, 55, 120);
+scene.fog = new THREE.Fog(0x010206, 70, 190);
 const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.5, 400);
 const CAM_OFF = new THREE.Vector3(0, 40, 27);   // far, high: Pac is small, lots of lane on screen
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
-scene.add(new THREE.HemisphereLight(0x5f7cff, 0x05030f, 0.5));
+scene.add(new THREE.HemisphereLight(0x3a4cff, 0x020108, 0.22));
 const LIGHT_DIR = new THREE.Vector3(-0.4, 1, 0.35).normalize();
 const sun = new THREE.DirectionalLight(0xbfd0ff, 0.5); sun.position.copy(LIGHT_DIR).multiplyScalar(40); scene.add(sun);
 
@@ -145,13 +145,50 @@ function glow(color, size, opacity=1){
 }
 
 // ======================= THE WORLD: dark, glossy satin neon =======================
-// ground: near-black with a faint grid; the lane is a slightly lighter glossy strip
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({color:0x04050b, roughness:1}));
+// ---- FLOOR DETAIL: procedural worn tech plating (plates, seams, rivets, cracks, grime, dead traces) ----
+function floorTexture(seed, plate, base){
+  const N = 1024, c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d');
+  let r = seed; const rnd = ()=>{ r = (r*16807)%2147483647; return r/2147483647; };
+  x.fillStyle = base; x.fillRect(0,0,N,N);
+  for(let py=0; py<N; py+=plate) for(let px=0; px<N; px+=plate){
+    const v = 10 + rnd()*14; x.fillStyle = `rgb(${v*0.7|0},${v*0.75|0},${v*1.15|0})`; x.fillRect(px+2,py+2,plate-4,plate-4);
+    // brushed streaks
+    x.globalAlpha = 0.08; x.strokeStyle = '#8fa0ff';
+    for(let i=0;i<10;i++){ const yy = py+4+rnd()*(plate-8); x.beginPath(); x.moveTo(px+4,yy); x.lineTo(px+plate-4, yy+(rnd()-0.5)*3); x.stroke(); }
+    x.globalAlpha = 1;
+    // bevel: light top-left edge, dark bottom-right
+    x.fillStyle = 'rgba(120,140,255,0.10)'; x.fillRect(px+2,py+2,plate-4,2); x.fillRect(px+2,py+2,2,plate-4);
+    x.fillStyle = 'rgba(0,0,0,0.6)'; x.fillRect(px+2,py+plate-4,plate-4,2); x.fillRect(px+plate-4,py+2,2,plate-4);
+    // rivets
+    x.fillStyle = 'rgba(160,170,210,0.35)';
+    for(const [ox,oy] of [[8,8],[plate-10,8],[8,plate-10],[plate-10,plate-10]]){ x.beginPath(); x.arc(px+ox,py+oy,2.2,0,7); x.fill(); }
+    // vents on some plates
+    if(rnd()<0.12){ x.fillStyle='rgba(0,0,0,0.75)'; for(let i=0;i<6;i++) x.fillRect(px+plate*0.25, py+plate*0.25+i*plate*0.08, plate*0.5, plate*0.035); }
+  }
+  // seams between plates
+  x.fillStyle = '#010104'; for(let i=0;i<=N;i+=plate){ x.fillRect(i-1,0,3,N); x.fillRect(0,i-1,N,3); }
+  // cracks
+  x.strokeStyle = 'rgba(0,0,0,0.85)'; x.lineWidth = 1.4;
+  for(let k=0;k<26;k++){ let cx = rnd()*N, cy = rnd()*N; x.beginPath(); x.moveTo(cx,cy);
+    for(let j=0;j<8;j++){ cx += (rnd()-0.5)*40; cy += (rnd()-0.5)*40; x.lineTo(cx,cy); } x.stroke(); }
+  // grime / scorch blotches
+  for(let k=0;k<40;k++){ const gx = rnd()*N, gy = rnd()*N, gr = 20+rnd()*90; const g = x.createRadialGradient(gx,gy,0,gx,gy,gr);
+    g.addColorStop(0,'rgba(0,0,0,0.55)'); g.addColorStop(1,'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(gx-gr,gy-gr,gr*2,gr*2); }
+  // dead circuit traces (faint), a few still lit
+  for(let k=0;k<18;k++){ let tx = Math.floor(rnd()*N/plate)*plate+plate/2, ty = rnd()*N; const lit = rnd()<0.3;
+    x.strokeStyle = lit ? 'rgba(60,140,255,0.55)' : 'rgba(70,90,160,0.18)'; x.lineWidth = lit?2:1.5; x.beginPath(); x.moveTo(tx,ty);
+    for(let j=0;j<4;j++){ if(rnd()<0.5) tx += (rnd()<0.5?-1:1)*plate*0.5; else ty += (rnd()<0.5?-1:1)*plate*0.6; x.lineTo(tx,ty); } x.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t;
+}
+const laneTex = floorTexture(7, 128, '#05060d'); laneTex.repeat.set(LANE_W/12, LANE_L/12);
+const groundTex = floorTexture(3, 256, '#030308'); groundTex.repeat.set(30, 30);
+// ground + lane carry the plating texture (bump from the same map)
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({color:0x8890a8, map:groundTex, bumpMap:groundTex, bumpScale:0.6, roughness:0.6, metalness:0.4}));
 ground.rotation.x = -Math.PI/2; scene.add(ground);
-const laneMat = new THREE.MeshStandardMaterial({color:0x0b0d1c, roughness:0.35, metalness:0.6});
+const laneMat = new THREE.MeshStandardMaterial({color:0xb0b8d8, map:laneTex, bumpMap:laneTex, bumpScale:0.8, roughness:0.28, metalness:0.7});
 const lane = new THREE.Mesh(new THREE.PlaneGeometry(LANE_W, LANE_L), laneMat);
 lane.rotation.x = -Math.PI/2; lane.position.set(0, 0.01, -LANE_L/2 + 30); scene.add(lane);
-const grid = new THREE.GridHelper(400, 100, 0x13207a, 0x0a1040); grid.position.y = 0.02; grid.material.transparent = true; grid.material.opacity = 0.35; scene.add(grid);
+const grid = new THREE.GridHelper(400, 100, 0x13207a, 0x0a1040); grid.position.y = 0.02; grid.material.transparent = true; grid.material.opacity = 0.12; scene.add(grid);
 // lane tiles: satin panels with thin neon seams
 for(let z=30; z>-LANE_L+30; z-=10){
   const seam = new THREE.Mesh(new THREE.PlaneGeometry(LANE_W-2, 0.08), new THREE.MeshBasicMaterial({color:0x1d3cff, transparent:true, opacity:0.5}));
@@ -165,7 +202,7 @@ function tube(x0,z0,x1,z1,color,y=0.2,r=0.12){
   m.position.set((x0+x1)/2, y, (z0+z1)/2); scene.add(m);
   // soft glow along the tube
   const n = Math.max(2, Math.floor(len/4));
-  for(let i=0;i<=n;i++){ const g = glow(color, 3.2, 0.35); g.position.set(x0+(x1-x0)*i/n, y, z0+(z1-z0)*i/n); scene.add(g); }
+  for(let i=0;i<=n;i++){ const g = glow(color, 3.6, 0.55); g.position.set(x0+(x1-x0)*i/n, y, z0+(z1-z0)*i/n); scene.add(g); }
 }
 // lane edges: glowing neon rails (the satin-neon look)
 tube(-LANE_W/2, 30, -LANE_W/2, -LANE_L+30, 0x2f6bff, 0.25);
@@ -204,6 +241,40 @@ for(let z=20; z>-LANE_L+40; z-=26){
   pelletLamp(-side*(LANE_W/2+9+Math.random()*5), z-10);
   spinners.push(pylon(side*(LANE_W/2+16), z-18));
 }
+
+// ---- SCALE: towering structures either side so the lane feels huge ----
+const towerMat = new THREE.MeshStandardMaterial({color:0x05060f, roughness:0.35, metalness:0.8});
+const NEON = [0x2f6bff, 0xff2fd0, 0x00e5ff, 0xffb627, 0x7c3bff];
+function monolith(x, z, w, d, h, col){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), towerMat); m.position.set(x, h/2, z); scene.add(m);
+  // vertical neon seams on the corners facing the lane + horizontal bands
+  const face = x < 0 ? w/2 : -w/2;
+  for(const dz of [-d/2+0.15, d/2-0.15]){
+    const s = new THREE.Mesh(new THREE.BoxGeometry(0.18, h, 0.18), new THREE.MeshBasicMaterial({color:col})); s.position.set(x+face, h/2, z+dz); scene.add(s);
+  }
+  for(let y = 6; y < h; y += 7 + Math.random()*6){
+    const b = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.25, d*0.9), new THREE.MeshBasicMaterial({color:col})); b.position.set(x+face, y, z); scene.add(b);
+  }
+  const cap = glow(col, Math.max(w,d)*1.6, 0.6); cap.position.set(x, h+0.5, z); scene.add(cap);
+}
+for(let z = 30; z > -LANE_L; z -= 18){
+  for(const side of [-1, 1]){
+    if(Math.random() < 0.25) continue;
+    const near = LANE_W/2 + 20 + Math.random()*10;
+    monolith(side*near, z + Math.random()*8, 4+Math.random()*6, 4+Math.random()*8, 12+Math.random()*30, NEON[Math.floor(Math.random()*NEON.length)]);
+    if(Math.random()<0.6) monolith(side*(near+18+Math.random()*20), z+Math.random()*10, 6+Math.random()*8, 6+Math.random()*8, 25+Math.random()*45, NEON[Math.floor(Math.random()*NEON.length)]);
+  }
+}
+// pools of coloured light on the glossy lane (real lights -> real contrast)
+const LIGHTS = [];
+for(let z = 20; z > -LANE_L+40; z -= 22){
+  for(const side of [-1,1]){
+    const col = side<0 ? 0x2f6bff : 0xff2fd0;
+    const L = new THREE.PointLight(col, 2.2, 26, 2); L.position.set(side*(LANE_W/2-1), 3, z - (side>0?11:0)); scene.add(L); LIGHTS.push(L);
+  }
+}
+// a warm light that rides with Pac so he pops out of the dark
+const pacLight = new THREE.PointLight(0xffd27a, 1.6, 14, 2); scene.add(pacLight);
 
 // ======================= THE SHARED RIG (every character) =======================
 function buildRig(p){
@@ -304,6 +375,25 @@ const pac = makeRound(PAC_P, 0xcdb35a, {mouth:true, eyes:true, cap:true});   // 
 scene.add(pac.root);
 equipSet(pac, null);
 
+
+// ======================= MS. PAC — same rig, same ink style (press C to swap) =======================
+// Proves the style + gear system carry to the next character: body art differs, rig + anchors + gear are shared.
+function addMsPacArt(rig){
+  const r = rig.p.bodyR, up = rig.jawU;
+  const bowM = hatchMat(0x9a3a4e);
+  for(const s of [-1,1]){ const lobe = inked(new THREE.ConeGeometry(r*0.32, r*0.6, 10), bowM, 0.035); lobe.rotation.z = s*Math.PI/2; lobe.position.set(s*r*0.3, r*1.02, -r*0.1); up.add(lobe); }
+  const knot = inked(new THREE.SphereGeometry(r*0.14,10,8), bowM, 0.035); knot.position.set(0, r*1.02, -r*0.1); up.add(knot);
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(r*0.93, r*0.035, 6, 30, Math.PI*0.9), new THREE.MeshBasicMaterial({color:0x8a1f2e}));
+  lip.rotation.set(Math.PI/2, 0, Math.PI*0.55); up.add(lip);
+  const mole = new THREE.Mesh(new THREE.SphereGeometry(r*0.045,6,4), new THREE.MeshBasicMaterial({color:0x14110e})); mole.position.set(r*0.42, r*0.12, r*0.86); up.add(mole);
+  for(const s of [-1,1]){ const lash = new THREE.Mesh(new THREE.BoxGeometry(r*0.18, r*0.025, r*0.02), new THREE.MeshBasicMaterial({color:0x14110e}));
+    lash.position.set(s*r*0.36, r*0.62, r*0.8); lash.rotation.z = s*0.5; up.add(lash); }
+}
+const msPac = makeRound(PAC_P, 0xc9ae62, {mouth:true, eyes:true});
+addMsPacArt(msPac); msPac.root.visible = false; scene.add(msPac.root);
+let hero = pac, heroTier = null;
+addEventListener('keydown', e=>{ if(e.key.toLowerCase()==='c'){ const next = hero===pac ? msPac : pac; hero.root.visible = false; next.root.visible = true; hero = next; equipSet(hero, heroTier); } });
+
 // gear display: SAME set on three body sizes (gnome / Pac / brute) — proves one set fits every size
 const displays = [];
 [[0.55,'crude',-10],[1.0,'quality',-5],[1.75,'epic',1]].forEach(([sc, tier, x], i)=>{
@@ -394,11 +484,15 @@ function say(k, force){ if(!force && performance.now()<sayT) return; const l = L
 // ======================= INPUT =======================
 const keys = {};
 addEventListener('keydown', e=>{ const k = e.key.toLowerCase(); keys[k] = true;
-  if(k==='1') { equipSet(pac,'crude'); say('gear',true); } if(k==='2') { equipSet(pac,'quality'); say('gear',true); }
-  if(k==='3') { equipSet(pac,'epic'); say('gear',true); } if(k==='0') equipSet(pac,null); });
+  const tierKey = {'1':'crude','2':'quality','3':'epic','0':null}; if(k in tierKey){ heroTier = tierKey[k]; equipSet(hero, heroTier); if(heroTier) say('gear',true); } });
 addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; });
+let inspect = false;
+addEventListener('keydown', e=>{ if(e.key==='Tab'){ e.preventDefault(); inspect = true; } });
+addEventListener('keyup', e=>{ if(e.key==='Tab') inspect = false; });
+renderer.domElement.addEventListener('contextmenu', e=>e.preventDefault());
+renderer.domElement.addEventListener('pointerup', e=>{ if(e.button===2) inspect = false; });
 let target = null; const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
-renderer.domElement.addEventListener('pointerdown', e=>{ mouse.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1); ray.setFromCamera(mouse,camera);
+renderer.domElement.addEventListener('pointerdown', e=>{ if(e.button===2){ inspect = true; return; } mouse.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1); ray.setFromCamera(mouse,camera);
   const h = ray.intersectObject(ground)[0]; if(h) target = h.point.clone(); });
 function input(){
   let x=0,z=0; if(keys.a||keys.arrowleft)x-=1; if(keys.d||keys.arrowright)x+=1; if(keys.w||keys.arrowup)z-=1; if(keys.s||keys.arrowdown)z+=1;
@@ -411,7 +505,8 @@ function input(){
 
 // ======================= GAME STATE =======================
 const Pc = {x:0, z:0, vx:0, vz:0, face:Math.PI, walk:0, hp:100, level:1, xp:0, kills:0, mouth:0};
-const XP_NEED = [0, 12, 30, 55, 90, 140, 99999];
+const XP_NEED = [0, 30, 80, 160, 280, 450, 99999];   // slower climb to 6
+const camLook = new THREE.Vector3(0,0,-4);
 let t = 0, spawnT = 0, pulseT = 0, boltT = 0, multi = 0, multiT = 0, last = performance.now(), hurtT = 0;
 const hud = document.getElementById('hud'), lvlEl = document.getElementById('lvl');
 
@@ -444,18 +539,18 @@ function loop(now){
   if(sp>0.4){ const w = Math.atan2(Pc.vx,Pc.vz); let d = w-Pc.face; d = Math.atan2(Math.sin(d),Math.cos(d)); Pc.face += d*Math.min(1,12*dt); }
   Pc.walk += sp*dt*2.2;
   // ---- rig animation ----
-  const B = pac.bones, k = Math.min(1, sp/SPEED);
-  pac.root.position.set(Pc.x,0,Pc.z); pac.root.rotation.y = Pc.face;
+  const B = hero.bones, k = Math.min(1, sp/SPEED);
+  hero.root.position.set(Pc.x,0,Pc.z); hero.root.rotation.y = Pc.face; pacLight.position.set(Pc.x, 3.5, Pc.z+1);
   B.legL.rotation.x = Math.sin(Pc.walk)*0.7*k; B.legR.rotation.x = -Math.sin(Pc.walk)*0.7*k;
   B.armL.rotation.x = -Math.sin(Pc.walk)*0.6*k; B.armR.rotation.x = Math.sin(Pc.walk)*0.6*k; B.armL.rotation.z=-0.25; B.armR.rotation.z=0.25;
   B.body.position.y = PAC_P.bodyR*0.95 + Math.abs(Math.sin(Pc.walk))*0.06*k; B.body.rotation.x = 0.12*k;
-  Pc.mouth = 0.5+0.5*Math.sin(t*16); const open = 0.08 + Pc.mouth*0.5; pac.jawU.rotation.x = -open; pac.jawL.rotation.x = open*0.6;
-  if(pac.auraPulse) pac.auraPulse.material.opacity = 0.32 + 0.18*Math.sin(t*5);
+  Pc.mouth = 0.5+0.5*Math.sin(t*16); const open = 0.08 + Pc.mouth*0.5; hero.jawU.rotation.x = -open; hero.jawL.rotation.x = open*0.6;
+  if(hero.auraPulse) hero.auraPulse.material.opacity = 0.32 + 0.18*Math.sin(t*5);
   displays.forEach((d,i)=>{ d.root.rotation.y = 0.3 + Math.sin(t*0.6+i)*0.4; if(d.auraPulse) d.auraPulse.material.opacity = 0.32+0.18*Math.sin(t*5+i); });
   spinners.forEach((s,i)=>{ s.rotation.y += dt*(0.6+i*0.05); s.position.y = 3.2 + Math.sin(t+i)*0.3; });
 
   // ---- spawn waves (grow over time) ----
-  spawnT -= dt; if(spawnT<=0){ spawnT = 0.5; spawn(Math.floor(4 + t*0.35 + Pc.level*2)); }
+  spawnT -= dt; if(spawnT<=0){ spawnT = 0.7; spawn(Math.floor(1 + t*0.12 + Pc.level*1.2)); }   // quiet start, builds over time
   // ---- ghosts chase ----
   let nearest = null, nd = 1e9;
   for(let i=0;i<G.length;i++){
@@ -513,13 +608,18 @@ function loop(now){
   pGeo.attributes.position.needsUpdate = true; pGeo.attributes.color.needsUpdate = true;
 
   // ---- camera: locked, far ----
-  camera.position.lerp(new THREE.Vector3(Pc.x*0.6, 0, Pc.z).add(CAM_OFF), Math.min(1, 6*dt));
-  camera.lookAt(Pc.x*0.6, 0, Pc.z - 4);
-  hud.innerHTML = `<b>PAC</b> · Original · Level ${Pc.level}<div id="bar"><i style="width:${Pc.hp}%"></i></div>kills ${Pc.kills} · swarm ${G.length} · xp ${Pc.xp}/${Pc.level<6?XP_NEED[Pc.level]:'max'}`;
+  // locked camera; while inspecting (Tab / right mouse) it swings down close to see the character and gear
+  const camWant = inspect ? new THREE.Vector3(Pc.x + Math.sin(Pc.face+0.45)*5.2, 2.6, Pc.z + Math.cos(Pc.face+0.45)*5.2) :   // in front of his face
+                           new THREE.Vector3(Pc.x*0.6, 0, Pc.z).add(CAM_OFF);
+  camLook.lerp(inspect ? new THREE.Vector3(Pc.x, 1.1, Pc.z) : new THREE.Vector3(Pc.x*0.6, 0, Pc.z-4), Math.min(1, 7*dt));
+  camera.position.lerp(camWant, Math.min(1, 6*dt));
+  camera.lookAt(camLook);
+  
+  hud.innerHTML = `<b>PAC</b> · ${hero===pac?"Original":"Ms. Pac"} · Level ${Pc.level}<div id="bar"><i style="width:${Pc.hp}%"></i></div>kills ${Pc.kills} · swarm ${G.length} · xp ${Pc.xp}/${Pc.level<6?XP_NEED[Pc.level]:'max'}`;
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
-window.__pac = {Pc, G, keys, equip:(t)=>equipSet(pac,t)};   // test hook
+window.__pac = {Pc, G, keys, equip:(t)=>{heroTier=t; equipSet(hero,t);}, setInspect:(v)=>inspect=v};   // test hook
 </script>
 </body></html>
