@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PAC — Flow Chart · Layer 1: The 23 · Layer 2: Characters per Slice</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, sans-serif; background:#12121a; color:#e8e8f0; }
+  header { padding:14px 18px; border-bottom:1px solid #2a2a3a; }
+  header h1 { font-size:19px; margin:0 0 4px; }
+  header p { margin:0; color:#9a9ab0; font-size:13px; }
+  .wrap { display:flex; min-height:calc(100vh - 70px); }
+  aside { width:250px; flex:0 0 250px; border-right:1px solid #2a2a3a; padding:14px; }
+  aside h2 { font-size:12px; letter-spacing:.12em; color:#9a9ab0; margin:16px 0 8px; text-transform:uppercase; }
+  aside h2:first-child { margin-top:0; }
+  .chk { display:flex; align-items:center; gap:8px; padding:4px 0; font-size:14px; cursor:pointer; }
+  .chk i { width:12px; height:12px; border-radius:3px; display:inline-block; flex:0 0 12px; }
+  .mode { display:flex; gap:8px; }
+  .mode button, .reset { background:#23233a; color:#e8e8f0; border:1px solid #3a3a55; border-radius:8px; padding:7px 10px; font-size:13px; cursor:pointer; }
+  .mode button.on { background:#f7c948; color:#111; border-color:#f7c948; font-weight:700; }
+  main { flex:1; padding:16px; display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .piebox { flex:1 1 420px; max-width:560px; }
+  svg { width:100%; height:auto; display:block; }
+  .detail { flex:1 1 260px; background:#1b1b28; border:1px solid #2a2a3a; border-radius:12px; padding:16px; }
+  .detail h2 { margin:0 0 6px; font-size:20px; }
+  .detail .fn { color:#c9c9da; font-size:14px; margin:0 0 10px; }
+  .detail dl { margin:0; font-size:13px; }
+  .detail dt { color:#9a9ab0; margin-top:8px; }
+  .detail dd { margin:2px 0 0; }
+  .note { color:#9a9ab0; font-size:12px; margin-top:12px; }
+  text.lbl { font-size:12.5px; font-weight:700; fill:#fff; text-anchor:middle; pointer-events:none; }
+  text.cnt { font-size:11px; fill:#dcdce8; text-anchor:middle; pointer-events:none; }
+  path.slice { cursor:pointer; stroke:#12121a; stroke-width:2; }
+  path.slice:hover { opacity:.85; }
+  path.off { opacity:.12; }
+  @media (max-width:760px){ aside{width:170px;flex-basis:170px;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>PAC — Game Flow Chart</h1>
+  <p>Layer 1: <b>the 23</b> (13 stats + 7 loadout options + 3 rarities) &nbsp;·&nbsp; Layer 2: <b>characters per slice</b> (heat = how many are filed there). Draft counts from the factory files.</p>
+</header>
+<div class="wrap">
+  <aside>
+    <h2>Layer</h2>
+    <div class="mode">
+      <button id="mStats" class="on">1 · The 23</button>
+      <button id="mChars">2 · Characters</button>
+    </div>
+    <h2>Categories (slices)</h2>
+    <div id="catFilters"></div>
+    <h2>Rarities</h2>
+    <div id="rarFilters"></div>
+    <h2>Loadout options (+7)</h2>
+    <div id="optList"></div>
+    <p class="note"><button class="reset" id="resetBtn">Reset filters</button></p>
+  </aside>
+  <main>
+    <div class="piebox">
+      <svg id="pie" viewBox="0 0 400 400" role="img" aria-label="The 13 slices as a pie chart"></svg>
+      <p class="note" id="pieNote">Layer 1: equal slices — every category is one of the 13. Tap a slice for its definition.</p>
+    </div>
+    <div class="detail" id="detail"></div>
+  </main>
+</div>
+<script>
+const SLICES = [
+  {name:"RESOURCE GAIN", color:"#f7c948", fn:"Resource recovery — how your resources come back.", count:11},
+  {name:"SPEED", color:"#40c4d0", fn:"Movement — how fast you move.", count:34},
+  {name:"POWER", color:"#e85d3a", fn:"The mythic ability enabler — the special-ability stat.", count:16},
+  {name:"CRITICAL CHANCE", color:"#b0e0f0", fn:"Your chance to hit — whether the attack lands at all.", count:15},
+  {name:"INT", color:"#7ec86e", fn:"Resource increase — the mental stat grows the resources.", count:24},
+  {name:"STRENGTH", color:"#8b693e", fn:"Physical damage — single-target and AOE, by buff type.", count:36},
+  {name:"DEFENSE", color:"#c7a46e", fn:"Damage mitigation — reduces the damage you take.", count:8},
+  {name:"VITALITY", color:"#d04040", fn:"Life total — the size of the life pool.", count:76},
+  {name:"HEALING FACTOR", color:"#9b6ed6", fn:"Your personal heal rate.", count:43},
+  {name:"CRITICAL DAMAGE", color:"#7a7a88", fn:"The damage increase % on a critical hit.", count:40},
+  {name:"AGILITY", color:"#5a5ab4", fn:"Dodge — avoiding the hit entirely.", count:30},
+  {name:"ATTACK SPEED", color:"#f08c28", fn:"The cooldown between attacks.", count:78},
+  {name:"SPELL", color:"#dc50a0", fn:"Magic % increase — magic damage scales by its percent.", count:74},
+];
+const RARITIES = ["Common","Rare","Mythic"];
+const OPTIONS = ["Orb slots","Food slots","Weapon slot","Car slot","Pet slot","Shield slot","Movement effect"];
+const MAXC = Math.max(...SLICES.map(s=>s.count));
+let mode = "stats";
+const activeCats = new Set(SLICES.map((_,i)=>i));
+const activeRar = new Set(RARITIES);
+
+const filtersEl = document.getElementById('catFilters');
+SLICES.forEach((s,i)=>{
+  const l=document.createElement('label'); l.className='chk';
+  l.innerHTML=`<input type="checkbox" checked data-i="${i}"> <i style="background:${s.color}"></i> ${s.name}`;
+  l.querySelector('input').addEventListener('change',e=>{ e.target.checked?activeCats.add(i):activeCats.delete(i); draw(); });
+  filtersEl.appendChild(l);
+});
+const rarEl = document.getElementById('rarFilters');
+RARITIES.forEach(r=>{
+  const l=document.createElement('label'); l.className='chk';
+  l.innerHTML=`<input type="checkbox" checked> ${r}`;
+  l.querySelector('input').addEventListener('change',e=>{ e.target.checked?activeRar.add(r):activeRar.delete(r); draw(); });
+  rarEl.appendChild(l);
+});
+const optEl = document.getElementById('optList');
+OPTIONS.forEach(o=>{ const d=document.createElement('div'); d.className='chk'; d.textContent="+ "+o; optEl.appendChild(d); });
+
+function pol(cx,cy,r,a){ return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; }
+function heat(color, t){ // t in 0..1 -> mix toward white-hot
+  const n = parseInt(color.slice(1),16);
+  let r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  r=Math.round(r+(255-r)*t*0.45); g=Math.round(g+(255-g)*t*0.45); b=Math.round(b+(255-b)*t*0.45);
+  return `rgb(${r},${g},${b})`;
+}
+function draw(){
+  const svg=document.getElementById('pie');
+  const cx=200, cy=200, R=185, r0=62;
+  const step=Math.PI*2/SLICES.length;
+  let a0=-Math.PI/2 - step/2;
+  let html="";
+  SLICES.forEach((s,i)=>{
+    const a1=a0+step;
+    const on = activeCats.has(i);
+    let fill = s.color;
+    if(mode==="chars"){ fill = heat(s.color, 0.15 + 0.85*(s.count/MAXC)); }
+    const [x0,y0]=pol(cx,cy,R,a0),[x1,y1]=pol(cx,cy,R,a1),[x2,y2]=pol(cx,cy,r0,a1),[x3,y3]=pol(cx,cy,r0,a0);
+    html+=`<path class="slice${on?"":" off"}" data-i="${i}" fill="${fill}" d="M${x0},${y0} A${R},${R} 0 0 1 ${x1},${y1} L${x2},${y2} A${r0},${r0} 0 0 0 ${x3},${y3} Z"/>`;
+    if(on){
+      const am=(a0+a1)/2, [lx,ly]=pol(cx,cy,(R+r0)/2+8,am);
+      const short = s.name.length>13 ? s.name.split(" ")[0] : s.name;
+      html+=`<text class="lbl" x="${lx}" y="${ly-2}">${short}</text>`;
+      if(mode==="chars") html+=`<text class="cnt" x="${lx}" y="${ly+13}">${s.count}</text>`;
+    }
+    a0=a1;
+  });
+  html+=`<text x="200" y="193" text-anchor="middle" fill="#9a9ab0" font-size="12">${mode==="stats"?"LAYER 1":"LAYER 2"}</text>`;
+  html+=`<text x="200" y="212" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">${mode==="stats"?"THE 23":"CHARACTERS"}</text>`;
+  svg.innerHTML=html;
+  svg.querySelectorAll('path.slice').forEach(p=>p.addEventListener('click',()=>select(+p.dataset.i)));
+  document.getElementById('pieNote').textContent = mode==="stats"
+    ? "Layer 1: equal slices — every category is one of the 13. Tap a slice for its definition."
+    : "Layer 2: heat map — the hotter the slice, the more characters are filed there (draft factory counts). Tap for detail.";
+}
+function rel(i,off){ return SLICES[(i+off+13)%13].name; }
+function select(i){
+  const s=SLICES[i];
+  document.getElementById('detail').innerHTML =
+   `<h2 style="color:${s.color}">${s.name}</h2>
+    <p class="fn">${s.fn}</p>
+    <dl>
+      <dt>Characters filed (draft count)</dt><dd><b>${s.count}</b></dd>
+      <dt>Neighbours (neutral, similar)</dt><dd>${rel(i,-1)} · ${rel(i,1)}</dd>
+      <dt>Opposite (weak against)</dt><dd>${rel(i,6)} · ${rel(i,7)}</dd>
+      <dt>Triadic (strong)</dt><dd>${rel(i,4)} · ${rel(i,9)}</dd>
+      <dt>Rarities in play</dt><dd>${[...activeRar].join(" · ") || "none selected"}</dd>
+    </dl>
+    <p class="note">Geometry per your ruling: opposite = weak, triadic = strong, side-by-side = neutral and similar.</p>`;
+}
+const mS=document.getElementById('mStats'), mC=document.getElementById('mChars');
+mS.onclick=()=>{mode="stats";mS.classList.add('on');mC.classList.remove('on');draw();};
+mC.onclick=()=>{mode="chars";mC.classList.add('on');mS.classList.remove('on');draw();};
+document.getElementById('resetBtn').onclick=()=>location.reload();
+draw(); select(0);
+</script>
+</body>
+</html>
