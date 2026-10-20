@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PAC — Arena Muncher</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#04040c;
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif; color:#fff;
+    -webkit-user-select:none; user-select:none; touch-action:none; }
+  #game { position:absolute; inset:0; display:block; }
+
+  /* ---------- HUD ---------- */
+  #hud { position:absolute; top:0; left:0; right:0; padding:10px 14px;
+    display:flex; justify-content:space-between; align-items:flex-start;
+    pointer-events:none; z-index:5; }
+  .hud-box { background:rgba(6,8,28,.62); border:1px solid rgba(90,110,255,.35);
+    border-radius:10px; padding:7px 12px; min-width:150px; backdrop-filter:blur(3px); }
+  .hud-label { font-size:10px; letter-spacing:2px; color:#8fa2ff; text-transform:uppercase; }
+  .hud-value { font-size:21px; font-weight:700; line-height:1.1; font-variant-numeric:tabular-nums; }
+  #hud-mid { text-align:center; }
+  #hud-right { text-align:right; }
+  .bar { height:9px; border-radius:5px; background:rgba(255,255,255,.12); overflow:hidden; margin-top:4px; }
+  .bar > div { height:100%; border-radius:5px; transform-origin:left; transition:transform .12s linear; }
+  #hpFill { background:linear-gradient(90deg,#ff3b6b,#ff7a3b); width:100%; }
+  #xpFill { background:linear-gradient(90deg,#37e08b,#b6ff5e); width:0%; }
+  #comboFill { background:linear-gradient(90deg,#ffd93b,#ff9a3b); width:0%; }
+  #comboText { color:#ffd93b; }
+  #livesText { color:#ff6b81; letter-spacing:3px; font-size:16px; }
+
+  /* ---------- Power slots ---------- */
+  #powers { position:absolute; left:14px; bottom:14px; display:flex; gap:8px; z-index:5; }
+  .slot { width:64px; height:64px; border-radius:12px; background:rgba(6,8,28,.66);
+    border:2px solid rgba(120,130,200,.35); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; position:relative; pointer-events:auto; cursor:pointer; }
+  .slot .ico { font-size:24px; line-height:1; }
+  .slot .nm { font-size:8.5px; letter-spacing:.5px; color:#aab4ff; text-align:center; margin-top:2px; padding:0 2px; }
+  .slot .key { position:absolute; top:2px; left:5px; font-size:9px; color:#7787d9; font-weight:700; }
+  .slot .lvl { position:absolute; top:2px; right:5px; font-size:9px; color:#ffd93b; font-weight:700; }
+  .slot.active { border-color:#ffd93b; box-shadow:0 0 14px rgba(255,217,59,.45); }
+  .slot.empty { opacity:.35; border-style:dashed; }
+  .slot .cd { position:absolute; bottom:0; left:0; height:4px; background:#37e08b; border-radius:2px; }
+
+  #eatBanner { position:absolute; top:64px; left:50%; transform:translateX(-50%);
+    font-size:30px; font-weight:900; letter-spacing:4px; color:#4db2ff;
+    text-shadow:0 0 18px rgba(77,178,255,.9); display:none; z-index:5; pointer-events:none; }
+
+  /* ---------- Buttons ---------- */
+  .ctl-btn { position:absolute; z-index:6; pointer-events:auto; cursor:pointer;
+    background:rgba(6,8,28,.7); color:#fff; border:1px solid rgba(120,140,255,.5);
+    border-radius:10px; padding:9px 13px; font-size:15px; }
+  #muteBtn { top:86px; right:14px; }
+  #dashBtn { right:18px; bottom:20px; width:84px; height:84px; border-radius:50%;
+    font-size:14px; font-weight:800; letter-spacing:1px; display:none;
+    background:rgba(255,160,30,.28); border-color:rgba(255,190,60,.8); }
+  body.touch #dashBtn { display:block; }
+
+  /* ---------- Overlays ---------- */
+  .overlay { position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; background:rgba(2,2,12,.78);
+    z-index:10; text-align:center; padding:20px; }
+  .overlay h1 { font-size:64px; font-weight:900; letter-spacing:6px; color:#ffe93b;
+    text-shadow:0 0 30px rgba(255,220,40,.55), 4px 4px 0 #ff5e3a; }
+  .overlay h2 { font-size:34px; font-weight:800; letter-spacing:3px; color:#ffe93b; margin-bottom:8px; }
+  .overlay p { color:#c4cbff; max-width:560px; line-height:1.55; font-size:15px; }
+  .overlay .small { font-size:12.5px; color:#8fa2ff; margin-top:10px; }
+  .big-btn { margin-top:22px; background:linear-gradient(180deg,#ffd93b,#ff9a3b);
+    color:#201200; border:none; border-radius:12px; padding:14px 42px;
+    font-size:20px; font-weight:900; letter-spacing:2px; cursor:pointer;
+    box-shadow:0 6px 24px rgba(255,170,40,.4); }
+  .big-btn:hover { filter:brightness(1.1); }
+  .hidden { display:none !important; }
+
+  /* ---------- Level-up cards ---------- */
+  #cards { display:flex; gap:14px; margin-top:20px; flex-wrap:wrap; justify-content:center; }
+  .card { width:196px; min-height:172px; background:linear-gradient(180deg,#121636,#0a0d26);
+    border:2px solid rgba(110,130,255,.55); border-radius:14px; padding:16px 13px;
+    cursor:pointer; transition:transform .1s, border-color .1s; }
+  .card:hover { transform:translateY(-5px) scale(1.03); border-color:#ffd93b; }
+  .card .tag { font-size:10px; letter-spacing:2px; color:#37e08b; text-transform:uppercase; }
+  .card .tag.power { color:#ff9de2; }
+  .card .ico { font-size:38px; margin:8px 0 4px; }
+  .card .name { font-size:16.5px; font-weight:800; }
+  .card .desc { font-size:12.5px; color:#aab4ff; margin-top:6px; line-height:1.45; }
+
+  #toast { position:absolute; top:38%; left:50%; transform:translate(-50%,-50%);
+    font-size:27px; font-weight:900; letter-spacing:2px; color:#fff;
+    text-shadow:0 0 16px rgba(255,160,40,.9); opacity:0; z-index:7; pointer-events:none;
+    transition:opacity .18s; white-space:nowrap; }
+  #savedTag { position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+    font-size:11.5px; letter-spacing:1.5px; color:#8fa2ff; opacity:0;
+    transition:opacity .6s; z-index:6; pointer-events:none; text-transform:uppercase; }
+  .ghost-btn { margin-top:14px; background:transparent; color:#8fa2ff;
+    border:1px solid rgba(120,140,255,.4); border-radius:9px; padding:7px 16px;
+    font-size:12.5px; letter-spacing:1px; cursor:pointer; }
+  .ghost-btn:hover { color:#ffb3c0; border-color:rgba(255,120,150,.6); }
+  #debugState { position:absolute; bottom:2px; right:4px; font-size:9px; color:#334; z-index:1; }
+
+  /* ---------- Intro: game chrome hidden while the intro scene owns the screen ---------- */
+  body.intro-on #hud, body.intro-on #powers, body.intro-on #muteBtn,
+  body.intro-on #dashBtn, body.intro-on #eatBanner, body.intro-on #toast { display:none !important; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div class="hud-box">
+    <div class="hud-label">Score</div>
+    <div class="hud-value" id="scoreText">0</div>
+    <div class="hud-label" style="margin-top:3px;">HP <span id="livesText"></span></div>
+    <div class="bar"><div id="hpFill"></div></div>
+    <div class="hud-label" style="margin-top:3px;">XP — Level <span id="levelText">1</span></div>
+    <div class="bar"><div id="xpFill"></div></div>
+  </div>
+  <div class="hud-box" id="hud-mid">
+    <div class="hud-label">Time</div>
+    <div class="hud-value" id="timeText">0:00</div>
+    <div class="hud-label" style="margin-top:3px;">Combo <span id="comboText">x0</span></div>
+    <div class="bar"><div id="comboFill"></div></div>
+  </div>
+  <div class="hud-box" id="hud-right">
+    <div class="hud-label">Best</div>
+    <div class="hud-value" id="bestText">0</div>
+    <div class="hud-label" style="margin-top:3px;">Eaten</div>
+    <div class="hud-value" id="eatenText" style="font-size:16px;">0</div>
+  </div>
+</div>
+
+<div id="eatBanner">EAT MODE!</div>
+<div id="powers"></div>
+<div id="toast"></div>
+<button class="ctl-btn" id="muteBtn" title="Mute (M)">🔊</button>
+<button class="ctl-btn" id="dashBtn">DASH</button>
+
+<div class="overlay hidden" id="startScreen">
+  <h1>PAC</h1>
+  <p><b style="color:#ffe93b;">ARENA MUNCHER</b> — a Vampire-Survivors-style
+     survival run through one huge looping maze-world.</p>
+  <p style="margin-top:10px;">Eat dots to level up. Gobble a <b style="color:#4db2ff;">power pellet</b>
+     to flip the hunt — then EAT the ghosts and <b>copy their powers</b> (hold up to 3,
+     swap with 1/2/3, dash with SPACE). Don't get touched when they're not blue.</p>
+  <p class="small">Move: WASD / arrows / drag on touch &nbsp;•&nbsp; Dash: SPACE &nbsp;•&nbsp; Pause: P &nbsp;•&nbsp; Mute: M</p>
+  <button class="big-btn" id="startBtn">▶ START</button>
+  <p class="small" id="saveLine"></p>
+  <button class="ghost-btn" id="resetSaveBtn">Reset save</button>
+</div>
+
+<div class="overlay hidden" id="levelupScreen">
+  <h2>LEVEL UP!</h2>
+  <p>Pick one:</p>
+  <div id="cards"></div>
+</div>
+
+<div class="overlay hidden" id="gameoverScreen">
+  <h2>GAME OVER</h2>
+  <p id="finalStats"></p>
+  <button class="big-btn" id="restartBtn">↻ RUN IT AGAIN</button>
+  <button class="ghost-btn" id="resetSaveBtn2">Reset save</button>
+</div>
+
+<div class="overlay hidden" id="pauseScreen" style="background:rgba(2,2,12,.5);">
+  <h2>PAUSED</h2>
+  <p>Press P to resume</p>
+</div>
+
+<div id="savedTag">✓ Progress saved</div>
+<div id="debugState"></div>
+<script src="game.js"></script>
+</body>
+</html>
