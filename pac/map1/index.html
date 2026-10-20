@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>PAC — MAP 1: one map, one character</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#20241c;
+    font-family:Verdana,Geneva,sans-serif;-webkit-user-select:none;user-select:none;
+    touch-action:none}
+  canvas{display:block}
+  #readout{position:fixed;top:8px;left:8px;z-index:5;color:#f2ecd9;
+    background:rgba(24,26,20,.72);border:2px solid rgba(242,236,217,.55);
+    border-radius:8px;padding:6px 9px;font-size:11px;line-height:1.5;
+    letter-spacing:.04em;pointer-events:none;white-space:nowrap}
+  #readout b{font-size:12px;letter-spacing:.08em}
+  #hint{position:fixed;bottom:8px;left:0;right:0;z-index:5;text-align:center;
+    color:rgba(242,236,217,.75);font-size:11px;letter-spacing:.05em;pointer-events:none}
+</style></head>
+<body>
+<div id="readout"><b>MAP 1 — one map, one character</b><br>
+<span id="scale">map 4800² · Pac Ø56 · lane 420 · tower 90 · range 700</span><br>
+<span id="pos">x — · y — · — fps</span></div>
+<div id="hint">drag to walk · WASD / arrow keys work too</div>
+<canvas id="cv"></canvas>
+<script>
+'use strict';
+/* ================================================================
+   PAC — MAP 1. One MOBA map, one character, built from parts.
+   Pure Pac is drawn on a RIG (legs, body+face, arms) in code —
+   never a pasted photo — with gear anchors taken from
+   models/anchors.json (Pure Tupac entry, normalised to the figure):
+     chest (0.586, 0.540) -> body centre        gloves (0.240/0.972, 0.675)
+     legs  (0.579, 0.880) -> hip band           boots  (0.399/0.759, 0.991)
+     headpiece (0.428, 0.030) -> helmet sits on the head anchor
+   One plain shared gear set is drawn as separate pieces ON those
+   anchors: helmet, pants, boots, gloves. The pieces ride their
+   anchors, so the same set fits any character built on the rig.
+   The world is an etched/sketch MOBA map — NOT notebook paper
+   (that look belongs to the characters only).
+   SCALE (world units): map 4800x4800 · Pac radius 28 (Ø56) ·
+   lane width 420 · tower width 90, range 700 · camera shows
+   ~900 units across on a portrait phone.
+   ================================================================ */
+const WORLD = 4800;
+const PAC_R = 28;              // collision radius; body Ø = 56
+const LANE_W = 420;
+const TOWER_W = 90, TOWER_R = TOWER_W / 2, TOWER_RANGE = 700;
+const PAC_SPEED = 340;         // units / second
+const BASE_POS = { x: 420, y: 4380 };   // your base, bottom-left
+const LAIR_POS = { x: 4380, y: 420 };   // enemy lair, top-right
+
+/* towers: one per lane per side, 180-degree symmetric */
+const TOWERS = [
+  { x: 1608, y: 3192, team: 'you',   lane: 'mid'    },
+  { x: 420,  y: 2900, team: 'you',   lane: 'top'    },
+  { x: 1900, y: 4380, team: 'you',   lane: 'bottom' },
+  { x: 3192, y: 1608, team: 'enemy', lane: 'mid'    },
+  { x: 2900, y: 420,  team: 'enemy', lane: 'top'    },
+  { x: 4380, y: 1900, team: 'enemy', lane: 'bottom' },
+];
+/* side-country obstacles (collision circles), symmetric pairs */
+const OBSTACLES = [
+  { x: 1050, y: 2250, r: 140, kind: 'trees' }, { x: 3750, y: 2550, r: 140, kind: 'trees' },
+  { x: 2250, y: 3750, r: 140, kind: 'rocks' }, { x: 2550, y: 1050, r: 140, kind: 'rocks' },
+  { x: 1500, y: 900,  r: 110, kind: 'trees' }, { x: 3300, y: 3900, r: 110, kind: 'trees' },
+];
+const SOLIDS = [
+  ...TOWERS.map(t => ({ x: t.x, y: t.y, r: TOWER_R })),
+  ...OBSTACLES.map(o => ({ x: o.x, y: o.y, r: o.r })),
+  { x: BASE_POS.x, y: BASE_POS.y, r: 150 },
+  { x: LAIR_POS.x, y: LAIR_POS.y, r: 150 },
+];
+
+/* ---------- seeded rng + sketch helpers (etched look) ---------- */
+function mulberry(seed) {
+  return function () {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const rnd = mulberry(1337);
+/* jittered polyline: the hand-drawn wobble, stable because rnd is seeded
+   and the static map is pre-rendered once */
+function jline(c, pts, jit) {
+  c.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    let [x, y] = pts[i];
+    if (i > 0 && i < pts.length - 1) { x += (rnd() - .5) * jit; y += (rnd() - .5) * jit; }
+    i ? c.lineTo(x, y) : c.moveTo(x, y);
+  }
+  c.stroke();
+}
+function jcirc(c, x, y, r, jit) {  /* two overlapping wobbly rings */
+  for (let k = 0; k < 2; k++) {
+    c.beginPath();
+    const seg = 14;
+    for (let i = 0; i <= seg; i++) {
+      const a = i / seg * Math.PI * 2;
+      const rr = r + (rnd() - .5) * jit;
+      const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr;
+      i ? c.lineTo(px, py) : c.moveTo(px, py);
+    }
+    c.stroke();
+  }
+}
+function hatch(c, x, y, w, h, slope, gap) {
+  c.save(); c.beginPath(); c.rect(x, y, w, h); c.clip();
+  c.beginPath();
+  for (let d = -h; d < w + h; d += gap) {
+    c.moveTo(x + d, y + h); c.lineTo(x + d + slope * h, y);
+  }
+  c.stroke(); c.restore();
+}
+function speckle(c, x, y, w, h, n, col, sMax) {
+  c.fillStyle = col;
+  for (let i = 0; i < n; i++) {
+    const s = 1 + rnd() * sMax;
+    c.fillRect(x + rnd() * w, y + rnd() * h, s, s * .7);
+  }
+}
+const INK = '#2e2a24';
+
+/* lane centrelines (paths the lanes follow) */
+function lanePaths() {
+  return [
+    [BASE_POS, { x: 2400, y: 2400 }, LAIR_POS],                                  // mid: the diagonal
+    [BASE_POS, { x: 420, y: 420 }, LAIR_POS],                                     // top: left edge, top edge
+    [BASE_POS, { x: 4380, y: 4380 }, LAIR_POS],                                  // bottom: bottom edge, right edge
+  ];
+}
+function strokePath(c, pts, width) {
+  c.beginPath();
+  c.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length - 1; i++) {
+    const xc = (pts[i].x + pts[i + 1].x) / 2, yc = (pts[i].y + pts[i + 1].y) / 2;
+    c.quadraticCurveTo(pts[i].x, pts[i].y, xc, yc);
+  }
+  c.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+  c.lineWidth = width; c.stroke();
+}
+/* sample a lane centreline (same quadratic smoothing as strokePath),
+   then build offset ribbons so a lane can be FILLED as one shape
+   with true edge lines instead of stacked stroke passes */
+function samplePath(pts, step) {
+  const out = [pts[0]];
+  let prev = pts[0];
+  for (let i = 1; i < pts.length - 1; i++) {
+    const mid = { x: (pts[i].x + pts[i + 1].x) / 2, y: (pts[i].y + pts[i + 1].y) / 2 };
+    const len = Math.hypot(pts[i].x - prev.x, pts[i].y - prev.y) + Math.hypot(mid.x - pts[i].x, mid.y - pts[i].y);
+    const n = Math.max(4, Math.round(len / step));
+    for (let j = 1; j <= n; j++) {
+      const t = j / n, a = (1 - t) * (1 - t), b = 2 * (1 - t) * t, d = t * t;
+      out.push({ x: a * prev.x + b * pts[i].x + d * mid.x, y: a * prev.y + b * pts[i].y + d * mid.y });
+    }
+    prev = mid;
+  }
+  const last = pts[pts.length - 1], n = Math.max(4, Math.round(Math.hypot(last.x - prev.x, last.y - prev.y) / step));
+  for (let j = 1; j <= n; j++) out.push({ x: prev.x + (last.x - prev.x) * j / n, y: prev.y + (last.y - prev.y) * j / n });
+  return out;
+}
+function offsetPts(pts, d) {
+  return pts.map((p, i) => {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+    let dx = b.x - a.x, dy = b.y - a.y; const l = Math.hypot(dx, dy) || 1; dx /= l; dy /= l;
+    return { x: p.x - dy * d, y: p.y + dx * d };
+  });
+}
+function fillRibbon(c, pts, w, col) {
+  const L = offsetPts(pts, w / 2), R = offsetPts(pts, -w / 2).reverse();
+  c.fillStyle = col; c.beginPath();
+  c.moveTo(L[0].x, L[0].y);
+  for (const p of L) c.lineTo(p.x, p.y);
+  for (const p of R) c.lineTo(p.x, p.y);
+  c.closePath(); c.fill();
+}
+
+/* ================= THE MAP — static layer, pre-rendered ========== */
+function drawTowerBody(c, t) {
+  const col = t.team === 'you' ? '#57b7e8' : '#e85d57';
+  c.save(); c.translate(t.x, t.y);
+  c.fillStyle = 'rgba(20,20,16,.25)';                       // ground shadow
+  c.beginPath(); c.ellipse(6, 40, 62, 18, 0, 0, 7); c.fill();
+  c.fillStyle = '#989ea2';                                  // stone drum (Ø90)
+  c.strokeStyle = INK; c.lineWidth = 5;
+  c.beginPath(); c.ellipse(0, 18, 45, 20, 0, 0, 7); c.fill(); c.stroke();
+  c.fillRect(-45, -52, 90, 70); c.fill();
+  c.beginPath(); c.moveTo(-45, -52); c.lineTo(-45, 18); c.moveTo(45, -52); c.lineTo(45, 18); c.stroke();
+  c.strokeStyle = 'rgba(46,42,36,.5)'; c.lineWidth = 2.5;    // stone courses
+  for (const yy of [-28, -4, 8]) { c.beginPath(); c.moveTo(-44, yy); c.lineTo(44, yy + (rnd() - .5) * 3); c.stroke(); }
+  for (const xx of [-22, 0, 22]) { c.beginPath(); c.moveTo(xx + (rnd() - .5) * 3, -50); c.lineTo(xx, -30); c.stroke(); }
+  c.fillStyle = '#878d90';                                  // battlements
+  c.strokeStyle = INK; c.lineWidth = 5;
+  for (let i = -1; i <= 1; i++) { c.fillRect(i * 30 - 12, -78, 24, 28); c.strokeRect(i * 30 - 12, -78, 24, 28); }
+  c.fillStyle = '#989ea2'; c.fillRect(-45, -56, 90, 10); c.fill();
+  c.strokeStyle = col; c.lineWidth = 6;                      // team ring
+  c.beginPath(); c.ellipse(0, 22, 56, 24, 0, 0, 7); c.stroke();
+  c.restore();
+}
+function drawCrystal(c, x, y, s, col, t) {
+  const bob = Math.sin(t * 2 + x * .01) * 5;
+  c.save(); c.translate(x, y + bob);
+  c.fillStyle = col; c.strokeStyle = INK; c.lineWidth = 4;
+  c.beginPath();
+  c.moveTo(0, -s); c.lineTo(s * .55, -s * .15); c.lineTo(s * .34, s * .8);
+  c.lineTo(-s * .34, s * .8); c.lineTo(-s * .55, -s * .15); c.closePath();
+  c.fill(); c.stroke();
+  c.strokeStyle = 'rgba(255,255,255,.65)'; c.lineWidth = 2.5;
+  c.beginPath(); c.moveTo(0, -s * .8); c.lineTo(-s * .2, s * .4); c.stroke();
+  c.restore();
+}
+function renderMap() {
+  const S = 0.5, off = document.createElement('canvas');
+  off.width = off.height = WORLD * S;
+  const c = off.getContext('2d'); c.scale(S, S);
+  /* ground — etched earth, patchy and speckled */
+  c.fillStyle = '#7f8f57'; c.fillRect(0, 0, WORLD, WORLD);
+  for (let i = 0; i < 260; i++) {
+    c.fillStyle = rnd() > .5 ? 'rgba(109,127,71,.20)' : 'rgba(154,168,107,.18)';
+    c.beginPath();
+    c.ellipse(rnd() * WORLD, rnd() * WORLD, 120 + rnd() * 380, 90 + rnd() * 260, rnd() * 3, 0, 7);
+    c.fill();
+  }
+  speckle(c, 0, 0, WORLD, WORLD, 5200, 'rgba(70,84,44,.35)', 5);
+  speckle(c, 0, 0, WORLD, WORLD, 3600, 'rgba(178,190,130,.30)', 4);
+  c.strokeStyle = 'rgba(56,70,34,.28)'; c.lineWidth = 3; c.lineCap = 'round';
+  for (let i = 0; i < 900; i++) {                            // etched grass tufts
+    const gx = rnd() * WORLD, gy = rnd() * WORLD;
+    c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx + 4, gy - 12); c.moveTo(gx + 7, gy); c.lineTo(gx + 12, gy - 10); c.stroke();
+  }
+  /* side country — rougher, darker ground between the lanes */
+  c.fillStyle = 'rgba(96,116,62,.35)';
+  for (const [x, y, w, h] of [[700, 1500, 1500, 1300], [2600, 2000, 1500, 1300],
+                              [2000, 700, 1300, 1400], [1500, 2700, 1300, 1400]]) {
+    c.beginPath(); c.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, .4, 0, 7); c.fill();
+  }
+  /* THE DIVIDE — a sketched river on the TL->BR diagonal, the frontier
+     between your bottom-left half and the enemy top-right half */
+  c.save();
+  c.strokeStyle = '#7590a6'; c.lineWidth = 300; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(-80, -80); c.lineTo(WORLD + 80, WORLD + 80); c.stroke();
+  c.strokeStyle = '#87a5bb'; c.lineWidth = 250;
+  c.beginPath(); c.moveTo(-80, -80); c.lineTo(WORLD + 80, WORLD + 80); c.stroke();
+  c.strokeStyle = 'rgba(230,242,248,.5)'; c.lineWidth = 3;   // flow lines
+  for (let i = 0; i < 90; i++) {
+    const t = rnd(), bx = t * WORLD + (rnd() - .5) * 200, by = t * WORLD + (rnd() - .5) * 200;
+    jline(c, [[bx - 40, by - 40], [bx, by], [bx + 40, by + 40]], 8);
+  }
+  c.strokeStyle = '#5d4a33'; c.lineWidth = 7;                // banks
+  for (const off2 of [-152, 152]) {
+    c.beginPath(); c.moveTo(-80 + off2 * .707, -80 - off2 * .707);
+    c.lineTo(WORLD + 80 + off2 * .707, WORLD + 80 - off2 * .707); c.stroke();
+  }
+  c.restore();
+  /* lanes — worn dirt paths, 420 wide: one filled ribbon each,
+     a soft worn centre, etched edge lines, faint wheel ruts */
+  for (const raw of lanePaths()) {
+    const pts = samplePath(raw, 60);
+    fillRibbon(c, pts, LANE_W + 30, '#a68f5c');
+    fillRibbon(c, pts, LANE_W, '#b39a67');
+    fillRibbon(c, pts, LANE_W * .58, 'rgba(194,170,119,.55)');
+    c.save();                                             // wear speckle, clipped to the lane
+    const L = offsetPts(pts, LANE_W / 2), R = offsetPts(pts, -LANE_W / 2).reverse();
+    c.beginPath(); c.moveTo(L[0].x, L[0].y);
+    for (const p of L) c.lineTo(p.x, p.y);
+    for (const p of R) c.lineTo(p.x, p.y);
+    c.closePath(); c.clip();
+    for (const [bx, by] of [[420, 4380], [2400, 2400], [4380, 420], [420, 2200], [2200, 420], [4380, 2600], [2600, 4380]])
+      speckle(c, bx - 900, by - 900, 1800, 1800, 260, 'rgba(122,98,58,.35)', 6);
+    c.restore();
+    c.strokeStyle = 'rgba(74,63,44,.8)'; c.lineWidth = 5;   // etched edges
+    for (const s of [1, -1]) {
+      const e = offsetPts(pts, s * LANE_W / 2);
+      jline(c, e.filter((_, i) => i % 2 === 0).map(p => [p.x, p.y]), 7);
+    }
+    c.strokeStyle = 'rgba(120,98,60,.35)'; c.lineWidth = 4; // wheel ruts
+    for (const s of [1, -1]) {
+      const e = offsetPts(pts, s * 72);
+      jline(c, e.filter((_, i) => i % 2 === 0).map(p => [p.x, p.y]), 6);
+    }
+  }
+  /* bridges where lanes cross the river */
+  for (const [bx, by, rot] of [[2400, 2400, Math.PI / 4], [420, 420, 0], [4380, 4380, 0]]) {
+    c.save(); c.translate(bx, by); c.rotate(rot);
+    c.fillStyle = '#8a6b42'; c.strokeStyle = INK; c.lineWidth = 4;
+    c.fillRect(-250, -70, 500, 140); c.strokeRect(-250, -70, 500, 140);
+    c.strokeStyle = 'rgba(46,42,36,.6)'; c.lineWidth = 3;
+    for (let px = -200; px <= 200; px += 50) { c.beginPath(); c.moveTo(px, -68); c.lineTo(px, 68); c.stroke(); }
+    c.restore();
+  }
+  /* side-country dressing around the obstacles */
+  for (const o of OBSTACLES) {
+    c.save(); c.translate(o.x, o.y);
+    if (o.kind === 'trees') {
+      for (let i = 0; i < 9; i++) {
+        const a = rnd() * 6.28, d = rnd() * o.r * .62, tx = Math.cos(a) * d, ty = Math.sin(a) * d;
+        c.fillStyle = '#5a4632'; c.fillRect(tx - 5, ty + 8, 10, 22);
+        c.fillStyle = rnd() > .5 ? '#5d7340' : '#546c38';
+        c.strokeStyle = INK; c.lineWidth = 3.5;
+        c.beginPath(); c.arc(tx, ty, 34 + rnd() * 16, 0, 7); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(46,42,36,.45)'; c.lineWidth = 2;
+        c.beginPath(); c.arc(tx - 6, ty - 4, 18, .6, 2.4); c.stroke();
+      }
+    } else {
+      for (let i = 0; i < 7; i++) {
+        const a = rnd() * 6.28, d = rnd() * o.r * .6, rx = Math.cos(a) * d, ry = Math.sin(a) * d, rr = 26 + rnd() * 26;
+        c.fillStyle = '#8d9296'; c.strokeStyle = INK; c.lineWidth = 3.5;
+        c.beginPath(); c.moveTo(rx - rr, ry + rr * .6);
+        c.lineTo(rx - rr * .4, ry - rr * .8); c.lineTo(rx + rr * .6, ry - rr * .5);
+        c.lineTo(rx + rr, ry + rr * .6); c.closePath(); c.fill(); c.stroke();
+        c.strokeStyle = 'rgba(46,42,36,.4)'; c.lineWidth = 2;
+        jline(c, [[rx - rr * .3, ry], [rx + rr * .3, ry + rr * .2]], 5);
+      }
+    }
+    c.restore();
+  }
+  /* your base — stone dais + crystal, bottom-left */
+  c.save(); c.translate(BASE_POS.x, BASE_POS.y);
+  c.fillStyle = '#a7adaf'; c.strokeStyle = INK; c.lineWidth = 5;
+  c.beginPath(); c.ellipse(0, 26, 182, 76, 0, 0, 7); c.fill(); c.stroke();
+  c.strokeStyle = 'rgba(46,42,36,.55)'; c.lineWidth = 3;
+  c.beginPath(); c.ellipse(0, 26, 132, 52, 0, 0, 7); c.stroke();
+  c.beginPath(); c.ellipse(0, 26, 84, 32, 0, 0, 7); c.stroke();
+  c.fillStyle = '#2e2a24'; c.font = 'bold 42px Verdana'; c.textAlign = 'center';
+  c.fillText('YOUR BASE', 0, 138);
+  c.restore();
+  /* enemy lair — dark gate + crystal, top-right */
+  c.save(); c.translate(LAIR_POS.x, LAIR_POS.y);
+  c.fillStyle = '#4c4543'; c.strokeStyle = INK; c.lineWidth = 6;
+  c.fillRect(-170, -90, 340, 200); c.strokeRect(-170, -90, 340, 200);
+  c.fillStyle = '#332e2c';
+  c.beginPath(); c.moveTo(-70, 110); c.lineTo(-70, -20); c.arc(0, -20, 70, Math.PI, 0); c.lineTo(70, 110); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = 'rgba(240,235,220,.35)'; c.lineWidth = 3;
+  for (let gx = -140; gx <= 140; gx += 40) { c.beginPath(); c.moveTo(gx, -84); c.lineTo(gx, 104); c.stroke(); }
+  c.fillStyle = '#f2ecd9'; c.font = 'bold 44px Verdana'; c.textAlign = 'center';
+  c.fillText('ENEMY LAIR', 0, 168);
+  c.restore();
+  /* towers (bodies static; crystals float in the live layer) */
+  for (const t of TOWERS) drawTowerBody(c, t);
+  /* map rim */
+  c.strokeStyle = INK; c.lineWidth = 14; c.strokeRect(0, 0, WORLD, WORLD);
+  c.strokeStyle = 'rgba(46,42,36,.5)'; c.lineWidth = 4; c.strokeRect(26, 26, WORLD - 52, WORLD - 52);
+  return off;
+}
+
+/* ================= PURE PAC — built on the rig ==================
+   Local frame: origin at the ground point between his feet.
+   Anchors converted from models/anchors.json (figure fractions):
+   body centre (0,-46) r28 · hands rest (±31,-32) · feet (±16,0) ·
+   helmet on the head anchor, top of the body. Figure is 100 tall,
+   ~84 wide — his round BODY is Ø56, exactly the stated radius x2. */
+const GEAR = {           // the one plain shared set — basic = plain
+  helmetCol: '#c3c9cd', helmetShade: '#99a0a5', bandCol: '#c8433c',
+  pantsCol: '#5d6d84', bootsCol: '#7b5a38', soleCol: '#4c3822',
+  glovesCol: '#eadfc2',
+};
+function drawBoot(c, toeDir) {
+  c.fillStyle = GEAR.bootsCol; c.strokeStyle = INK; c.lineWidth = 3;
+  c.beginPath();                                   // shaft + foot
+  c.moveTo(-6, -12); c.lineTo(6, -12); c.lineTo(6, -3);
+  c.lineTo(6 + toeDir * 9, -3); c.lineTo(6 + toeDir * 9, 2); c.lineTo(-6, 2);
+  c.closePath(); c.fill(); c.stroke();
+  c.fillStyle = GEAR.soleCol; c.fillRect(-6, 1, 15 + (toeDir > 0 ? 6 : 0), 3.4);
+  c.strokeStyle = 'rgba(46,42,36,.55)'; c.lineWidth = 1.8;
+  c.beginPath(); c.moveTo(-6, -7); c.lineTo(6, -7); c.stroke();
+}
+function drawLeg(c, side, swing, toeDir) {
+  c.save();
+  c.translate(side * 11, -24);                     // hip pivot (legs anchor band)
+  c.rotate(swing);
+  c.fillStyle = '#f7cf4a'; c.strokeStyle = INK; c.lineWidth = 3;   // bare lower leg
+  c.beginPath(); c.moveTo(-5.5, 10); c.lineTo(5.5, 10); c.lineTo(4.5, 24); c.lineTo(-4.5, 24); c.closePath(); c.fill(); c.stroke();
+  c.fillStyle = GEAR.pantsCol;                                  // PANTS on the leg anchor
+  c.beginPath(); c.moveTo(-6.5, -3); c.lineTo(6.5, -3); c.lineTo(5.5, 12); c.lineTo(-5.5, 12); c.closePath(); c.fill(); c.stroke();
+  c.strokeStyle = 'rgba(46,42,36,.5)'; c.lineWidth = 1.8;
+  c.beginPath(); c.moveTo(0, -2); c.lineTo(0, 11); c.stroke();   // seam
+  c.translate(side * 3, 25); drawBoot(c, toeDir);               // BOOT on the boot anchor
+  c.restore();
+}
+function drawGlove(c) {
+  c.fillStyle = GEAR.glovesCol; c.strokeStyle = INK; c.lineWidth = 3;
+  c.beginPath(); c.arc(0, 2, 7.5, 0, 7); c.fill(); c.stroke();  // mitten hand
+  c.beginPath(); c.arc(-6.5, -1, 3.4, 0, 7); c.fill(); c.stroke(); // thumb
+  c.fillStyle = '#d8cba6'; c.fillRect(-7, -8.5, 14, 5); c.strokeRect(-7, -8.5, 14, 5); // cuff
+}
+function drawArm(c, side, swing) {
+  c.save();
+  c.translate(side * 25, -56);                     // shoulder pivot
+  c.rotate(side * 0.16 + swing);
+  c.fillStyle = '#f7cf4a'; c.strokeStyle = INK; c.lineWidth = 3;
+  c.beginPath(); c.moveTo(-5, 0); c.lineTo(5, 0); c.lineTo(4, 26); c.lineTo(-4, 26); c.closePath(); c.fill(); c.stroke();
+  c.translate(0, 29); drawGlove(c);                // GLOVE on the hand anchor
+  c.restore();
+}
+function drawHelmet(c) {
+  c.save();
+  c.translate(-5, -76); c.rotate(-0.06);           // head anchor, cap-like tilt
+  c.fillStyle = GEAR.helmetCol; c.strokeStyle = INK; c.lineWidth = 3.2;
+  c.beginPath(); c.arc(0, 0, 22, Math.PI, 0); c.closePath(); c.fill(); c.stroke();  // dome
+  c.fillStyle = GEAR.helmetShade;                   // etched shade, right side
+  c.beginPath(); c.arc(0, 0, 22, -0.5, 0.9); c.arc(7, 1, 15, 0.9, -0.5, true); c.closePath(); c.fill();
+  c.fillStyle = GEAR.bandCol;                       // the cap's red, carried in the band
+  c.fillRect(-23, -5.5, 46, 5.5); c.strokeRect(-23, -5.5, 46, 5.5);
+  c.fillStyle = '#aeb5ba'; c.fillRect(-27, 0, 54, 5.5); c.strokeRect(-27, 0, 54, 5.5); // brim
+  c.fillStyle = INK; for (const rx of [-13, 0, 13]) { c.beginPath(); c.arc(rx, -9, 1.6, 0, 7); c.fill(); } // rivets
+  c.restore();
+}
+function drawPac(c, p, t) {
+  const moving = p.speedNow > 12;
+  const ph = p.phase;
+  const legSwing = moving ? Math.sin(ph) * 0.55 : 0;
+  const armSwing = moving ? Math.sin(ph) * 0.38 : Math.sin(t * 2) * 0.05;
+  const bob = moving ? Math.abs(Math.cos(ph)) * 2.4 : Math.sin(t * 2) * 0.9;
+  c.save(); c.translate(p.x, p.y);
+  c.fillStyle = 'rgba(20,22,14,.28)';               // soft shadow — he stands IN the map
+  c.beginPath(); c.ellipse(0, 4, 32, 10, 0, 0, 7); c.fill();
+  c.scale(p.face, 1);
+  c.rotate(p.lean);
+  const toe = 1;                                    // boots point his facing way (local +x after flip)
+  drawLeg(c, -1, legSwing, toe);
+  drawLeg(c, 1, -legSwing, toe);
+  /* body + face (the head IS the body — anchors.json: no neck segment) */
+  c.save(); c.translate(0, -bob);
+  c.fillStyle = '#f7cf4a'; c.strokeStyle = INK; c.lineWidth = 3.6;
+  c.beginPath(); c.arc(0, -46, PAC_R, 0, 7); c.fill(); c.stroke();
+  c.strokeStyle = 'rgba(190,140,30,.55)'; c.lineWidth = 2;   // pencil rim shading
+  for (let i = 0; i < 5; i++) { c.beginPath(); c.arc(3, -44, 23 - i * 1.5, 0.7 + i * 0.16, 1.25 + i * 0.16); c.stroke(); }
+  const hx = p.headX;                                // face turns a little toward travel
+  c.fillStyle = INK;                                 // eyes + brows
+  c.beginPath(); c.ellipse(-10 + hx, -54, 3.4, 4.6, 0, 0, 7); c.fill();
+  c.beginPath(); c.ellipse(11 + hx, -55, 3.4, 4.6, 0, 0, 7); c.fill();
+  c.strokeStyle = INK; c.lineWidth = 2.6;
+  c.beginPath(); c.moveTo(-15 + hx, -63); c.lineTo(-5 + hx, -65); c.stroke();
+  c.beginPath(); c.moveTo(6 + hx, -66); c.lineTo(16 + hx, -63); c.stroke();
+  c.strokeStyle = 'rgba(224,110,120,.8)'; c.lineWidth = 2.4;  // blush
+  c.beginPath(); c.moveTo(-21, -47); c.lineTo(-15, -46); c.stroke();
+  c.beginPath(); c.moveTo(16, -47); c.lineTo(22, -46); c.stroke();
+  /* the big open grin — his mouth is the slice */
+  c.save(); c.translate(hx * 0.7, 0);
+  c.fillStyle = '#6e2b25'; c.strokeStyle = INK; c.lineWidth = 3.2;
+  c.beginPath();
+  c.moveTo(-19, -43);
+  c.quadraticCurveTo(0, -37, 20, -43);        // lip line
+  c.quadraticCurveTo(16, -25, 0, -24.5);      // right cheek down to the chin curve
+  c.quadraticCurveTo(-16, -25, -19, -43);      // left cheek back up
+  c.closePath(); c.fill(); c.stroke();
+  c.fillStyle = '#fff6e8';                           // teeth
+  c.beginPath(); c.moveTo(-14, -41.5); c.quadraticCurveTo(0, -36, 14, -41.5);
+  c.lineTo(12, -35.5); c.quadraticCurveTo(0, -31.5, -12, -35.5); c.closePath(); c.fill();
+  c.fillStyle = '#e2707a';                           // tongue
+  c.beginPath(); c.ellipse(2, -27.5, 7.5, 3.4, 0, 0, 7); c.fill();
+  c.restore();
+  drawArm(c, -1, armSwing);                          // arms ride over the body's edge —
+  drawArm(c, 1, -armSwing);                          // limbs + GLOVES read outside the silhouette
+  drawHelmet(c);                                     // HELMET on the head anchor, over the body
+  c.restore();
+  c.restore();
+}
+
+/* ================= state, input, physics ========================= */
+const qs = new URLSearchParams(location.search);
+const pac = {
+  x: parseFloat(qs.get('x')) || 700, y: parseFloat(qs.get('y')) || 4100,
+  vx: 0, vy: 0, face: 1, lean: 0, headX: 0, phase: 0, speedNow: 0,
+};
+const keys = {};
+addEventListener('keydown', e => { keys[e.code] = true; if (e.code.startsWith('Arrow')) e.preventDefault(); });
+addEventListener('keyup', e => { keys[e.code] = false; });
+let drag = null;
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+function ptr(e) { return { x: e.clientX, y: e.clientY }; }
+cv.addEventListener('pointerdown', e => { drag = { sx: e.clientX, sy: e.clientY, dx: 0, dy: 0 }; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => { if (drag) { drag.dx = e.clientX - drag.sx; drag.dy = e.clientY - drag.sy; } });
+cv.addEventListener('pointerup', () => drag = null);
+cv.addEventListener('pointercancel', () => drag = null);
+
+function step(dt) {
+  let ix = 0, iy = 0;
+  if (keys.KeyA || keys.ArrowLeft) ix -= 1;
+  if (keys.KeyD || keys.ArrowRight) ix += 1;
+  if (keys.KeyW || keys.ArrowUp) iy -= 1;
+  if (keys.KeyS || keys.ArrowDown) iy += 1;
+  if (drag && Math.hypot(drag.dx, drag.dy) > 8) {
+    const m = Math.min(1, Math.hypot(drag.dx, drag.dy) / 70);
+    ix = drag.dx / Math.hypot(drag.dx, drag.dy) * m;
+    iy = drag.dy / Math.hypot(drag.dx, drag.dy) * m;
+  }
+  const il = Math.hypot(ix, iy);
+  if (il > 1) { ix /= il; iy /= il; }
+  const k = 1 - Math.pow(0.0001, dt);                // smooth accel
+  pac.vx += (ix * PAC_SPEED - pac.vx) * k;
+  pac.vy += (iy * PAC_SPEED - pac.vy) * k;
+  pac.x += pac.vx * dt; pac.y += pac.vy * dt;
+  pac.speedNow = Math.hypot(pac.vx, pac.vy);
+  if (pac.speedNow > 12) {
+    pac.phase += dt * pac.speedNow * 0.048;
+    if (Math.abs(pac.vx) > 20) pac.face = pac.vx > 0 ? 1 : -1;
+    pac.lean += ((pac.vx / PAC_SPEED) * 0.10 - pac.lean) * Math.min(1, dt * 8);
+    pac.headX += ((pac.vx / PAC_SPEED) * 5 - pac.headX) * Math.min(1, dt * 8);
+  } else {
+    pac.lean *= Math.pow(0.001, dt); pac.headX *= Math.pow(0.001, dt);
+  }
+  for (const s of SOLIDS) {                          // collisions
+    const dx = pac.x - s.x, dy = pac.y - s.y, d = Math.hypot(dx, dy), min = s.r + PAC_R;
+    if (d > 0.01 && d < min) { pac.x = s.x + dx / d * min; pac.y = s.y + dy / d * min; }
+  }
+  pac.x = Math.max(PAC_R, Math.min(WORLD - PAC_R, pac.x));
+  pac.y = Math.max(PAC_R, Math.min(WORLD - PAC_R, pac.y));
+}
+
+/* ================= camera + main loop ============================ */
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+  cv.style.width = W + 'px'; cv.style.height = H + 'px';
+}
+addEventListener('resize', resize); resize();
+const ZOOM = parseFloat(qs.get('zoom')) || 1;
+const mapImg = renderMap();
+const posEl = document.getElementById('pos');
+let last = performance.now(), fpsN = 0, fpsT = 0, fps = 0;
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  fpsN++; fpsT += dt; if (fpsT >= 0.5) { fps = Math.round(fpsN / fpsT); fpsN = 0; fpsT = 0; }
+  step(dt);
+  const scale = (W < H ? W / 900 : H / 1000) * ZOOM;         // ~900 units across, portrait phone
+  const vw = W / scale, vh = H / scale;
+  let camX = pac.x - vw / 2, camY = pac.y - vh / 2;          // hard clamp: the map always fills the screen
+  camX = vw >= WORLD ? (WORLD - vw) / 2 : Math.max(0, Math.min(WORLD - vw, camX));
+  camY = vh >= WORLD ? (WORLD - vh) / 2 : Math.max(0, Math.min(WORLD - vh, camY));
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#20241c'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.scale(scale, scale); ctx.translate(-camX, -camY);
+  ctx.drawImage(mapImg, 0, 0, WORLD, WORLD);
+  const t = now / 1000;
+  for (const tw of TOWERS) {                                  // tower range, shown when near
+    const d = Math.hypot(pac.x - tw.x, pac.y - tw.y);
+    if (d < 1050) {
+      ctx.strokeStyle = tw.team === 'you' ? 'rgba(87,183,232,.5)' : 'rgba(232,93,87,.5)';
+      ctx.fillStyle = tw.team === 'you' ? 'rgba(87,183,232,.06)' : 'rgba(232,93,87,.06)';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(tw.x, tw.y, TOWER_RANGE, 0, 7); ctx.fill(); ctx.stroke();
+    }
+    drawCrystal(ctx, tw.x, tw.y - 104, 22, tw.team === 'you' ? '#57b7e8' : '#e85d57', t);
+  }
+  drawCrystal(ctx, BASE_POS.x, BASE_POS.y - 46, 40, '#57b7e8', t);
+  drawCrystal(ctx, LAIR_POS.x, LAIR_POS.y - 130, 40, '#e85d57', t);
+  drawPac(ctx, pac, t);
+  ctx.restore();
+  posEl.textContent = 'x ' + Math.round(pac.x) + ' · y ' + Math.round(pac.y) + ' · ' + fps + ' fps';
+  requestAnimationFrame(frame);
+}
+window.__map1 = { pac, TOWERS, BASE_POS, LAIR_POS, WORLD };
+window.__ready = true;
+requestAnimationFrame(frame);
+</script>
+</body></html>
