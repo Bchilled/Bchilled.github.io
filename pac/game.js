@@ -1,9 +1,12 @@
 'use strict';
 /* =========================================================================
-   PAC — Arena Muncher (prototype v1)
-   Vampire-Survivors-like on a big looping (toroidal) arena with Pac-Man DNA.
-   Single file, no assets: canvas primitives + WebAudio synth only.
+   PAC — Arena Muncher — v3.0.0
+   (v1 core + v2 maze/Time Shift/radar + v3: the 7-stat wheel & spin offers,
+   thresholds, resources, run timer & difficulties, the Level-6 APE boss,
+   fog/radar upgrade, named areas, team-up tag-in. Numbers: BALANCE.md.
+   Structure guide: CODE-GUIDE.md.)
    ========================================================================= */
+const PAC_VERSION = '3.0.0';
 
 // ---------------- World / tuning constants ----------------
 const WORLD_W = 3400;            // arena width  (world wraps on both axes)
@@ -272,6 +275,8 @@ window.addEventListener('keydown', (e) => {
   if (e.key === ' ') G.wantDash = true;
   if (e.key.toLowerCase() === 'e' || e.key === 'Shift') G.wantShift = true;
   if (e.key === '1' || e.key === '2' || e.key === '3') setActivePower(Number(e.key) - 1);
+  if (e.key.toLowerCase() === 'f') G.wantBurst = true;
+  if (e.key.toLowerCase() === 't') tagIn();
   if (e.key.toLowerCase() === 'm') toggleMute();
   if (e.key.toLowerCase() === 'p') togglePause();
 });
@@ -363,7 +368,17 @@ function defaultSave() {
     unlocks: ['pac'],          // roster — the design bible's unlock system lands here
     curses: [],                // Bomberguy curse ledger (structure ready, nothing writes yet)
     seen: [],                  // first-sight teaching registry — ids already taught, never repeated
-    settings: { muted: false }
+    settings: { muted: false },
+    // ---- v3 fields (same save key; saneSave defaults keep old saves valid) ----
+    difficulty: 'medium',      // easy | medium | hard (BALANCE §2 canon lives)
+    endlessUnlocked: {},       // {levelKey: true} — endless unlocks per level (BALANCE §7.2)
+    cumulativeLevels: 0,       // account progress: total level-ups ever (team-up unlocks at 10)
+    teamUnlocked: false,
+    teamPlayLevels: 0,         // levels played with team-up available (team growth step S)
+    teamSize: 2,               // current unlocked team size (max 3, BALANCE §12)
+    hardcoreDeath: null,       // {char, at, level, score} — Hard is canon character loss
+    coins: {},                 // per-character coin wallets (BALANCE §6.2: coins are character-based)
+    lightRadius: 0             // last gear-rolled Light Radius steps (-2..+4, BALANCE appendix)
   };
 }
 function saneSave(raw) {
@@ -387,6 +402,15 @@ function saneSave(raw) {
   if (Array.isArray(raw.curses)) d.curses = raw.curses;
   if (Array.isArray(raw.seen)) d.seen = raw.seen.filter((u) => typeof u === 'string');
   if (raw.settings) d.settings.muted = !!raw.settings.muted;
+  if (['easy', 'medium', 'hard'].includes(raw.difficulty)) d.difficulty = raw.difficulty;
+  if (raw.endlessUnlocked && typeof raw.endlessUnlocked === 'object') d.endlessUnlocked = raw.endlessUnlocked;
+  d.cumulativeLevels = +raw.cumulativeLevels || 0;
+  d.teamUnlocked = !!raw.teamUnlocked;
+  d.teamPlayLevels = +raw.teamPlayLevels || 0;
+  d.teamSize = clamp(+raw.teamSize || 2, 2, 3);
+  if (raw.hardcoreDeath && typeof raw.hardcoreDeath === 'object') d.hardcoreDeath = raw.hardcoreDeath;
+  if (raw.coins && typeof raw.coins === 'object') d.coins = raw.coins;
+  d.lightRadius = clamp(Math.round(+raw.lightRadius || 0), -2, 4);
   return d;
 }
 const Save = {
@@ -427,7 +451,16 @@ const Save = {
       unlocks: d.unlocks.slice(),
       curses: d.curses.slice(),
       seen: d.seen.slice(),
-      settings: { muted: Snd.muted }
+      settings: { muted: Snd.muted },
+      difficulty: d.difficulty,
+      endlessUnlocked: Object.assign({}, d.endlessUnlocked),
+      cumulativeLevels: d.cumulativeLevels,
+      teamUnlocked: d.teamUnlocked,
+      teamPlayLevels: d.teamPlayLevels,
+      teamSize: d.teamSize,
+      hardcoreDeath: d.hardcoreDeath,
+      coins: Object.assign({}, d.coins),
+      lightRadius: d.lightRadius
     };
   },
   write(silent) {
@@ -478,7 +511,22 @@ const TEACH = {
   copy:      { title: 'POWER COPIED', text: 'You hold up to 3 copied powers. Press 1 / 2 / 3 (or tap a power slot) to choose the active one. Eating a ghost whose power you already hold levels that power up instead.' },
   levelup:   { title: 'LEVEL UP', text: 'Pick 1 of 3 cards. Early levels offer SKILLS only; deeper upgrades arrive from level 4. Every card says in plain words what it does — read it, then commit. Picking can never hurt you: you resume under a grace shield.' },
   grace:     { title: 'GRACE', text: 'After every pick you get 1.5 seconds like this: ghosts frozen solid, you untouchable. Use it to aim your first move — choosing a card never costs health.' },
-  timeshift: { title: 'DANGER CLOSE — TIME SHIFT', text: 'Press E (or the SHIFT button) for TIME SHIFT: the swarm freezes and you slip out through the nearest edge, reappearing on the opposite side. 6-second cooldown. It is your escape hatch — spend it to live.' }
+  timeshift: { title: 'DANGER CLOSE — TIME SHIFT', text: 'Press E (or the SHIFT button) for TIME SHIFT: the swarm freezes and you slip out through the nearest edge, reappearing on the opposite side. 6-second cooldown. It is your escape hatch — spend it to live.' },
+  // ---- v3 first-sight lessons (one per new system; fire once ever) ----
+  spin:      { title: 'THE WHEEL SPINS', text: 'Every level-up, the 7-stat wheel spins. Level 1: it lands on one stat and your offers come from that stat. Level 2: it lands one step to the side. Level 3: it jumps to the OPPOSITE side. After that, the pattern repeats. The wheel deals the stat; you pick the card.' },
+  resource:  { title: 'RAGE', text: 'Pac runs on RAGE — his one resource. Dealing and taking damage builds it. Out of the fight it drains away. At 50 or more, press F for an explosive burst that clears the ghosts around you.' },
+  threshold: { title: 'THRESHOLD CROSSED', text: 'Stats pay out at amounts, not one-for-one: reach 5, 10, 15, 20, 30, 40 or 50 in a stat and that stat grants an increase in its own area. Watch the pause screen for your totals.' },
+  collectrange: { title: 'COLLECTION RANGE', text: 'Collection range is how far away pellets and pickups get pulled into your mouth. It is one of the small increases the wheel can deal — it belongs to Spirit (collect range lives in Spirit\'s third shade).' },
+  difficulty: { title: 'DIFFICULTY', text: 'Easy: 3 lives. Medium: 1 life. Hard: HARDCORE — die once and the character is GONE, marked dead on the menu for good. Pick on the start screen before a run.' },
+  endless:   { title: 'ENDLESS UNLOCKED', text: 'You beat this level\'s boss, so its ENDLESS mode is unlocked: no time limit, no boss gate — the swarm just keeps coming. Toggle it on the start screen.' },
+  teamup:    { title: 'TEAM UP!', text: 'Ten levels of account progress unlock TEAM UP: a partner joins the run. Press T to TAG IN — you swap places with your partner, and each of you keeps your own health, stats and resource.' },
+  stonepick: { title: 'PICK YOUR STONE', text: 'Level 6 prize: an Infinity Stone of YOUR choice — one per stat, plus the Darkhold as the seventh. A stone buffs the skills of its own stat (+15%). Choose the colour your build already loves.' },
+  ape:       { title: 'THE APE — LEVEL 6', text: 'You cannot hurt him up on his scaffold. BAIT THE THROW, BREAK THE SCAFFOLD: stand where his barrel will land beside a cracked pylon, be gone when it blows, and let his own barrels drop all 4 pylons. Then he fights you on the ground — where he is finally edible.' },
+  radar:     { title: 'RADAR', text: 'The corner radar now runs all the time: blue dots are edible ghosts, pale dots are hunters, pink is fruit, gold is a stone. It only shows ground you have EXPLORED — the fog is real, and Light Radius pushes it back.' },
+  areachange: { title: 'NEW AREA', text: 'The maze has named areas. Crossing into a new one shows its name — exploring fills in your radar, and each area wears its own light.' },
+  lightradius: { title: 'LIGHT RADIUS', text: 'Light Radius brightens the area around you: gear can roll it from -2 to +4 steps, and every step pushes the fog 40px further out. A bad roll (negative) pulls the dark in closer.' },
+  weaponpick: { title: 'THE ARSENAL OPENS', text: 'Level 5: pick a weapon. Weapon rolls are SIGNED — a roll can come up negative, a bad roll, as well as good. The numbers on the card are the numbers you get.' },
+  banknote:  { title: 'LEVEL 4 — THE BANK', text: 'Canon ladder note: at level 4 the full game unlocks the Bank (save a power-up for later). In this prototype the bank itself is not built yet — the ladder continues: weapon at 5, stone and the Ape at 6.' }
 };
 
 const Teach = {
@@ -543,7 +591,8 @@ const G = {
   state: 'menu',           // menu | playing | levelup | paused | gameover
   time: 0, score: 0, best: 0, eaten: 0, dots: 0,
   runCounted: true,        // false while a run is live and not yet folded into the save
-  wantDash: false, wantShift: false,
+  wantDash: false, wantShift: false, wantBurst: false,
+  timeLeft: 0, endlessRun: false,
   shake: 0, toastT: 0, hudT: 0
 };
 G.best = Save.data.best.score;
@@ -568,7 +617,22 @@ const player = {
   graceT: 0,
   // eat mode
   eatT: 0, eatChain: 0,
-  trailAcc: 0
+  trailAcc: 0,
+  // ---- v3: stats / resources / build state (numbers: BALANCE.md) ----
+  charId: 'pac', charName: 'Pac',
+  stats: null,               // {strength..nature} totals — set from the build package in resetGame
+  statSteps: null,           // threshold steps already applied per stat (BALANCE §3)
+  resourceType: 'rage',      // Pac's ONE resource per STAT-OUT: Rage
+  resource: 0, resourceMax: 100, combatT: 0,  // combatT = seconds since last fight action (rage decay)
+  damageMul: 1,              // Strength threshold steps + weapon % + stone %
+  abilityPowMul: 1,          // Speciality threshold steps
+  dodgePct: 0,               // Agility threshold steps: +2pp/step, cap +20 (BALANCE §3)
+  stone: null,               // chosen stone key at Level 6 (BALANCE §9B)
+  weapon: null,              // chosen weapon at Level 5 {name, pct, signed}
+  buffT: 0,                  // timed buff (speed) seconds left
+  coinsEarned: 0,            // this run's coin finds (wallet itself lives in the save)
+  lightRadius: 0,            // gear-rolled Light Radius steps for this run (-2..+4)
+  slowT: 0                   // Ape chest-pound slow seconds left
 };
 
 let dots = [];        // {x,y,r,kind}  kind: dot
@@ -580,9 +644,10 @@ let particles = [];   // {x,y,vx,vy,ttl,max,color,size}
 let floaters = [];    // {x,y,ttl,text,color}
 let pelletTimer = 8, fruitTimer = 20, ghostTimer = 0, dotTimer = 0, surgeTimer = 55, patternTimer = 2;
 
-// v2 curve: eating is the game, upgrades are the punctuation — level 2 takes
-// ~22 dots (was ~11) and each next level ~35% more than the last
-function xpForLevel(lv) { return Math.floor(20 * Math.pow(1.35, lv - 1)) + lv * 2; }
+// XP curve per BALANCE §7.3 (DRAFT): level 2 takes 22 pellets-worth, then
+// x1.45 per level, rounded — 22 · 32 · 46 · 67 · 97 · 141 · 204 · …
+// Leveling is slower than gathering on purpose (canon tempo law).
+function xpForLevel(lv) { return Math.round(22 * Math.pow(1.45, lv - 1)); }
 function hasPower(id) { return player.powers.find((p) => p.id === id) || null; }
 function activePowerId() {
   const p = player.powers[player.activePower];
@@ -686,8 +751,12 @@ function ghostTargetCount() {
   // ~14 @30s, ~27 @1min, ~62 @2min, ~111 @3min, ~177 @4min, capped 220 @~5min.
   // If the player's clear rate (eat mode / dash / fire) falls behind this curve,
   // the screen masses with ghosts and contact damage ends the run. That IS the game.
-  const t = G.time;
-  return Math.min(GHOST_CAP, Math.floor(5 + t * 0.28 + Math.pow(t / 60, 2.2) * 5));
+  // difficulty scales the swarm clock (BALANCE §2): Easy spawns x1.15 slower
+  // (read here as a slower effective clock), Hard x0.9 (faster clock)
+  const scale = Save.data.difficulty === 'easy' ? 1 / 1.15 : (Save.data.difficulty === 'hard' ? 1 / 0.9 : 1);
+  const t = G.time * scale;
+  const t1Mul = TrigState.t1 > 0 ? 1.5 : 1;   // T1 More Enemies window (BALANCE trigger appendix)
+  return Math.min(GHOST_CAP, Math.floor((5 + t * 0.28 + Math.pow(t / 60, 2.2) * 5) * t1Mul));
 }
 
 function placeGhostAtEdge(g, ang, dist) {
@@ -716,7 +785,8 @@ function spawnGhost(forceType, ringAng) {
     ghosts.push(g);
   }
   g.type = forceType || GHOST_TYPES[randi(0, 3)];
-  g.elite = G.time > 80 && Math.random() < 0.10;
+  // elite rate per BALANCE §4: 4% of spawns (Hard: +2 pts). Adds (Ape chimps) are never elites.
+  g.elite = !g.isAdd && G.time > 30 && Math.random() < eliteChance();
   g.r = g.elite ? 25 : 16;
   g.modeT = rand(2, 4); g.wander = false; g.wanderX = 0; g.wanderY = 0;
   if (ringAng !== undefined) placeGhostAtEdge(g, ringAng, rand(700, 790));
@@ -726,6 +796,8 @@ function killGhost(g, grantPower, basePoints) {
   g.alive = false;
   g.respawnAt = 3.2;
   G.eaten++;
+  if (player.resourceType === 'rage') gainResource(8);   // Rage builds when dealing damage (BALANCE v3 appendix)
+  else player.combatT = 0;
   burst(g.x, g.y, GHOST_STYLE[g.type].color, 14);
   if (grantPower) {
     const pid = GHOST_POWER[g.type] || randomPowerId();
@@ -834,47 +906,7 @@ function setActivePower(i) {
 // band = 'early' (skills only) for levels 1–3, 'deep' afterwards.
 // CARD CLARITY LAW (playtest v2): every card says in plain words what it
 // does, with the number in the text. A card name is a label, never the rules.
-function buildChoices() {
-  const early = player.level <= 3;
-  const skills = [];   // new powers + upgrades — the "spells" of this system
-  const basics = [];   // early-band stat skills
-  const deep = [];     // level 4+ cards
-  for (const id of Object.keys(POWER_DEFS)) {
-    const held = hasPower(id);
-    if (!held && player.powers.length < 3) {
-      skills.push({ tag: 'New Skill', power: true, icon: POWER_DEFS[id].icon,
-        name: POWER_DEFS[id].name, desc: POWER_DEFS[id].desc,
-        apply: () => { player.powers.push({ id, lvl: 1 }); player.activePower = player.powers.length - 1; } });
-    } else if (held && held.lvl < 3 && !early) {
-      const upDesc = {
-        fire: 'Upgrade: the flame trail lasts about +0.35s longer and burns a ghost up in about 0.42s instead of 0.5s.',
-        dash: 'Upgrade: dash cooldown drops by about 28% (2.6s → 1.9s at Lv2, → 1.35s at Lv3) and each dash lasts slightly longer.',
-        magnet: 'Upgrade: the Magnet Maw pull radius grows by +45% of its base reach.' }[id];
-      skills.push({ tag: 'Upgrade Skill', power: true, icon: POWER_DEFS[id].icon,
-        name: POWER_DEFS[id].name + ' Lv' + (held.lvl + 1), desc: upDesc,
-        apply: () => { held.lvl++; } });
-    }
-  }
-  const basicStats = [
-    { icon: '👟', name: 'Zoom Grease', desc: 'Your move speed goes up by 9%. You move at ' + Math.round(272 * player.speedMul) + ' now — this makes it about ' + Math.round(272 * player.speedMul * 1.09) + '.', apply: () => { player.speedMul *= 1.09; } },
-    { icon: '❤️', name: 'Thick Peel', desc: 'Your maximum health goes up by 25 (now ' + player.maxHp + ' → ' + (player.maxHp + 25) + ') and you heal 25 HP right away.', apply: () => { player.maxHp += 25; player.hp = Math.min(player.maxHp, player.hp + 25); } },
-    { icon: '🧲', name: 'Wide Gullet', desc: 'Your passive magnet — the range that pulls nearby dots into your mouth — grows by 45 (now ' + Math.round(player.magnetR) + ' → ' + Math.round(player.magnetR + 45) + ').', apply: () => { player.magnetR += 45; } },
-    { icon: '🦷', name: 'Mega Chomp', desc: 'Your mouth counts as 5 bigger: you eat dots and ghosts from 5 further away, every time.', apply: () => { player.chompBonus += 5; } },
-    { icon: '🍒', name: 'Fruit Feast', desc: 'Heal 45 HP right now. (One-time — fruit on the map also heals, every time you eat it.)', apply: () => { player.hp = Math.min(player.maxHp, player.hp + 45); } }
-  ];
-  const deepStats = [
-    { icon: '🔵', name: 'Blue Rage', desc: 'Eat Mode — the blue-ghost hunting window you get from a power pellet — lasts +1.6 seconds longer per pellet (now ' + (6 + player.eatBonus).toFixed(1) + 's → ' + (7.6 + player.eatBonus).toFixed(1) + 's).', apply: () => { player.eatBonus += 1.6; } },
-    { icon: '🔥', name: 'Combo Lube', desc: 'Your combo survives +0.6s longer without eating before it resets to zero (now ' + player.comboWindow.toFixed(1) + 's → ' + (player.comboWindow + 0.6).toFixed(1) + 's). Combo raises your score multiplier and move speed.', apply: () => { player.comboWindow += 0.6; } },
-    { icon: '⏪', name: 'Shift Grease', desc: 'Time Shift (E / Shift key) recharges 1.5s faster: every 4.5s instead of every 6s.', apply: () => { player.shiftCdMax = Math.max(3, player.shiftCdMax - 1.5); } }
-  ];
-  for (const s of basicStats) basics.push({ tag: 'Skill', power: false, icon: s.icon, name: s.name, desc: s.desc, apply: s.apply });
-  for (const s of deepStats) deep.push({ tag: 'Upgrade', power: false, icon: s.icon, name: s.name, desc: s.desc, apply: s.apply });
-  // early band: ONLY skills (new powers first, then basic stats). Deep band:
-  // everything — power upgrades and advanced cards join the pool.
-  const pool = early ? skills.concat(basics) : skills.concat(basics, deep);
-  for (let i = pool.length - 1; i > 0; i--) { const j = randi(0, i); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
-  return pool.slice(0, 3);
-}
+// buildChoices() lives in the v3 section below (spin-dealt offers).
 let pendingLevels = 0;
 function gainXP(n) {
   player.xp += n;
@@ -883,6 +915,22 @@ function gainXP(n) {
     player.level++;
     player.xpNext = xpForLevel(player.level);
     pendingLevels++;
+    // v3: account progress — cumulative levels unlock TEAM UP at 10 (BALANCE §12)
+    Save.data.cumulativeLevels++;
+    if (Save.data.cumulativeLevels >= 10 && !Save.data.teamUnlocked) {
+      Save.data.teamUnlocked = true;
+      toast('🤝 TEAM UP UNLOCKED!');
+      Teach.fire('teamup', player.x, player.y);
+    }
+    if (Save.data.teamUnlocked) {
+      Save.data.teamPlayLevels++;
+      if (Save.data.teamPlayLevels >= TEAM_STEP_LEVELS && Save.data.teamSize < 3) {
+        Save.data.teamSize = 3;
+        Save.data.teamPlayLevels = 0;
+        toast('🤝 TEAM SIZE 3 UNLOCKED (slot ready)!');
+      }
+    }
+    Save.write(true);
   }
 }
 let levelChoices = [];
@@ -903,6 +951,11 @@ function openLevelUp() {
     d.addEventListener('click', () => pickCard(i));
     wrap.appendChild(d);
   });
+  const sl = document.getElementById('spinLine');
+  if (sl) sl.textContent = '🎡 The wheel dealt ' + WHEEL[V3.spin.statIdx].name.toUpperCase() +
+    ' — pick ' + (V3.picksMade + 1) + (V3.picksMade < 3 ? ' (curated opening: skills only)' : '') +
+    '. Your ' + RESOURCE_DEFS[player.resourceType].name + ': ' + Math.floor(player.resource) + '/' + player.resourceMax + '.';
+  if (levelChoices.some((c) => c.name && c.name.indexOf('Collection Range') >= 0)) Teach.fire('collectrange');
   document.getElementById('levelupScreen').classList.remove('hidden');
   Teach.fire('levelup');   // first-sight: the first card screen explains itself
 }
@@ -910,26 +963,22 @@ function pickCard(i) {
   const choice = levelChoices[i];
   if (!choice || G.state !== 'levelup') return;
   choice.apply();
+  V3.picksMade++;
   pendingLevels--;
   document.getElementById('levelupScreen').classList.add('hidden');
   renderPowerSlots();
-  if (pendingLevels > 0) { openLevelUp(); return; }
-  G.state = 'playing';
-  Teach.fire('grace', player.x, player.y);   // first-sight: the grace shield, explained once
-  // POST-PICK GRACE (playtest bug): the moment play resumes, the swarm does
-  // not get a free hit for the crime of reading a card. For ~1.5s the ghosts
-  // HOLD (no steering, no contact) and Pac is untouchable — ringed on screen
-  // so the player can see the window and plan their first move inside it.
-  player.graceT = 1.5;
-  player.invulnUntil = Math.max(player.invulnUntil, G.time + 1.5);
-  floater(player.x, player.y - 38, 'GRACE!', '#9df2ff');
+  if (V3.picksMade === 4) Teach.fire('banknote', player.x, player.y);   // ladder note: the Bank (canon L4)
+  if (V3.picksMade === 6 && !V3.stonePicked && !G.endlessRun) { openStonePick(); return; }
+  if (pendingLevels > 0) { startSpin(); return; }
+  resumeAfterPick();
 }
 
 // ---------------- Run management ----------------
 function resetGame() {
   G.time = 0; G.score = 0; G.eaten = 0; G.dots = 0; G.shake = 0;
   player.x = WORLD_W / 2; player.y = WORLD_H / 2; player.vx = 0; player.vy = 0;
-  player.hp = 100; player.maxHp = 100; player.lives = 3;
+  player.hp = 100; player.maxHp = 100;
+  player.lives = Save.data.difficulty === 'easy' ? 3 : 1;   // BALANCE §2 canon lives: Easy 3 · Medium 1 · Hard 1 (hardcore)
   player.xp = 0; player.level = 1; player.xpNext = xpForLevel(1);
   player.combo = 0; player.comboTimer = 0;
   player.speedMul = 1; player.magnetR = 78; player.chompBonus = 0;
@@ -942,6 +991,31 @@ function resetGame() {
   dots = []; pellets = []; fruits = []; ghosts = []; trail = []; particles = []; floaters = [];
   pelletTimer = 9; fruitTimer = 22; ghostTimer = 0; dotTimer = 0; surgeTimer = 55; patternTimer = 2;
   pendingLevels = 0;
+  // ---- v3 reset: build package, resources, wheel, boss, fog, triggers, team ----
+  player.charId = PAC_PACKAGE.charId; player.charName = PAC_PACKAGE.charName; player.charColor = PAC_PACKAGE.color;
+  player.resourceType = PAC_PACKAGE.resourceType;
+  player.stats = Object.assign({}, PAC_PACKAGE.stats);
+  player.statSteps = {};
+  player.resource = 0; player.resourceMax = 100; player.combatT = 99; player.resRegenMul = 1;
+  player.damageMul = 1; player.abilityPowMul = 1; player.dodgePct = 0;
+  player.stone = null; player.weapon = null; player.buffT = 0; player.slowT = 0; player.coinsEarned = 0;
+  player.lightRadius = Save.data.lightRadius || 0;   // gear-rolled modifier persists on the save
+  applyThresholds(true);   // the package's starting thresholds (Pac Strength 22 = 4 steps)
+  lastSpinIdx = null;
+  V3.picksMade = 0; V3.spin.statIdx = 0; V3.stonePicked = false;
+  V3.bossSpawned = false; V3.bossBeaten = false; V3.boss = null;
+  V3.pylons = []; V3.barrels = []; V3.danger = []; V3.explored = new Set(); V3.areaIdx = -1;
+  V3.radarTaught = false;
+  G.endlessRun = !!V3.endlessSelected;
+  G.timeLeft = limitForLevel(1);
+  TrigState.nextRoll = 20; TrigState.active = null; TrigState.t1 = 0; TrigState.eliteWindow = 0;
+  TrigState.ice = 0; TrigState.cascade = 0; TrigState.boltWindow = 0;
+  // team: per-character run states + the partner entity (deployed when unlocked)
+  V3.chars = { pac: charStateFromPackage(PAC_PACKAGE), mspac: charStateFromPackage(PARTNER_PACKAGE) };
+  V3.partner = Save.data.teamUnlocked
+    ? { deployed: true, charId: 'mspac', pkgColor: PARTNER_PACKAGE.color, x: player.x - 60, y: player.y }
+    : { deployed: false, charId: 'mspac', pkgColor: PARTNER_PACKAGE.color, x: player.x, y: player.y };
+  if (V3.partner.deployed && G.state === 'playing') Teach.fire('teamup', player.x, player.y);
   for (let i = 0; i < 80 && dots.length < 380; i++) spawnDotCluster();
   for (let i = 0; i < 4; i++) spawnGhost(GHOST_TYPES[i]);
   renderPowerSlots();
@@ -971,9 +1045,14 @@ function gameOver() {
     d.totals.dots += G.dots;
     G.runCounted = true;
   }
+  if (Save.data.difficulty === 'hard' && !Save.data.hardcoreDeath) {
+    // HARD = HARDCORE (BALANCE §2 canon): die once and the character is gone
+    Save.data.hardcoreDeath = { char: player.charId, at: new Date().toISOString(), level: player.level, score: Math.floor(G.score) };
+  }
   G.best = Save.data.best.score;
   Save.write();
   refreshSaveLine();
+  refreshMenuV3();
   document.getElementById('finalStats').innerHTML =
     'Score <b style="color:#ffe93b;">' + Math.floor(G.score) + '</b> &nbsp;•&nbsp; Best <b>' + G.best + '</b><br>' +
     'Survived <b>' + fmtTime(G.time) + '</b> &nbsp;•&nbsp; Level <b>' + player.level + '</b> &nbsp;•&nbsp; Ghosts eaten <b>' + G.eaten + '</b>';
@@ -1035,6 +1114,10 @@ function update(dt) {
     return;
   }
 
+  // ---- v3 systems (resources, triggers, danger zones, boss, partner, fog, timer) ----
+  v3Update(dt);
+  if (G.state !== 'playing') return;
+
   // ---- combo decay ----
   if (player.comboTimer > 0) {
     player.comboTimer -= dt;
@@ -1058,6 +1141,10 @@ function update(dt) {
   if (player.dashCd > 0) player.dashCd -= dt;
   if ((G.wantDash || touchDashQueued) && dashPow && player.dashCd <= 0 && player.dashT <= 0) {
     touchDashQueued = false;
+    if (player.resourceType === 'energy') {
+      if (player.resource < 20) { G.wantDash = false; /* not enough in the tank */ }
+      else player.resource -= 20;   // Energy pays for physical exertion (BALANCE v3 appendix)
+    }
     player.dashT = 0.16 + 0.03 * (dashPow.lvl - 1);
     player.dashCd = 2.6 * Math.pow(0.72, dashPow.lvl - 1);
     if (ilen > 0.01) { player.dashDirX = ix / ilen; player.dashDirY = iy / ilen; }
@@ -1067,16 +1154,25 @@ function update(dt) {
   G.wantDash = false;
 
   // ---- player movement ----
-  const baseSpeed = 272 * player.speedMul * comboSpeed;
+  const baseSpeed = 272 * player.speedMul * comboSpeed * (player.buffT > 0 ? 1.2 : 1) * (player.slowT > 0 ? 0.6 : 1);
   if (player.dashT > 0) {
     player.dashT -= dt;
     player.vx = player.dashDirX * baseSpeed * 3.2;
     player.vy = player.dashDirY * baseSpeed * 3.2;
   } else {
     const accel = 2400;
-    player.vx += clamp(ix * baseSpeed - player.vx, -accel * dt, accel * dt);
-    player.vy += clamp(iy * baseSpeed - player.vy, -accel * dt, accel * dt);
-    if (ilen < 0.01) { player.vx *= Math.pow(0.0001, dt); player.vy *= Math.pow(0.0001, dt); }
+    if (TrigState.ice > 0) {
+      // T7 freeze floor: thrust applies, friction nearly vanishes — you slide
+      player.vx += ix * baseSpeed * 1.6 * dt;
+      player.vy += iy * baseSpeed * 1.6 * dt;
+      const sp2 = Math.hypot(player.vx, player.vy), cap = baseSpeed * 1.25;
+      if (sp2 > cap) { player.vx = player.vx / sp2 * cap; player.vy = player.vy / sp2 * cap; }
+      player.vx *= Math.pow(0.55, dt); player.vy *= Math.pow(0.55, dt);
+    } else {
+      player.vx += clamp(ix * baseSpeed - player.vx, -accel * dt, accel * dt);
+      player.vy += clamp(iy * baseSpeed - player.vy, -accel * dt, accel * dt);
+      if (ilen < 0.01) { player.vx *= Math.pow(0.0001, dt); player.vy *= Math.pow(0.0001, dt); }
+    }
   }
   player.x = wrapPos(player.x + player.vx * dt, WORLD_W);
   player.y = wrapPos(player.y + player.vy * dt, WORLD_H);
@@ -1354,13 +1450,23 @@ function update(dt) {
         Snd.eatGhost(player.eatChain);
       } else if (G.time >= player.invulnUntil && g.touchCd <= 0) {
         g.touchCd = 1.0;
+        if (Math.random() * 100 < player.dodgePct) {
+          // Agility pays out as DODGE: the hit never lands (BALANCE §3/§40)
+          floater(player.x, player.y - 30, 'DODGED!', '#b6ff5e');
+          g._dodged = true;
+        }
+        if (!g._dodged) {
         player.hp -= 13;
+        if (player.resourceType === 'rage') gainResource(12);   // Rage builds when taking damage
+        else player.combatT = 0;
         player.combo = Math.floor(player.combo / 2);
         player.invulnUntil = G.time + 0.9;
         G.shake = 9;
         burst(player.x, player.y, '#ff3b6b', 10);
         Snd.hurt();
         if (player.hp <= 0) { loseLife(); if (G.state !== 'playing') return; }
+        }
+        g._dodged = false;
       }
     }
   }
@@ -1385,7 +1491,7 @@ function update(dt) {
   Teach.scan();
 
   // ---- level up? ----
-  if (pendingLevels > 0 && G.state === 'playing') openLevelUp();
+  if (pendingLevels > 0 && G.state === 'playing') startSpin();
 }
 
 // ---------------- Rendering ----------------
@@ -1500,6 +1606,10 @@ function render() {
     }
   }
 
+  // v3: the current area's light — a translucent tint unique to the zone
+  if (V3.areaIdx >= 0 && AREAS[V3.areaIdx]) { ctx.fillStyle = AREAS[V3.areaIdx].tint; ctx.fillRect(0, 0, VW, VH); }
+  drawDangerZones();
+
   // fire trail (under everything else)
   for (const s of trail) {
     const sx = SX(s.x), sy = SY(s.y);
@@ -1551,6 +1661,9 @@ function render() {
     drawGhostShape(g, sx, sy);
   }
 
+  drawBossAndBarrels();
+  drawPartner();
+
   // particles
   for (const p of particles) {
     const sx = SX(p.x), sy = SY(p.y);
@@ -1577,7 +1690,7 @@ function render() {
     }
     const mouthAmp = player.eatT > 0 ? 1.0 : 0.82;
     const mouth = (0.14 + (0.5 + 0.5 * Math.sin(player.chomp * 6.2)) * mouthAmp * 0.72);
-    ctx.fillStyle = player.eatT > 0 ? '#ffe93b' : '#ffd21f';
+    ctx.fillStyle = player.eatT > 0 ? '#ffe93b' : (player.charColor || '#ffd21f');
     ctx.beginPath();
     ctx.moveTo(px, py);
     ctx.arc(px, py, player.r + player.chompBonus * 0.4, player.angle + mouth, player.angle + TAU - mouth);
@@ -1640,6 +1753,9 @@ function render() {
     ctx.fillRect(0, 0, VW, VH);
   }
   if (vignette) ctx.drawImage(vignette, 0, 0, VW, VH);
+  drawFog();
+  drawRadarMinimap();
+  drawWheelOverlay();
   drawStick();
 }
 // the touch stick, drawn in screen space over everything: base ring where the
@@ -1739,7 +1855,7 @@ const el = {
 };
 function updateHUD(force) {
   el.score.textContent = Math.floor(G.score).toLocaleString();
-  el.time.textContent = fmtTime(G.time);
+  el.time.textContent = G.endlessRun ? fmtTime(G.time) : fmtTime(Math.max(0, G.timeLeft || 0));
   el.level.textContent = player.level;
   el.lives.textContent = '♥'.repeat(Math.max(0, player.lives));
   el.hp.style.transform = 'scaleX(' + clamp(player.hp / player.maxHp, 0, 1) + ')';
@@ -1760,6 +1876,20 @@ function updateHUD(force) {
     if (el.shiftFill) el.shiftFill.style.transform =
       'scaleX(' + clamp(1 - Math.max(0, player.shiftCd) / player.shiftCdMax, 0, 1) + ')';
     if (el.shiftBtn) { if (ready) el.shiftBtn.classList.add('ready'); else el.shiftBtn.classList.remove('ready'); }
+  }
+  // v3 resource bar (name + behaviour come from the active character's one resource)
+  { const rt = document.getElementById('resText'), rf = document.getElementById('resFill');
+    if (rt && rf) {
+      const def = RESOURCE_DEFS[player.resourceType];
+      rt.textContent = def.name + ' ' + Math.floor(player.resource) + (player.resource >= BURST_COST ? ' — F: BURST!' : '');
+      rt.style.color = def.color;
+      rf.style.transform = 'scaleX(' + clamp(player.resource / player.resourceMax, 0, 1) + ')';
+      rf.style.background = def.color;
+    }
+    const lt = document.getElementById('timeLabel');
+    if (lt) lt.textContent = G.endlessRun ? 'Time — ENDLESS' : 'Level Time Left';
+    const lv = document.getElementById('livesText');
+    if (lv && Save.data.difficulty === 'hard') lv.textContent = '☠ HARDCORE';
   }
   // dash cooldown sliver on the dash slot
   const dashIdx = player.powers.findIndex((p) => p.id === 'dash');
@@ -1816,6 +1946,12 @@ function togglePause() {
       } else {
         lines.push('Powers held: none yet — eat a ghost in EAT MODE or take a skill card.');
       }
+      lines.push('Stats: ' + WHEEL.map((w) => '<span style="color:' + w.color + '">' + w.name + ' ' + player.stats[w.key] + '</span>').join(' · ') +
+        ' &nbsp;•&nbsp; ' + RESOURCE_DEFS[player.resourceType].name + ' <b>' + Math.floor(player.resource) + '/' + player.resourceMax + '</b>' +
+        (player.weapon ? ' &nbsp;•&nbsp; Weapon <b>' + player.weapon.name + ' ' + (player.weapon.pct >= 0 ? '+' : '') + player.weapon.pct + '%</b>' : '') +
+        (player.stone ? ' &nbsp;•&nbsp; Stone <b>' + player.stone + '</b>' : '') +
+        ' &nbsp;•&nbsp; Light Radius <b>' + (player.lightRadius >= 0 ? '+' : '') + player.lightRadius + '</b>' +
+        ' &nbsp;•&nbsp; Coins <b>' + (Save.data.coins[player.charId] || 0) + '</b>');
       lines.push('Move speed <b>' + Math.round(272 * player.speedMul) + '</b> &nbsp;•&nbsp; Max HP <b>' + player.maxHp + '</b>' +
         ' &nbsp;•&nbsp; Magnet <b>' + Math.round(player.magnetR) + '</b> &nbsp;•&nbsp; Chomp <b>+' + player.chompBonus + '</b>' +
         ' &nbsp;•&nbsp; Eat Mode <b>' + (6 + player.eatBonus).toFixed(1) + 's</b>' +
@@ -1827,7 +1963,14 @@ function togglePause() {
   else if (G.state === 'paused') { G.state = 'playing'; document.getElementById('pauseScreen').classList.add('hidden'); }
 }
 function beginRun() {
+  if (Save.data.hardcoreDeath && Save.data.hardcoreDeath.char === 'pac') {
+    // the character is gone (hardcore canon) — the tombstone on the menu says it
+    document.getElementById('startScreen').classList.remove('hidden');
+    refreshMenuV3();
+    return;
+  }
   resetGame();
+  Teach.fire('resource', player.x, player.y);   // first-sight: Pac's one resource
   G.runCounted = false;
   Save.data.totals.runs++;
   Save.write(true);
@@ -3017,6 +3160,1100 @@ function drawChromeFigure(x, groundY, h, scan) {
   ctx.restore();
 }
 
+
+// ================= v3.0.0 — the 7-stat wheel, spin offers, thresholds, resources =================
+// Every number in this section comes from BALANCE.md (see CODE-GUIDE.md for
+// the mapping table). Nothing here rewrites the v1/v2 systems: the copy
+// layer, ghost AIs, maze, Time Shift, pause and save key are untouched.
+
+// ---- The wheel: 7 stats in wheel order (STR—VIT—SPIRIT—INT—AGI—SPEC—NAT) ----
+const WHEEL = [
+  { key: 'strength',   name: 'Strength',   color: '#c94c4c', stone: 'Reality' },
+  { key: 'vitality',   name: 'Vitality',   color: '#dd7e3f', stone: 'Darkhold' },
+  { key: 'spirit',     name: 'Spirit',     color: '#5b8ec4', stone: 'Soul' },
+  { key: 'intellect',  name: 'Intellect',  color: '#7d6bb3', stone: 'Mind' },
+  { key: 'agility',    name: 'Agility',    color: '#4fa66a', stone: 'Space' },
+  { key: 'speciality', name: 'Speciality', color: '#c05a8a', stone: 'Power' },
+  { key: 'nature',     name: 'Nature',     color: '#6a9a4f', stone: 'Time' }
+];
+function wheelIdx(key) { return WHEEL.findIndex((w) => w.key === key); }
+// The 7 stones (BALANCE §9B): 6 Infinity Stones + the Darkhold as the 7th,
+// each aligned to one stat; a stone buffs its own stat's skills by +15%.
+const STONES = [
+  { key: 'reality',  name: 'Reality Stone',  stat: 'strength',   color: '#ff3b30' },
+  { key: 'darkhold', name: 'The Darkhold',   stat: 'vitality',   color: '#8a5a2e' },
+  { key: 'soul',     name: 'Soul Stone',     stat: 'spirit',     color: '#ff9a3b' },
+  { key: 'mind',     name: 'Mind Stone',     stat: 'intellect',  color: '#ffd93b' },
+  { key: 'space',    name: 'Space Stone',    stat: 'agility',    color: '#4db2ff' },
+  { key: 'power',    name: 'Power Stone',    stat: 'speciality', color: '#b06bff' },
+  { key: 'time',     name: 'Time Stone',     stat: 'nature',     color: '#37e08b' }
+];
+// Threshold law (BALANCE §3): stat totals earn increases at these amounts;
+// the step counts per threshold are +1,+1,+1,+1,+2,+2,+3 (cumulative).
+const THRESHOLDS = [5, 10, 15, 20, 30, 40, 50];
+const THRESHOLD_INC = [1, 1, 1, 1, 2, 2, 3];
+function thresholdSteps(total) {
+  let steps = 0;
+  for (let i = 0; i < THRESHOLDS.length; i++) if (total >= THRESHOLDS[i]) steps += THRESHOLD_INC[i];
+  return steps;
+}
+// Build packages (STAT-OUT.md): Pac — STR/S1, resource Rage, sub-stats
+// Physical Damage 9 · Crit Physical 7 · Defense 3 · Red Magic 3 → Strength
+// total 22 (BALANCE v3 appendix derivation: total = sum of printed sub-stats).
+// Partner — Ms. Pac (STAT-OUT featured-adjacent line): SPEC/S3, resource
+// Energy, Move Speed 9 · Movement Buff 7 · Ability Power 3 · Rage Magic 3.
+const PAC_PACKAGE = { charId: 'pac', charName: 'Pac', color: '#ffd21f', resourceType: 'rage',
+  stats: { strength: 22, vitality: 0, spirit: 0, intellect: 0, agility: 0, speciality: 0, nature: 0 } };
+const PARTNER_PACKAGE = { charId: 'mspac', charName: 'Ms. Pac', color: '#ff9de2', resourceType: 'energy',
+  stats: { strength: 0, vitality: 0, spirit: 0, intellect: 0, agility: 0, speciality: 22, nature: 0 } };
+// Team growth step S (BALANCE §12 + v3 appendix): S = 10 levels of team-up
+// play per +1 team size — a DRAFT placeholder so the system runs. It is NOT
+// the unconfirmed "25" fragment; that remains an owner call.
+const TEAM_STEP_LEVELS = 10;
+// Resources (BALANCE v3 appendix): one per character; all three behaviours
+// exist behind this config — Mana regens and pays for spell-type abilities,
+// Energy regens while not exerting and pays for physical exertion, Rage
+// builds on dealing/taking damage and decays out of combat.
+const RESOURCE_DEFS = {
+  rage:   { name: 'RAGE',   color: '#ff5e3a' },
+  mana:   { name: 'MANA',   color: '#4db2ff' },
+  energy: { name: 'ENERGY', color: '#b6ff5e' }
+};
+const BURST_COST = 50, BURST_RADIUS = 150;      // BALANCE v3 appendix
+const LIGHT_STEP_PX = 40, REVEAL_BASE = 300;    // Light Radius: 1 step = 40px (BALANCE v3 appendix)
+
+// ---- v3 run state (reset in resetGame) ----
+const V3 = {
+  picksMade: 0, spin: { statIdx: 0, animT: 0, dur: 1.15 },
+  stonePicked: false, bossSpawned: false, bossBeaten: false, boss: null,
+  pylons: [], barrels: [], danger: [],   // danger = shared telegraph system (boss + triggers)
+  explored: new Set(), areaIdx: -1,
+  chars: null, partner: null, endlessSelected: false,
+  radarTaught: false
+};
+// Environmental triggers state — see TrigState further below (T1 needs a
+// hook inside the v2 swarm curve, so the state object lives here).
+const TrigState = { nextRoll: 20, active: null, t1: 0, eliteWindow: 0, ice: 0, cascade: 0, cascadeT: 0, boltT: 0, boltWindow: 0 };
+function eliteChance() {
+  let base = Save.data.difficulty === 'hard' ? 0.06 : 0.04;   // BALANCE §4 (+ Hard §2)
+  if (TrigState.eliteWindow > 0) base *= 3;                    // T5 window (BALANCE trigger appendix)
+  return Math.min(0.3, base);
+}
+
+// ---- Spin planning (BALANCE §1.1 + FULL-SCOPE spin canon) ----
+// Pick 1: the wheel SPINS, weighted by distance from the build centre
+// (same 34 · neighbour 22 each · ±2 7 each · far side 8 total, split 4/4
+// across the two far seats of a 7-wheel — DRAFT adaptation, CODE-GUIDE).
+// Pick 2: lands ±1 from the previous landing, side 50/50.
+// Pick 3: lands OPPOSITE (the +3 seat on a 7-wheel — DRAFT convention).
+// Picks 4+: the same 3-beat pattern cycles (BALANCE only specifies 1–3).
+function buildCentreIdx() {
+  if (!player.stats) return 0;
+  let best = 0, bestV = -1;
+  WHEEL.forEach((w, i) => { if (player.stats[w.key] > bestV) { bestV = player.stats[w.key]; best = i; } });
+  return best;
+}
+function weightedSpinIdx(centre) {
+  const weights = WHEEL.map((w, i) => {
+    const d = Math.min(Math.abs(i - centre), 7 - Math.abs(i - centre));
+    return d === 0 ? 34 : (d === 1 ? 22 : (d === 2 ? 7 : 4));
+  });
+  let roll = Math.random() * 100, acc = 0;
+  for (let i = 0; i < 7; i++) { acc += weights[i]; if (roll < acc) return i; }
+  return centre;
+}
+let lastSpinIdx = null;
+function planSpin(pickNo) {
+  const beat = ((pickNo - 1) % 3) + 1;   // 1,2,3,1,2,3… — the pattern cycles
+  let idx;
+  if (lastSpinIdx === null || beat === 1) idx = weightedSpinIdx(buildCentreIdx());
+  else if (beat === 2) idx = (lastSpinIdx + (Math.random() < 0.5 ? -1 : 1) + 7) % 7;
+  else idx = (lastSpinIdx + 3) % 7;      // opposite side
+  lastSpinIdx = idx;
+  return idx;
+}
+function startSpin() {
+  V3.spin.statIdx = planSpin(V3.picksMade + 1);
+  V3.spin.animT = 0;
+  V3.spin.dur = TEST_MODE ? 0.15 : 1.15;   // scripted runs don't sit through the wheel
+  G.state = 'spin';
+  Teach.fire('spin', player.x, player.y);
+}
+
+// ---- Thresholds: apply newly-earned steps (BALANCE §3 step effects) ----
+// Step = +5% of the sub-stat's base effect; rate stats (dodge) +2pp, cap +20.
+// Mapping onto the v2 systems (honest map, documented in CODE-GUIDE):
+// Strength→damage · Vitality→max HP · Spirit→collect range + resource
+// recovery · Intellect→resource size · Agility→dodge · Speciality→ability
+// power · Nature→Time Shift recharge (its time sub-stat).
+function applyThresholds(silent) {
+  if (!player.stats) return;
+  for (const w of WHEEL) {
+    const steps = thresholdSteps(player.stats[w.key]);
+    const prev = player.statSteps[w.key] || 0;
+    if (steps <= prev) continue;
+    const k = steps - prev;
+    player.statSteps[w.key] = steps;
+    if (w.key === 'strength') player.damageMul += 0.05 * k;
+    else if (w.key === 'vitality') { player.maxHp += 5 * k; player.hp += 5 * k; }
+    else if (w.key === 'spirit') { player.magnetR += 4 * k; player.resRegenMul = (player.resRegenMul || 1) + 0.05 * k; }
+    else if (w.key === 'intellect') player.resourceMax += 5 * k;
+    else if (w.key === 'agility') player.dodgePct = Math.min(20, player.dodgePct + 2 * k);
+    else if (w.key === 'speciality') player.abilityPowMul += 0.05 * k;
+    else if (w.key === 'nature') player.shiftCdMax = Math.max(3, player.shiftCdMax * Math.pow(0.95, k));
+    if (!silent && G.state === 'playing') {
+      Teach.fire('threshold', player.x, player.y);
+      floater(player.x, player.y - 44, w.name.toUpperCase() + ' THRESHOLD! +' + k + ' step' + (k > 1 ? 's' : ''), w.color);
+    }
+  }
+}
+function addStatPoints(key, n) { player.stats[key] += n; applyThresholds(false); }
+
+// ---- Signed rolls (BALANCE appendix, canon): a roll can come up NEGATIVE.
+// Negative floor ≈ −⅓ of the positive cap, rounded toward zero; 0 = no modifier.
+function rollSigned(lo, hi) {
+  const negFloor = -Math.round(hi / 3);
+  let v = randi(negFloor, hi);
+  if (v > 0 && v < lo) v = lo;   // a positive roll respects the table's floor
+  return v;
+}
+// Rarity roll inside an ability offer (BALANCE §1.1/§4): L1–6 70/25/5, L7+ 60/32/8.
+function rollRarity(pickNo) {
+  const r = Math.random() * 100;
+  if (pickNo <= 6) return r < 70 ? 'Common' : (r < 95 ? 'Rare' : 'Mythic');
+  return r < 60 ? 'Common' : (r < 92 ? 'Rare' : 'Mythic');
+}
+
+// ---- Offer construction: the spin deals the stat, the mix deals the kinds ----
+// Kind weights per BALANCE §1.1. Picks 1–3 are CURATED (hand-picked sensible
+// offers from the spun stat, skills only per the ladder). Pick 5 = the weapon
+// choice; pick 6's offers are normal, then the stone pick + the Ape follow.
+function statCard(statKey) {
+  const w = WHEEL[wheelIdx(statKey)];
+  return { tag: w.name + ' Stat', power: false, icon: '📈', statKey,
+    name: w.name + ' +3',
+    desc: 'Your ' + w.name + ' total goes up by 3 points (now ' + player.stats[statKey] + ' → ' + (player.stats[statKey] + 3) + '). Reach 5 / 10 / 15 / 20 / 30 / 40 / 50 in a stat and it grants an increase in its own area.',
+    apply: () => addStatPoints(statKey, 3) };
+}
+function abilityCard(statKey, forceUpgrade) {
+  const w = WHEEL[wheelIdx(statKey)];
+  const heldIds = player.powers.filter((p) => p.lvl < 3);
+  if (forceUpgrade && heldIds.length) {
+    const p = heldIds[randi(0, heldIds.length - 1)];
+    return { tag: w.name + ' · Rank Up · ' + rollRarity(V3.picksMade + 1), power: true, icon: POWER_DEFS[p.id].icon, statKey,
+      name: POWER_DEFS[p.id].name + ' Lv' + (p.lvl + 1),
+      desc: 'Rank up a power you already hold. Ranks pay out on the universal axes: costs down, durations longer, range greater, power up.',
+      apply: () => { p.lvl++; } };
+  }
+  const unheld = Object.keys(POWER_DEFS).filter((id) => !hasPower(id));
+  if (unheld.length && player.powers.length < 3) {
+    const id = unheld[randi(0, unheld.length - 1)];
+    return { tag: w.name + ' · New Skill · ' + rollRarity(V3.picksMade + 1), power: true, icon: POWER_DEFS[id].icon, statKey,
+      name: POWER_DEFS[id].name, desc: POWER_DEFS[id].desc,
+      apply: () => { player.powers.push({ id, lvl: 1 }); player.activePower = player.powers.length - 1; } };
+  }
+  if (heldIds.length) return abilityCard(statKey, true);
+  return statCard(statKey);
+}
+function smallIncreaseCard(statKey) {
+  // The small-increase pool (BALANCE §1.1: sub-stat +1–2). COLLECTION RANGE
+  // is in this pool by owner canon — it is Spirit's collect-range sub-stat,
+  // and it is always offered when the wheel lands on Spirit.
+  const pool = [
+    { icon: '👟', name: 'Small Increase: Quick Feet', desc: 'A small increase: your move speed goes up by 2%.', apply: () => { player.speedMul *= 1.02; } },
+    { icon: '❤️', name: 'Small Increase: Thick Skin', desc: 'A small increase: your maximum health goes up by 10 and you heal 10 HP now.', apply: () => { player.maxHp += 10; player.hp = Math.min(player.maxHp, player.hp + 10); } },
+    { icon: '🦷', name: 'Small Increase: Sharp Bite', desc: 'A small increase: your damage goes up by 3%.', apply: () => { player.damageMul *= 1.03; } }
+  ];
+  const collect = { icon: '🧲', name: 'Small Increase: Collection Range', statKey: 'spirit',
+    desc: 'A small increase — COLLECTION RANGE +1 step: pellets and pickups are pulled into your mouth from 4px further away (now ' + Math.round(player.magnetR) + ' → ' + Math.round(player.magnetR + 4) + '). Collection range is Spirit\'s collect-range sub-stat.',
+    apply: () => { player.magnetR += 4; Teach.fire('collectrange', player.x, player.y); } };
+  if (statKey === 'spirit') return collect;
+  pool.push(collect);
+  const c = pool[randi(0, pool.length - 1)];
+  c.tag = WHEEL[wheelIdx(statKey)].name + ' · Small Increase';
+  return { tag: c.tag, power: false, icon: c.icon, name: c.name, desc: c.desc, apply: c.apply, statKey };
+}
+function buffCard(statKey) {
+  return { tag: WHEEL[wheelIdx(statKey)].name + ' · Buff', power: false, icon: '⚡', statKey,
+    name: 'Surge Buff', desc: 'A buff: +20% move speed for 30 seconds. Small, temporary, and gone when the timer dies.',
+    apply: () => { player.buffT = 30; } };
+}
+function currencyCard(statKey) {
+  return { tag: WHEEL[wheelIdx(statKey)].name + ' · Currency', power: false, icon: '🪙', statKey,
+    name: 'Coin Drop +20', desc: 'A currency drop: +20 coins into ' + player.charName + '\'s own wallet (coins are character-based — they buy shop goods and skills from the menu).',
+    apply: () => {
+      Save.data.coins[player.charId] = (Save.data.coins[player.charId] || 0) + 20;
+      player.coinsEarned += 20; Save.write(true);
+    } };
+}
+function weaponCard(kindIdx) {
+  // Level 5 — the Arsenal opens (BALANCE §5.1 ranges, SIGNED rolls per the
+  // signed-rolls appendix; each weapon also rolls Light Radius −2…+4 steps,
+  // the gear-rollable modifier, signed like everything else).
+  const kinds = [
+    { name: 'Heavy Maul', icon: '🔨', lo: 8, hi: 20, line: 'physical damage' },
+    { name: 'Fast Fang', icon: '🗡️', lo: 5, hi: 14, line: 'physical damage, faster hands' },
+    { name: 'Longbow Charm', icon: '🏹', lo: 6, hi: 16, line: 'projectile damage' }
+  ];
+  const k = kinds[kindIdx % kinds.length];
+  const pct = rollSigned(k.lo, k.hi);
+  const lr = randi(-2, 4);
+  return { tag: 'Weapon Choice', power: false, icon: k.icon, statKey: 'strength',
+    name: k.name + ' (' + (pct >= 0 ? '+' : '') + pct + '%)',
+    desc: 'A weapon: ' + (pct >= 0 ? '+' : '') + pct + '% ' + k.line + ' while it is yours. Rolls are SIGNED — this one ' + (pct < 0 ? 'came up BAD (negative) — a real roll, printed honestly.' : pct === 0 ? 'came up at 0 — no modifier.' : 'came up good.') + ' It also rolls Light Radius ' + (lr >= 0 ? '+' : '') + lr + ' steps (your fog reveal ' + (lr >= 0 ? 'grows' : 'shrinks') + ' by ' + Math.abs(lr * LIGHT_STEP_PX) + 'px).',
+    apply: () => {
+      player.weapon = { name: k.name, pct };
+      player.damageMul += pct / 100;
+      player.lightRadius = lr;
+      Save.data.lightRadius = lr; Save.write(true);
+      if (lr !== 0) Teach.fire('lightradius', player.x, player.y);
+    } };
+}
+// Curated basics per stat for picks 1–3 (hand-picked, sensible, skills only)
+function curatedBasic(statKey) {
+  const basics = {
+    strength:   { icon: '🦷', name: 'Mega Chomp', desc: 'Your mouth counts as 5 bigger: you eat dots and ghosts from 5 further away, every time.', apply: () => { player.chompBonus += 5; } },
+    vitality:   { icon: '❤️', name: 'Thick Peel', desc: 'Your maximum health goes up by 25 (now ' + player.maxHp + ' → ' + (player.maxHp + 25) + ') and you heal 25 HP right away.', apply: () => { player.maxHp += 25; player.hp = Math.min(player.maxHp, player.hp + 25); } },
+    spirit:     { icon: '🧲', name: 'Wide Gullet', desc: 'Your passive magnet — the range that pulls nearby dots into your mouth — grows by 45 (now ' + Math.round(player.magnetR) + ' → ' + Math.round(player.magnetR + 45) + ').', apply: () => { player.magnetR += 45; } },
+    intellect:  { icon: '🍒', name: 'Fruit Feast', desc: 'Heal 45 HP right now. (One-time — fruit on the map also heals, every time you eat it.)', apply: () => { player.hp = Math.min(player.maxHp, player.hp + 45); } },
+    agility:    { icon: '👟', name: 'Zoom Grease', desc: 'Your move speed goes up by 9%. You move at ' + Math.round(272 * player.speedMul) + ' now — this makes it about ' + Math.round(272 * player.speedMul * 1.09) + '.', apply: () => { player.speedMul *= 1.09; } },
+    speciality: { icon: '💨', name: 'Chomp Dash Start', desc: 'Take the Chomp Dash now if it is offered beside this card — Speciality is the house of big abilities. This card itself: +9% move speed.', apply: () => { player.speedMul *= 1.09; } },
+    nature:     { icon: '⏪', name: 'Shift Grease', desc: 'Time Shift (E / Shift key) recharges 1.5s faster: every 4.5s instead of every 6s. Nature holds the time sub-stat — this is its gift.', apply: () => { player.shiftCdMax = Math.max(3, player.shiftCdMax - 1.5); } }
+  };
+  const b = basics[statKey] || basics.strength;
+  return { tag: WHEEL[wheelIdx(statKey)].name + ' · Skill', power: false, icon: b.icon, name: b.name, desc: b.desc, apply: b.apply, statKey };
+}
+function buildChoices() {
+  const pickNo = V3.picksMade + 1;
+  const statKey = WHEEL[V3.spin.statIdx].key;
+  if (pickNo === 5) {   // the ladder: Level 5 = weapon choice (canon)
+    Teach.fire('weaponpick', player.x, player.y);
+    return [weaponCard(0), weaponCard(1), weaponCard(2)];
+  }
+  if (pickNo <= 3) {    // curated opening: hand-picked, skills only (BALANCE §1)
+    const cards = [abilityCard(statKey, false), curatedBasic(statKey), abilityCard(statKey, player.powers.length > 0)];
+    // de-duplicate by name, topping up with the stat card's neighbour basics
+    const seen = new Set(), out = [];
+    for (const c of cards) { if (!seen.has(c.name)) { seen.add(c.name); out.push(c); } }
+    while (out.length < 3) out.push(curatedBasic(WHEEL[(V3.spin.statIdx + out.length) % 7].key));
+    return out.slice(0, 3);
+  }
+  // Random rolls from pick 4 on, kind-weighted per BALANCE §1.1
+  const weights = pickNo <= 6
+    ? [['ability', 35], ['rankup', 40], ['stat', 10], ['buff', 5], ['small', 5], ['currency', 5]]
+    : [['ability', 30], ['rankup', 30], ['stat', 20], ['buff', 8], ['small', 7], ['currency', 5]];
+  const mk = (kind) => kind === 'ability' ? abilityCard(statKey, false)
+    : kind === 'rankup' ? abilityCard(statKey, true)
+    : kind === 'stat' ? statCard(statKey)
+    : kind === 'buff' ? buffCard(statKey)
+    : kind === 'small' ? smallIncreaseCard(statKey)
+    : currencyCard(statKey);
+  const out = [], usedNames = new Set();
+  for (let n = 0; n < 3; n++) {
+    let roll = Math.random() * 100, acc = 0, kind = 'stat';
+    for (const [k, wgt] of weights) { acc += wgt; if (roll < acc) { kind = k; break; } }
+    let c = mk(kind), guard = 0;
+    while (usedNames.has(c.name) && guard++ < 4) c = mk(guard % 2 ? 'stat' : 'small');
+    usedNames.add(c.name);
+    out.push(c);
+  }
+  return out;
+}
+
+// ---- Resources: gain/spend + the explosive burst ----
+function gainResource(n) {
+  player.resource = clamp(player.resource + n, 0, player.resourceMax);
+  player.combatT = 0;
+}
+function doBurst() {
+  // the explosive spend: a big flashy arcade ring that clears the circle
+  player.resource -= BURST_COST;
+  burst(player.x, player.y, '#ffd93b', 34);
+  burst(player.x, player.y, RESOURCE_DEFS[player.resourceType].color, 22);
+  G.shake = Math.max(G.shake, 12);
+  floater(player.x, player.y - 46, RESOURCE_DEFS[player.resourceType].name + ' BURST!', '#ffd93b');
+  Snd.tone(120, 0.35, 'sawtooth', 0.22, 40);
+  for (const g of ghosts) {
+    if (g.alive && tDist(g.x, g.y, player.x, player.y) < BURST_RADIUS) {
+      const pts = killGhost(g, true, 200);
+      G.score += pts;
+      gainXP(2);
+    }
+  }
+  if (V3.boss && V3.boss.phase === 4 && tDist(V3.boss.x, V3.boss.y, player.x, player.y) < BURST_RADIUS + 30) {
+    apeDamage(50, 'burst');
+  }
+}
+function updateResource(dt, exerting) {
+  player.combatT += dt;
+  if (player.buffT > 0) player.buffT -= dt;
+  if (player.slowT > 0) player.slowT -= dt;
+  const regenMul = player.resRegenMul || 1;
+  if (player.resourceType === 'rage') {
+    if (player.combatT > 4) player.resource = Math.max(0, player.resource - 6 * dt);   // decays out of combat
+  } else if (player.resourceType === 'mana') {
+    player.resource = Math.min(player.resourceMax, player.resource + 5 * dt * regenMul);
+  } else if (player.resourceType === 'energy') {
+    if (!exerting) player.resource = Math.min(player.resourceMax, player.resource + 12 * dt * regenMul);
+  }
+  if (G.wantBurst) {
+    G.wantBurst = false;
+    if (player.resource >= BURST_COST) doBurst();
+    else floater(player.x, player.y - 40, 'NEED 50 ' + RESOURCE_DEFS[player.resourceType].name, '#ff8a8a');
+  }
+}
+// reveal radius: the fog edge around Pac — base + Light Radius steps (signed)
+function revealRadius() { return REVEAL_BASE + player.lightRadius * LIGHT_STEP_PX; }
+
+// ================= v3.0.0 — environmental triggers (8 slots, merge TBD) =================
+// Owner canon: "7 triggers" with 8 lines — one pair MERGES, but which pair
+// is UNRULED. All 8 slots ship data-driven and unmerged; MERGE_PAIR stays
+// blank/TBD below on purpose. When the owner rules, set MERGE_PAIR and the
+// pair collapses into one slot — no other code changes (BALANCE appendix).
+// Triggers are the level-side siblings of boss-arena debuffs: they share
+// the danger-zone telegraph system (V3.danger) with the Ape's barrels.
+const TRIGGER_CONFIG = {
+  rollInterval: 25,                 // seconds between trigger rolls (BALANCE trigger appendix, DRAFT)
+  MERGE_PAIR: null,                 // TBD — owner call. DO NOT GUESS. e.g. ['T6','T7'] once ruled.
+  slots: [
+    { id: 'T1', name: 'More Enemies',    weight: 18 },
+    { id: 'T2', name: 'More Pellets',    weight: 16 },
+    { id: 'T3', name: 'Rolling Bonuses', weight: 14 },
+    { id: 'T4', name: 'More Health',     weight: 14 },
+    { id: 'T5', name: 'More Mini-Bosses', weight: 8 },
+    { id: 'T6', name: 'Floor Is Lava',   weight: 10 },
+    { id: 'T7', name: 'Freeze Floor',    weight: 10 },
+    { id: 'T8', name: 'Lightning',       weight: 10 }
+  ]
+};
+Object.assign(TEACH, {
+  trigger:   { title: 'THE ARENA BREATHES', text: 'Every so often the level itself rolls an ENVIRONMENTAL TRIGGER — more enemies, more pellets, lava floors, lightning and stranger weather. Helpful or hostile, it is always announced. There are 8 trigger slots; the owner has ruled that two of them will one day merge into one — which pair is still his call.' },
+  trig_T6:   { title: 'FLOOR IS LAVA', text: 'Patches of floor are about to BURN. The red telegraph circles show exactly where — stand somewhere else before they light. Lava is a danger zone: shown first, harmful second, never a surprise.' },
+  trig_T7:   { title: 'FREEZE FLOOR', text: 'The floor has iced over: you SLIDE. Steering still works, stopping does not. Aim early, brake with walls, and do not panic.' },
+  trig_T8:   { title: 'LIGHTNING', text: 'Random lightning is striking near you. Each strike paints its target circle first — get out of the circle before it lands. Telegraph, then thunder: that is the law.' },
+  trig_T5:   { title: 'MINI-BOSSES', text: 'Crowned mini-bosses are joining the fight and elites are spawning thick. Big, fast, and worth a Melon each if you eat one in EAT MODE.' }
+});
+function fireTrigger(id) {
+  Teach.fire('trigger', player.x, player.y);
+  if (id === 'T1') { TrigState.t1 = 20; toast('⚠ TRIGGER: MORE ENEMIES!'); }
+  else if (id === 'T2') { spawnDotPattern(); spawnDotPattern(); for (let i = 0; i < 3; i++) spawnDotCluster(); toast('✦ TRIGGER: MORE PELLETS!'); }
+  else if (id === 'T3') { TrigState.cascade = 15; TrigState.cascadeT = 0; toast('🎲 TRIGGER: ROLLING BONUSES!'); }
+  else if (id === 'T4') { for (let i = 0; i < 3; i++) spawnFruit(); toast('🍒 TRIGGER: MORE HEALTH!'); }
+  else if (id === 'T5') {
+    TrigState.eliteWindow = 30;
+    spawnGhost();
+    const g = ghosts[ghosts.length - 1];
+    if (g && g.alive) { g.elite = true; g.r = 30; g.miniboss = true; }
+    Teach.fire('trig_T5', player.x, player.y);
+    toast('👑 TRIGGER: MINI-BOSSES!');
+  }
+  else if (id === 'T6') {
+    Teach.fire('trig_T6', player.x, player.y);
+    for (let i = 0; i < 6; i++) {
+      const a = rand(0, TAU), d = rand(120, 460);
+      const x = wrapPos(player.x + Math.cos(a) * d, WORLD_W), y = wrapPos(player.y + Math.sin(a) * d, WORLD_H);
+      if (!circleHitsWall(x, y, 40)) V3.danger.push({ x, y, r: 58, kind: 'lava', tele: 1.2, live: 18, t: 0 });
+    }
+    toast('🌋 TRIGGER: FLOOR IS LAVA!');
+  }
+  else if (id === 'T7') { TrigState.ice = 15; Teach.fire('trig_T7', player.x, player.y); toast('🧊 TRIGGER: FREEZE FLOOR — YOU SLIDE!'); }
+  else if (id === 'T8') { TrigState.boltWindow = 20; TrigState.boltT = 0.5; Teach.fire('trig_T8', player.x, player.y); toast('⚡ TRIGGER: LIGHTNING!'); }
+}
+function rollTrigger() {
+  let roll = Math.random() * 100, acc = 0;
+  for (const s of TRIGGER_CONFIG.slots) { acc += s.weight; if (roll < acc) { fireTrigger(s.id); return; } }
+  fireTrigger('T1');
+}
+function updateTriggers(dt) {
+  if (TrigState.t1 > 0) TrigState.t1 -= dt;
+  if (TrigState.eliteWindow > 0) TrigState.eliteWindow -= dt;
+  if (TrigState.ice > 0) TrigState.ice -= dt;
+  TrigState.nextRoll -= dt;
+  if (TrigState.nextRoll <= 0) { TrigState.nextRoll = TRIGGER_CONFIG.rollInterval; rollTrigger(); }
+  if (TrigState.cascade > 0) {
+    TrigState.cascade -= dt; TrigState.cascadeT -= dt;
+    if (TrigState.cascadeT <= 0) {   // the random roll cascade: a gift every 3s
+      TrigState.cascadeT = 3;
+      const gift = randi(0, 3);
+      if (gift === 0) spawnFruit(player.x + rand(-160, 160), player.y + rand(-160, 160));
+      else if (gift === 1) { Save.data.coins[player.charId] = (Save.data.coins[player.charId] || 0) + 10; player.coinsEarned += 10; floater(player.x, player.y - 30, '+10 COINS', '#ffd93b'); }
+      else if (gift === 2) { gainResource(25); floater(player.x, player.y - 30, '+25 ' + RESOURCE_DEFS[player.resourceType].name, '#b6ff5e'); }
+      else { player.buffT = Math.max(player.buffT, 5); floater(player.x, player.y - 30, 'SPEED SURGE!', '#9df2ff'); }
+    }
+  }
+  if (TrigState.boltWindow > 0) {
+    TrigState.boltWindow -= dt; TrigState.boltT -= dt;
+    if (TrigState.boltT <= 0) {
+      TrigState.boltT = 2.5;
+      const a = rand(0, TAU), d = rand(40, 420);
+      V3.danger.push({ x: wrapPos(player.x + Math.cos(a) * d, WORLD_W), y: wrapPos(player.y + Math.sin(a) * d, WORLD_H),
+        r: 55, kind: 'bolt', tele: 0.9, live: 0.15, t: 0, struck: false });
+    }
+  }
+}
+// Shared danger-zone update: telegraph first (harmless), then live.
+// Lava burns while stood in; a bolt strikes once at the end of its telegraph.
+function updateDanger(dt) {
+  for (let i = V3.danger.length - 1; i >= 0; i--) {
+    const z = V3.danger[i];
+    z.t += dt;
+    if (z.kind === 'lava') {
+      if (z.t > z.tele && tDist(z.x, z.y, player.x, player.y) < z.r && G.time >= player.invulnUntil) {
+        player.hp -= 8 * dt;
+        player.combatT = 0;
+        if (Math.random() < dt * 3) burst(player.x, player.y, '#ff7a3b', 3);
+        if (player.hp <= 0) { loseLife(); if (G.state !== 'playing') return; }
+      }
+      if (z.t > z.tele + z.live) V3.danger.splice(i, 1);
+    } else if (z.kind === 'bolt') {
+      if (!z.struck && z.t >= z.tele) {
+        z.struck = true;
+        burst(z.x, z.y, '#cfeaff', 16);
+        Snd.tone(1400, 0.14, 'square', 0.14, 300);
+        if (tDist(z.x, z.y, player.x, player.y) < z.r && G.time >= player.invulnUntil) {
+          if (Math.random() * 100 < player.dodgePct) floater(player.x, player.y - 30, 'DODGED!', '#b6ff5e');
+          else {
+            player.hp -= 15; G.shake = Math.max(G.shake, 8); Snd.hurt();
+            floater(player.x, player.y - 30, 'STRUCK! -15', '#cfeaff');
+            if (player.hp <= 0) { loseLife(); if (G.state !== 'playing') return; }
+          }
+        }
+      }
+      if (z.t > z.tele + z.live) V3.danger.splice(i, 1);
+    }
+  }
+}
+
+// ================= v3.0.0 — named areas & explored fog =================
+// The arena has named AREAS (zones). Entering one announces it (first-sight
+// lesson once ever for the area system, a toast after that), and every area
+// wears its own light (a translucent tint while you are inside it).
+const AREAS = [
+  { name: 'The Centre Cross', sub: 'the doodle crossroads', tint: 'rgba(255,217,59,0.05)', test: (x, y) => x > 1350 && x < 2050 && y > 950 && y < 1650 },
+  { name: 'Shift Bay North-West', sub: 'landing pads and corner brackets', tint: 'rgba(77,178,255,0.05)', test: (x, y) => x < WORLD_W / 2 && y < WORLD_H / 2 },
+  { name: 'The Quadrant Bars', sub: 'long runs, longer chases', tint: 'rgba(255,157,226,0.045)', test: (x, y) => x >= WORLD_W / 2 && y < WORLD_H / 2 },
+  { name: 'The Long Way Round', sub: 'the southern corridors', tint: 'rgba(55,224,139,0.045)', test: (x, y) => x < WORLD_W / 2 && y >= WORLD_H / 2 },
+  { name: 'Corner Pocket South-East', sub: 'deep in the page corner', tint: 'rgba(255,122,59,0.05)', test: () => true }
+];
+function areaAt(x, y) { for (let i = 0; i < AREAS.length; i++) if (AREAS[i].test(x, y)) return i; return AREAS.length - 1; }
+function updateExploredAndArea() {
+  // explored grid: 100px cells, revealed within the (Light-Radius-fed) radius
+  const R = revealRadius();
+  const cx0 = Math.floor((player.x - R) / 100), cx1 = Math.floor((player.x + R) / 100);
+  const cy0 = Math.floor((player.y - R) / 100), cy1 = Math.floor((player.y + R) / 100);
+  for (let cx = cx0; cx <= cx1; cx++) for (let cy = cy0; cy <= cy1; cy++) {
+    const wx = ((cx % 34) + 34) % 34, wy = ((cy % 26) + 26) % 26;
+    V3.explored.add(wx + ',' + wy);
+  }
+  const ai = areaAt(player.x, player.y);
+  if (ai !== V3.areaIdx) {
+    V3.areaIdx = ai;
+    if (G.state === 'playing' && G.time > 1) {
+      toast('🗺 ' + AREAS[ai].name);
+      floater(player.x, player.y - 52, AREAS[ai].sub, '#c2caff');
+      Teach.fire('areachange', player.x, player.y);
+    }
+  }
+}
+function cellExplored(x, y) {
+  const cx = ((Math.floor(x / 100) % 34) + 34) % 34, cy = ((Math.floor(y / 100) % 26) + 26) % 26;
+  return V3.explored.has(cx + ',' + cy);
+}
+
+// ================= v3.0.0 — the APE, Level 6 mini-boss (BOSS-FIGHTS.md §1) =================
+// Mechanic-to-win: BAIT THE THROW, BREAK THE SCAFFOLD. Pac's damage cannot
+// reach the Ape on his scaffold (phases 1–3). His exploding barrels can:
+// bait a throw so its cross-blast touches a cracked pylon — 2 blasts break
+// a pylon, 4 pylons drop him to the ground (phase 4), where he takes damage.
+// Aggro/threat: a threat table — the Ape throws at whoever has built the
+// most threat (Pac by dealing damage/kills; the partner decoy by holding a
+// pylon corridor). Barrel impact zones are telegraphed the whole flight.
+const APE = { pylons: 4, blastsPerPylon: 2, hp: 300, barrelSpeed: 190, blastArm: 150, blastHalfWidth: 40, blastDamage: 20,
+  throwInterval: [2.6, 2.0, 1.5, 2.2], addInterval: 6, enrageStep: 60 };
+function spawnApe() {
+  let bx = wrapPos(player.x + 240, WORLD_W), by = wrapPos(player.y - 300, WORLD_H);
+  const slid = pushOutWalls(bx, by, 40); bx = slid.x; by = slid.y;
+  V3.boss = { type: 'ape', x: bx, y: by, r: 38, phase: 1, hp: APE.hp, maxHp: APE.hp,
+    throwT: 1.4, throwMul: 1, sinceCrack: 0, addT: 5, poundT: 3, touchT: 0, throws: 0,
+    threat: { pac: 0, decoy: 0 } };
+  V3.pylons = [];
+  for (const off of [-170, -80, 80, 170]) {
+    let px = wrapPos(bx + off, WORLD_W), py = wrapPos(by + 120, WORLD_H);
+    const s2 = pushOutWalls(px, py, 18); px = s2.x; py = s2.y;
+    V3.pylons.push({ x: px, y: py, hp: APE.blastsPerPylon });
+  }
+  V3.bossSpawned = true;
+  toast('🦍 THE APE!');
+  Teach.fire('ape', bx, by);
+}
+function apeTargetPos() {
+  // threat decides the target: the decoy (partner) wins throws by holding
+  // ground near a pylon; Pac wins them by fighting. Snapshot at the throw.
+  const b = V3.boss;
+  if (V3.partner && V3.partner.deployed && b.threat.decoy > b.threat.pac) {
+    return { x: V3.partner.x, y: V3.partner.y, lead: null };
+  }
+  const lead = b.phase >= 2 ? { x: player.x + player.vx * 0.5, y: player.y + player.vy * 0.5 } : null;
+  return { x: player.x, y: player.y, lead };
+}
+function throwBarrel(tx, ty, red) {
+  const b = V3.boss;
+  V3.barrels.push({ x: b.x, y: b.y, tx, ty, fuse: 6, red: !!red });
+  V3.danger.push({ x: tx, y: ty, r: 46, kind: 'barrelmark', tele: 99, live: 99, t: 0 });
+}
+function explodeBarrel(bl) {
+  burst(bl.tx, bl.ty, '#ff7a3b', 20);
+  burst(bl.tx, bl.ty, '#ffd93b', 10);
+  G.shake = Math.max(G.shake, 9);
+  Snd.tone(90, 0.3, 'sine', 0.24, 34);
+  const inCross = (x, y, slack) => {
+    const dx = Math.abs(wrapDelta(x - bl.tx, WORLD_W)), dy = Math.abs(wrapDelta(y - bl.ty, WORLD_H));
+    return (dx <= APE.blastArm + slack && dy <= APE.blastHalfWidth + slack) ||
+           (dy <= APE.blastArm + slack && dx <= APE.blastHalfWidth + slack);
+  };
+  for (let i = V3.pylons.length - 1; i >= 0; i--) {
+    if (inCross(V3.pylons[i].x, V3.pylons[i].y, 6)) damagePylon(i);
+  }
+  if (inCross(player.x, player.y, 0) && G.time >= player.invulnUntil) {
+    if (Math.random() * 100 < player.dodgePct) floater(player.x, player.y - 30, 'DODGED!', '#b6ff5e');
+    else {
+      player.hp -= APE.blastDamage; player.combatT = 0;
+      if (player.resourceType === 'rage') gainResource(12);
+      floater(player.x, player.y - 30, 'BARREL BLAST! -' + APE.blastDamage, '#ff7a3b');
+      Snd.hurt();
+      if (player.hp <= 0) loseLife();
+    }
+  }
+  // the marker for this barrel is spent
+  const mi = V3.danger.findIndex((z) => z.kind === 'barrelmark' && Math.abs(wrapDelta(z.x - bl.tx, WORLD_W)) < 4 && Math.abs(wrapDelta(z.y - bl.ty, WORLD_H)) < 4);
+  if (mi >= 0) V3.danger.splice(mi, 1);
+}
+function damagePylon(i) {
+  const p = V3.pylons[i];
+  p.hp--;
+  burst(p.x, p.y, '#c98a4b', 12);
+  if (V3.boss) V3.boss.sinceCrack = 0;
+  if (p.hp > 0) { floater(p.x, p.y - 26, 'PYLON CRACKED!', '#ffd93b'); return; }
+  V3.pylons.splice(i, 1);
+  floater(p.x, p.y - 26, 'PYLON DOWN!', '#ffd93b');
+  G.shake = Math.max(G.shake, 10);
+  const left = V3.pylons.length;
+  if (!V3.boss) return;
+  if (left === 0) {
+    V3.boss.phase = 4;
+    V3.boss.y = wrapPos(V3.boss.y + 130, WORLD_H);
+    toast('💥 THE SCAFFOLD FALLS! THE APE IS DOWN!');
+    floater(V3.boss.x, V3.boss.y - 56, 'NOW HE IS EDIBLE!', '#ffd93b');
+  } else {
+    V3.boss.phase = left === 1 ? 3 : 2;
+    toast('🦍 ' + left + (left === 1 ? ' PYLON' : ' PYLONS') + ' LEFT!');
+  }
+}
+function apeDamage(n, source) {
+  const b = V3.boss;
+  if (!b) return;
+  if (b.phase < 4) {   // out of reach on the scaffold — the game says so
+    if (!b._reachT || G.time - b._reachT > 2) { b._reachT = G.time; floater(b.x, b.y - 52, 'OUT OF REACH!', '#ff8a8a'); }
+    return;
+  }
+  const dealt = n * player.damageMul * (source === 'burst' ? player.abilityPowMul : 1);
+  b.hp -= dealt;
+  b.threat.pac += dealt;
+  burst(b.x, b.y, '#ffd93b', 6);
+  if (b.hp <= 0) bossDown();
+}
+function bossDown() {
+  const b = V3.boss;
+  G.score += 2000;
+  burst(b.x, b.y, '#ffd93b', 40);
+  toast('🏆 THE APE IS DOWN! +2000');
+  Snd.levelUp();
+  V3.boss = null; V3.pylons = []; V3.barrels = [];
+  V3.danger = V3.danger.filter((z) => z.kind !== 'barrelmark');
+  V3.bossBeaten = true;
+  Save.data.endlessUnlocked['level6'] = true;   // BALANCE §7.2: boss kill unlocks endless for the level
+  Save.write();
+  Teach.fire('endless', player.x, player.y);
+  refreshMenuV3();
+}
+function updateBoss(dt) {
+  const b = V3.boss;
+  if (!b) return;
+  // threat: Pac's decays slowly; the decoy builds threat by holding a pylon corridor
+  b.threat.pac = Math.max(0, b.threat.pac - dt * 1.2);
+  if (V3.partner && V3.partner.deployed) {
+    let nearPylon = false;
+    for (const p of V3.pylons) if (tDist(p.x, p.y, V3.partner.x, V3.partner.y) < 130) nearPylon = true;
+    if (nearPylon) b.threat.decoy += dt * 6; else b.threat.decoy = Math.max(0, b.threat.decoy - dt * 2);
+  }
+  b.sinceCrack += dt;
+  if (b.phase < 4 && b.sinceCrack >= APE.enrageStep) {   // soft enrage: passivity is punished
+    b.sinceCrack = 0; b.throwMul *= 0.85;
+    toast('🦍 THE APE THROWS FASTER!');
+  }
+  // throws
+  b.throwT -= dt;
+  if (b.throwT <= 0) {
+    b.throwT = APE.throwInterval[b.phase - 1] * b.throwMul;
+    const tgt = apeTargetPos();
+    b.throws++;
+    const red = b.phase >= 2 && b.throws % 5 === 0;   // every fifth barrel in P2+ is a wide red one
+    throwBarrel(tgt.x, tgt.y, red);
+    if (b.phase === 2) throwBarrel(tgt.lead ? tgt.lead.x : tgt.x, tgt.lead ? tgt.lead.y : tgt.y, false);
+    if (b.phase === 3) {   // the last pylon is protected: cluster on whoever stands near it
+      const p = V3.pylons[0];
+      if (p) throwBarrel(p.x + rand(-30, 30), p.y + rand(-30, 30), false);
+    }
+    if (b.phase === 4) throwBarrel(tgt.x, tgt.y, red);
+  }
+  // adds trickle from phase 2 (barrel-ape chimps — killable, edible in EAT MODE)
+  if (b.phase >= 2 && b.phase < 4) {
+    b.addT -= dt;
+    if (b.addT <= 0) {
+      b.addT = APE.addInterval;
+      spawnGhost('wildcard');
+      const g = ghosts[ghosts.length - 1];
+      if (g && g.alive) { g.isAdd = true; g.elite = false; g.r = 13; g.chimp = true; }
+    }
+  }
+  // phase 3 chest pound: lingering in the last pylon's corridor gets punished
+  if (b.phase === 3 && V3.pylons.length) {
+    b.poundT -= dt;
+    const p = V3.pylons[0];
+    if (b.poundT <= 0 && tDist(p.x, p.y, player.x, player.y) < 150) {
+      b.poundT = 4;
+      burst(p.x, p.y, '#c98a4b', 18);
+      toast('🦍 CHEST POUND!');
+      const dx = wrapDelta(player.x - p.x, WORLD_W), dy = wrapDelta(player.y - p.y, WORLD_H);
+      const d = Math.hypot(dx, dy) || 1;
+      player.vx += (dx / d) * 420; player.vy += (dy / d) * 420;
+      player.slowT = 1;
+    }
+  }
+  // phase 4: on the ground — he chases, and he can finally be hurt
+  if (b.phase === 4) {
+    const dx = wrapDelta(player.x - b.x, WORLD_W), dy = wrapDelta(player.y - b.y, WORLD_H);
+    const d = Math.hypot(dx, dy) || 1;
+    b.x = wrapPos(b.x + (dx / d) * 148 * dt, WORLD_W);
+    b.y = wrapPos(b.y + (dy / d) * 148 * dt, WORLD_H);
+    const slid = pushOutWalls(b.x, b.y, b.r); b.x = slid.x; b.y = slid.y;
+    // fire trail burns him like anyone else on the ground
+    for (const s of trail) {
+      if (tDist(s.x, s.y, b.x, b.y) < 34) { apeDamage(14 * dt * player.abilityPowMul, 'fire'); break; }
+    }
+    b.touchT -= dt;
+    if (d < b.r + player.r + player.chompBonus && b.touchT <= 0) {
+      if (player.dashT > 0 || player.eatT > 0) {
+        b.touchT = 0.45;
+        apeDamage(10, 'dash');
+        floater(b.x, b.y - 50, 'CHOMP!', '#ffd93b');
+      } else if (G.time >= player.invulnUntil) {
+        b.touchT = 1;
+        player.hp -= 13; player.combatT = 0;
+        if (player.resourceType === 'rage') gainResource(12);
+        G.shake = Math.max(G.shake, 8); Snd.hurt();
+        if (player.hp <= 0) loseLife();
+      }
+    }
+  }
+  // barrels roll toward their snapshot and explode on arrival or at fuse end
+  for (let i = V3.barrels.length - 1; i >= 0; i--) {
+    const bl = V3.barrels[i];
+    bl.fuse -= dt;
+    const dx = wrapDelta(bl.tx - bl.x, WORLD_W), dy = wrapDelta(bl.ty - bl.y, WORLD_H);
+    const d = Math.hypot(dx, dy);
+    if (d < 12 || bl.fuse <= 0) { V3.barrels.splice(i, 1); explodeBarrel(bl); if (G.state !== 'playing') return; continue; }
+    bl.x = wrapPos(bl.x + (dx / d) * APE.barrelSpeed * dt, WORLD_W);
+    bl.y = wrapPos(bl.y + (dy / d) * APE.barrelSpeed * dt, WORLD_H);
+  }
+}
+
+// ================= v3.0.0 — stone pick & boss intro (Level 6 ladder) =================
+function openStonePick() {
+  G.state = 'stonepick';
+  Teach.fire('stonepick', player.x, player.y);
+  const wrap = document.getElementById('stoneCards');
+  wrap.innerHTML = '';
+  for (const st of STONES) {
+    const d = document.createElement('div');
+    d.className = 'card';
+    d.innerHTML = '<div class="tag">Infinity Stone · ' + WHEEL[wheelIdx(st.stat)].name + '</div>' +
+      '<div class="ico">💎</div><div class="name" style="color:' + st.color + '">' + st.name + '</div>' +
+      '<div class="desc">Buffs the skills of its own colour: ' + WHEEL[wheelIdx(st.stat)].name + ' skills and effects run +15% stronger while this stone is yours.</div>';
+    d.addEventListener('click', () => pickStone(st));
+    wrap.appendChild(d);
+  }
+  document.getElementById('stoneScreen').classList.remove('hidden');
+}
+function pickStone(st) {
+  player.stone = st.key;
+  // the stone's buff lands on its own stat's mapped system (BALANCE §9B: +15%)
+  if (st.stat === 'strength') player.damageMul *= 1.15;
+  else if (st.stat === 'vitality') { player.maxHp = Math.round(player.maxHp * 1.15); player.hp += Math.round(player.maxHp * 0.15); }
+  else if (st.stat === 'spirit') { player.magnetR *= 1.15; player.resRegenMul = (player.resRegenMul || 1) * 1.15; }
+  else if (st.stat === 'intellect') player.resourceMax = Math.round(player.resourceMax * 1.15);
+  else if (st.stat === 'agility') player.abilityPowMul *= 1.15;
+  else if (st.stat === 'speciality') player.abilityPowMul *= 1.15;
+  else if (st.stat === 'nature') player.shiftCdMax = Math.max(3, player.shiftCdMax * 0.85);
+  V3.stonePicked = true;
+  document.getElementById('stoneScreen').classList.add('hidden');
+  burst(player.x, player.y, st.color, 30);
+  toast('💎 ' + st.name.toUpperCase() + ' CLAIMED!');
+  if (!V3.bossSpawned && !G.endlessRun) openBossIntro();
+  else resumeAfterPick();
+}
+function openBossIntro() {
+  G.state = 'bossintro';
+  document.getElementById('bossIntro').classList.remove('hidden');
+}
+
+// ================= v3.0.0 — team up (framework + tag-in for 2) =================
+// Unlocks after 10 cumulative levels of account progress (save). Max team 3
+// in the data model (V3.chars holds per-character run state); the third
+// slot unlocks by the TEAM_STEP_LEVELS growth rule and is data-model-only
+// in this prototype — 2 characters are fielded, the slot is ready.
+function charStateFromPackage(pkg) {
+  return { charId: pkg.charId, charName: pkg.charName, color: pkg.color, resourceType: pkg.resourceType,
+    stats: Object.assign({}, pkg.stats), statSteps: {}, hp: 100, maxHp: 100,
+    resource: pkg.resourceType === 'energy' ? 60 : 0, resourceMax: 100,
+    damageMul: 1, abilityPowMul: 1, dodgePct: 0 };
+}
+function stashPlayerInto(state) {
+  state.hp = player.hp; state.maxHp = player.maxHp;
+  state.resource = player.resource; state.resourceMax = player.resourceMax;
+  state.damageMul = player.damageMul; state.abilityPowMul = player.abilityPowMul;
+  state.dodgePct = player.dodgePct;
+  Object.assign(state.stats, player.stats);
+  Object.assign(state.statSteps, player.statSteps);
+}
+function loadPlayerFrom(state) {
+  player.charId = state.charId; player.charName = state.charName; player.charColor = state.color;
+  player.resourceType = state.resourceType;
+  player.stats = state.stats; player.statSteps = state.statSteps;
+  player.hp = state.hp; player.maxHp = state.maxHp;
+  player.resource = state.resource; player.resourceMax = state.resourceMax;
+  player.damageMul = state.damageMul; player.abilityPowMul = state.abilityPowMul;
+  player.dodgePct = state.dodgePct;
+  player.resRegenMul = 1;
+  applyThresholds(true);
+}
+function tagIn() {
+  if (!V3.partner || !V3.partner.deployed || G.state !== 'playing') return;
+  const activeState = V3.chars[player.charId];
+  stashPlayerInto(activeState);
+  const otherId = player.charId === PAC_PACKAGE.charId ? PARTNER_PACKAGE.charId : PAC_PACKAGE.charId;
+  const other = V3.chars[otherId];
+  // the partner steps off the field at the swap point; positions exchange
+  const px = player.x, py = player.y;
+  player.x = V3.partner.x; player.y = V3.partner.y;
+  V3.partner.x = px; V3.partner.y = py;
+  loadPlayerFrom(other);
+  V3.partner.charId = activeState.charId;
+  burst(player.x, player.y, '#ff9de2', 18);
+  toast('🔁 TAG! ' + player.charName.toUpperCase() + ' IS IN!');
+  Snd.copySting();
+}
+function updatePartner(dt) {
+  const pt = V3.partner;
+  if (!pt || !pt.deployed) return;
+  // the benched partner trails the active character — a visible decoy the
+  // Ape's threat table can choose (that is her job in the boss fight)
+  const dx = wrapDelta(player.x - pt.x, WORLD_W), dy = wrapDelta(player.y - pt.y, WORLD_H);
+  const d = Math.hypot(dx, dy);
+  if (d > 52) {
+    pt.x = wrapPos(pt.x + (dx / d) * 230 * dt, WORLD_W);
+    pt.y = wrapPos(pt.y + (dy / d) * 230 * dt, WORLD_H);
+    const slid = pushOutWalls(pt.x, pt.y, 14); pt.x = slid.x; pt.y = slid.y;
+  }
+  // benched partner recovers resource at half the Spirit recovery rate (BALANCE §12)
+  const st = V3.chars[pt.charId];
+  if (st) st.resource = Math.min(st.resourceMax, st.resource + 2.5 * dt);
+}
+
+// ================= v3.0.0 — per-frame systems hook =================
+function v3Update(dt) {
+  updateResource(dt, player.dashT > 0);
+  updateTriggers(dt);
+  updateDanger(dt);
+  if (G.state !== 'playing') return;
+  updateBoss(dt);
+  if (G.state !== 'playing') return;
+  updatePartner(dt);
+  updateExploredAndArea();
+  if (!V3.radarTaught) { V3.radarTaught = true; Teach.fire('radar', player.x, player.y); }
+  // level time limit (BALANCE §7.1): endless runs and the boss fight pause it
+  if (!G.endlessRun && !V3.boss) {
+    G.timeLeft -= dt;
+    if (G.timeLeft <= 0) {
+      toast('⏰ TIME UP — THE LEVEL FAILS!');
+      loseLife();
+      if (G.state === 'playing') { G.timeLeft = limitForLevel(player.level); player.hp = player.maxHp; }
+    }
+  }
+}
+function limitForLevel(lv) {
+  if (lv <= 3) return 360;        // 6:00 (BALANCE §7.1)
+  if (lv <= 6) return 480;        // 8:00
+  if (lv <= 10) return 600;       // 10:00
+  return Math.min(1200, 720 + Math.floor((lv - 11) / 5) * 60);   // 12:00 +1:00/5 levels, cap 20:00
+}
+
+// ================= v3.0.0 — rendering: telegraphs, boss, partner, fog, radar, wheel =================
+function drawDangerZones() {
+  for (const z of V3.danger) {
+    const sx = SX(z.x), sy = SY(z.y);
+    if (!onScreen(sx, sy, z.r + 60)) continue;
+    ctx.save();
+    if (z.kind === 'lava') {
+      const live = z.t > z.tele;
+      ctx.fillStyle = live ? 'rgba(255,90,20,0.5)' : 'rgba(255,60,20,0.16)';
+      ctx.strokeStyle = live ? '#ff7a3b' : 'rgba(255,90,40,0.8)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(sx, sy, z.r, 0, TAU); ctx.fill(); ctx.stroke();
+      if (!live) {   // telegraph: the ring closes as the burn approaches
+        ctx.strokeStyle = '#ffd93b'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(sx, sy, z.r * (1 - z.t / z.tele) + 4, 0, TAU); ctx.stroke();
+      } else if (Math.random() < 0.3) burst(z.x + rand(-z.r, z.r) * 0.6, z.y + rand(-z.r, z.r) * 0.6, '#ff9a3b', 1);
+    } else if (z.kind === 'bolt') {
+      ctx.strokeStyle = 'rgba(207,234,255,0.9)'; ctx.lineWidth = 2.5;
+      ctx.fillStyle = 'rgba(160,210,255,0.13)';
+      ctx.beginPath(); ctx.arc(sx, sy, z.r, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(sx, sy, Math.max(3, z.r * (1 - z.t / z.tele)), 0, TAU); ctx.stroke();
+      if (z.struck) { ctx.fillStyle = 'rgba(220,245,255,0.75)'; ctx.beginPath(); ctx.arc(sx, sy, z.r, 0, TAU); ctx.fill(); }
+    } else if (z.kind === 'barrelmark') {
+      // the Ape's snapshot marker: a crayon X + landing circle, shown the
+      // whole flight — the fight is telegraph literacy (BOSS-FIGHTS.md)
+      const pulse = 0.75 + 0.25 * Math.sin(animT * 10);
+      ctx.strokeStyle = 'rgba(255,70,40,' + (0.65 * pulse + 0.3) + ')'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(sx, sy, 40, 0, TAU); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(sx - 13, sy - 13); ctx.lineTo(sx + 13, sy + 13);
+      ctx.moveTo(sx + 13, sy - 13); ctx.lineTo(sx - 13, sy + 13);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+function drawBossAndBarrels() {
+  // pylons: cracked wooden posts — crack lines multiply as hp falls
+  for (const p of V3.pylons) {
+    const sx = SX(p.x), sy = SY(p.y);
+    if (!onScreen(sx, sy, 60)) continue;
+    ctx.save();
+    ctx.fillStyle = '#7a5230'; ctx.fillRect(sx - 9, sy - 30, 18, 60);
+    ctx.strokeStyle = '#3a2410'; ctx.lineWidth = 2; ctx.strokeRect(sx - 9, sy - 30, 18, 60);
+    ctx.strokeStyle = '#ffd93b'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(sx - 7, sy - 18); ctx.lineTo(sx + 2, sy - 4); ctx.lineTo(sx - 4, sy + 8);
+    if (p.hp < 2) { ctx.moveTo(sx + 7, sy - 24); ctx.lineTo(sx - 1, sy - 10); ctx.lineTo(sx + 5, sy + 4); ctx.lineTo(sx, sy + 20); }
+    ctx.stroke();
+    ctx.restore();
+  }
+  // barrels in flight: brown, banded, red ones wider and angrier
+  for (const bl of V3.barrels) {
+    const sx = SX(bl.x), sy = SY(bl.y);
+    if (!onScreen(sx, sy, 40)) continue;
+    ctx.save();
+    ctx.fillStyle = bl.red ? '#c23b2a' : '#8a5a2e';
+    ctx.beginPath(); ctx.arc(sx, sy, bl.red ? 17 : 14, 0, TAU); ctx.fill();
+    ctx.strokeStyle = '#3a2410'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,220,150,0.8)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(sx - 10, sy); ctx.lineTo(sx + 10, sy); ctx.stroke();
+    ctx.restore();
+  }
+  const b = V3.boss;
+  if (!b) return;
+  const sx = SX(b.x), sy = SY(b.y);
+  if (onScreen(sx, sy, 120)) {
+    ctx.save();
+    if (b.phase < 4) {   // the scaffold platform under him
+      ctx.fillStyle = '#5a4028'; ctx.fillRect(sx - 90, sy + 30, 180, 12);
+      ctx.strokeStyle = '#2e1e0e'; ctx.lineWidth = 2; ctx.strokeRect(sx - 90, sy + 30, 180, 12);
+    }
+    ctx.font = (b.phase === 4 ? 74 : 84) + 'px serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('🦍', sx, sy);
+    ctx.restore();
+    // boss bar: phases 1–3 show pylons (the real health), phase 4 shows HP
+    ctx.save();
+    const bw = 190, bx = clamp(sx - bw / 2, 8, VW - bw - 8), by = Math.max(54, sy - 86);
+    ctx.fillStyle = 'rgba(6,8,28,0.8)'; ctx.fillRect(bx, by, bw, 17);
+    ctx.fillStyle = b.phase === 4 ? '#ff3b6b' : '#c98a4b';
+    const frac = b.phase === 4 ? clamp(b.hp / b.maxHp, 0, 1) : V3.pylons.length / APE.pylons;
+    ctx.fillRect(bx + 2, by + 2, (bw - 4) * frac, 13);
+    ctx.strokeStyle = '#ffd93b'; ctx.lineWidth = 1.5; ctx.strokeRect(bx, by, bw, 17);
+    ctx.fillStyle = '#fff'; ctx.font = '800 10.5px "Segoe UI", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(b.phase === 4 ? 'THE APE — GROUND FIGHT' : 'THE APE — PYLONS ' + V3.pylons.length + '/4 (bait his barrels!)', bx + bw / 2, by + 27);
+    ctx.restore();
+  }
+}
+function drawPartner() {
+  const pt = V3.partner;
+  if (!pt || !pt.deployed) return;
+  const sx = SX(pt.x), sy = SY(pt.y);
+  if (!onScreen(sx, sy, 50)) return;
+  ctx.save();
+  ctx.fillStyle = pt.pkgColor || '#ff9de2';
+  ctx.beginPath(); ctx.arc(sx, sy, 14, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#c2185b';   // her bow
+  ctx.beginPath(); ctx.arc(sx - 5, sy - 13, 4, 0, TAU); ctx.arc(sx + 5, sy - 13, 4, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = '700 9px "Segoe UI", sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('PARTNER — T TO TAG', sx, sy - 24);
+  ctx.restore();
+}
+// Fog / darkness: the build's darkness layer is the vignette; v3 adds a
+// true reveal disc — darkness closes in beyond revealRadius(), and Light
+// Radius (signed, gear-rolled) pushes that edge out or pulls it in.
+function drawFog() {
+  const R = revealRadius();
+  const g = ctx.createRadialGradient(VW / 2, VH / 2, R * 0.55, VW / 2, VH / 2, R * 1.45);
+  g.addColorStop(0, 'rgba(2,2,12,0)');
+  g.addColorStop(0.75, 'rgba(2,2,12,0.28)');
+  g.addColorStop(1, 'rgba(2,2,12,0.66)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, VW, VH);
+  if (player.lightRadius !== 0) {
+    ctx.save();
+    ctx.fillStyle = player.lightRadius > 0 ? 'rgba(255,240,180,0.9)' : 'rgba(150,160,255,0.9)';
+    ctx.font = '700 10px "Segoe UI", sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('LIGHT RADIUS ' + (player.lightRadius > 0 ? '+' : '') + player.lightRadius, VW / 2, VH - 8);
+    ctx.restore();
+  }
+}
+// The upgraded radar: a real minimap, always on. Edible ghosts are BLUE and
+// distinct; hunters are pale; fruit pink; stones/pellets gold. The fog rule
+// binds it: only EXPLORED ground and the things on it render at all.
+function drawRadarMinimap() {
+  if (G.state !== 'playing' && G.state !== 'paused') return;
+  const mw = 156, mh = 118, mx = VW - mw - 10, my = VH - mh - 10;
+  ctx.save();
+  ctx.fillStyle = 'rgba(6,8,28,0.72)';
+  ctx.strokeStyle = 'rgba(120,140,255,0.55)'; ctx.lineWidth = 1.5;
+  ctx.fillRect(mx, my, mw, mh); ctx.strokeRect(mx, my, mw, mh);
+  const px2w = (x) => mx + (wrapPos(x, WORLD_W) / WORLD_W) * mw;
+  const py2w = (y) => my + (wrapPos(y, WORLD_H) / WORLD_H) * mh;
+  ctx.fillStyle = 'rgba(120,150,255,0.16)';   // explored cells
+  for (const key of V3.explored) {
+    const [cx, cy] = key.split(',').map(Number);
+    ctx.fillRect(mx + (cx / 34) * mw, my + (cy / 26) * mh, mw / 34 + 1, mh / 26 + 1);
+  }
+  const dot = (x, y, color, r) => { if (!cellExplored(x, y)) return; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(px2w(x), py2w(y), r, 0, TAU); ctx.fill(); };
+  for (const f of fruits) dot(f.x, f.y, '#ff4d7e', 2.6);
+  for (const pl of pellets) dot(pl.x, pl.y, '#ffd93b', 2.6);
+  for (const g of ghosts) {
+    if (!g.alive) continue;
+    dot(g.x, g.y, player.eatT > 0 ? '#3b6bff' : (g.elite ? '#ffd93b' : '#dfe6ff'), g.elite ? 3 : 2.2);
+  }
+  if (V3.boss) dot(V3.boss.x, V3.boss.y, '#ff3b30', 4);
+  if (V3.partner && V3.partner.deployed) dot(V3.partner.x, V3.partner.y, '#ff9de2', 2.6);
+  ctx.fillStyle = '#ffd21f';   // Pac is always the bright centre of his own map
+  ctx.beginPath(); ctx.arc(px2w(player.x), py2w(player.y), 3.2, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#8fa2ff'; ctx.font = '700 8.5px "Segoe UI", sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('RADAR — EXPLORED ONLY', mx + 5, my + 11);
+  ctx.restore();
+}
+// The wheel overlay: 7 slices in wheel order, spinning to its landing while
+// the state is 'spin', resting on the landed stat behind the card screen.
+function drawWheelOverlay() {
+  if (G.state !== 'spin' && G.state !== 'levelup') return;
+  const cx = VW / 2, cy = Math.min(VH * 0.30, 210), R = 74;
+  const p = G.state === 'spin' ? clamp(V3.spin.animT / V3.spin.dur, 0, 1) : 1;
+  const ease = 1 - Math.pow(1 - p, 3);
+  const spinIdx = G.state === 'spin'
+    ? Math.floor(ease * (21 + V3.spin.statIdx)) % 7
+    : V3.spin.statIdx;
+  ctx.save();
+  ctx.fillStyle = 'rgba(4,6,24,0.55)';
+  ctx.beginPath(); ctx.arc(cx, cy, R + 14, 0, TAU); ctx.fill();
+  for (let i = 0; i < 7; i++) {
+    const a0 = -Math.PI / 2 + (i / 7) * TAU, a1 = -Math.PI / 2 + ((i + 1) / 7) * TAU;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, a0, a1); ctx.closePath();
+    ctx.fillStyle = WHEEL[i].color;
+    ctx.globalAlpha = i === spinIdx ? 1 : 0.38;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#0a0d26'; ctx.lineWidth = 2; ctx.stroke();
+    const am = (a0 + a1) / 2;
+    ctx.fillStyle = '#fff'; ctx.font = '800 10px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(WHEEL[i].name.slice(0, 3).toUpperCase(), cx + Math.cos(am) * R * 0.68, cy + Math.sin(am) * R * 0.68);
+  }
+  ctx.fillStyle = '#0a0d26'; ctx.beginPath(); ctx.arc(cx, cy, 17, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#ffd93b'; ctx.font = '900 13px "Segoe UI", sans-serif';
+  ctx.fillText('🎡', cx, cy);
+  ctx.fillStyle = '#fff'; ctx.font = '800 13px "Segoe UI", sans-serif';
+  ctx.fillText(G.state === 'spin' ? 'THE WHEEL SPINS…' : 'THE WHEEL DEALT: ' + WHEEL[V3.spin.statIdx].name.toUpperCase(), cx, cy + R + 30);
+  ctx.restore();
+}
+
+// ================= v3.0.0 — menu wiring: difficulty, endless, tombstone, version =================
+function refreshMenuV3() {
+  const d = Save.data;
+  document.querySelectorAll('[data-diff]').forEach((b) => {
+    b.classList.toggle('on', b.getAttribute('data-diff') === d.difficulty);
+  });
+  const eb = document.getElementById('endlessBtn');
+  if (eb) {
+    const unlocked = !!d.endlessUnlocked['level6'];
+    eb.textContent = '♾ ENDLESS: ' + (!unlocked ? 'LOCKED (beat the Level 6 boss)' : (V3.endlessSelected ? 'ON' : 'OFF'));
+    eb.style.opacity = unlocked ? '1' : '0.45';
+  }
+  const tb = document.getElementById('tombstone');
+  if (tb) {
+    if (d.hardcoreDeath) {
+      tb.classList.remove('hidden');
+      tb.innerHTML = '🪦 HERE LIES <b>' + d.hardcoreDeath.char.toUpperCase() + '</b> — died on HARD (hardcore) at level ' +
+        d.hardcoreDeath.level + ', score ' + d.hardcoreDeath.score + '. The character is gone. (Prototype: Reset save is the only way back — canon offers no undo.)';
+      document.getElementById('startBtn').style.opacity = '0.4';
+    } else {
+      tb.classList.add('hidden');
+      document.getElementById('startBtn').style.opacity = '1';
+    }
+  }
+  const tl = document.getElementById('teamLine');
+  if (tl) tl.textContent = d.teamUnlocked
+    ? 'TEAM UP unlocked — partner fields with you; press T to tag in. Team size ' + d.teamSize + ' of 3 (third slot: data model ready).'
+    : 'TEAM UP locks at 10 total levels of account progress — you are at ' + d.cumulativeLevels + '.';
+}
+document.querySelectorAll('[data-diff]').forEach((b) => {
+  b.addEventListener('click', () => {
+    Save.data.difficulty = b.getAttribute('data-diff');
+    Save.write(true);
+    Teach.fire('difficulty');
+    refreshMenuV3();
+  });
+});
+{ const eb = document.getElementById('endlessBtn');
+  if (eb) eb.addEventListener('click', () => {
+    if (!Save.data.endlessUnlocked['level6']) { toast('ENDLESS IS LOCKED — BEAT THE LEVEL 6 BOSS'); return; }
+    V3.endlessSelected = !V3.endlessSelected;
+    refreshMenuV3();
+  });
+}
+{ const bb = document.getElementById('bossGoBtn');
+  if (bb) bb.addEventListener('click', () => {
+    document.getElementById('bossIntro').classList.add('hidden');
+    G.state = 'playing';
+    spawnApe();
+    resumeGrace();
+  });
+}
+{ const tb2 = document.getElementById('tagBtn');
+  if (tb2) tb2.addEventListener('click', () => tagIn());
+}
+{ const bb2 = document.getElementById('burstBtn');
+  if (bb2) bb2.addEventListener('click', () => { G.wantBurst = true; });
+}
+// the grace window, shared by card picks and the boss-intro dismissal
+function resumeGrace() {
+  Teach.fire('grace', player.x, player.y);
+  player.graceT = 1.5;
+  player.invulnUntil = Math.max(player.invulnUntil, G.time + 1.5);
+  floater(player.x, player.y - 38, 'GRACE!', '#9df2ff');
+}
+function resumeAfterPick() {
+  G.state = 'playing';
+  resumeGrace();
+}
+
 // ---------------- Main loop ----------------
 const TEST_MODE = new URLSearchParams(window.location.search).get('test') === '1';
 const INTRO_TEST = new URLSearchParams(window.location.search).get('test') === 'intro';
@@ -3034,6 +4271,10 @@ function frame(ts) {
   if (G.state === 'intro') {
     Intro.update(dt);
     Intro.render();
+  } else if (G.state === 'spin') {
+    V3.spin.animT += dt;
+    if (V3.spin.animT >= V3.spin.dur) openLevelUp();
+    render();
   } else {
     if (G.state === 'playing') {
       // a first-sight lesson freezes the world until it is dismissed
@@ -3067,6 +4308,8 @@ function frame(ts) {
 resetGame();
 refreshSaveLine();
 window.PAC_DEBUG = { G, Intro, player, Save, Teach, beginRun, buildChoices, pickCard, computeStick, togglePause,
+  V3, WHEEL, STONES, TrigState, TRIGGER_CONFIG, PAC_VERSION, planSpin, startSpin, rollSigned, thresholdSteps,
+  fireTrigger, spawnApe, apeDamage, pickStone, tagIn, revealRadius, limitForLevel, eliteChance,
   get choices() { return levelChoices; },
   doTimeShift, requestShift,
   radarTargets, isWallAt, circleHitsWall, WALLS,

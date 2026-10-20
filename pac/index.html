@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PAC — Arena Muncher</title>
+<title>PAC — Arena Muncher · v3.0.0</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { width:100%; height:100%; overflow:hidden; background:#04040c;
@@ -116,6 +116,18 @@
     border:1px solid rgba(120,140,255,.4); border-radius:9px; padding:7px 16px;
     font-size:12.5px; letter-spacing:1px; cursor:pointer; }
   .ghost-btn:hover { color:#ffb3c0; border-color:rgba(255,120,150,.6); }
+  .diff-btn { margin-top:10px; background:transparent; color:#8fa2ff; border:1px solid rgba(120,140,255,.4);
+    border-radius:9px; padding:8px 14px; font-size:13px; letter-spacing:1px; cursor:pointer; }
+  .diff-btn.on { background:#ffd93b; color:#201200; border-color:#ffd93b; font-weight:800; }
+  #resFill { background:#ff5e3a; width:0%; }
+  #tombstone { margin-top:14px; max-width:520px; background:rgba(40,10,20,.85); border:2px solid #8a4a5e;
+    border-radius:12px; padding:12px 16px; color:#ffb3c0; line-height:1.55; font-size:14px; }
+  #tagBtn { right:16px; bottom:216px; width:88px; height:56px; border-radius:16px; font-size:12px; font-weight:800;
+    display:none; background:rgba(255,120,200,.22); border-color:rgba(255,157,226,.7); }
+  body.touch #tagBtn { display:block; }
+  #burstBtn { right:114px; bottom:18px; width:76px; height:76px; border-radius:50%; font-size:11px; font-weight:800;
+    display:none; background:rgba(255,90,40,.25); border-color:rgba(255,140,60,.8); }
+  body.touch #burstBtn { display:block; }
   #debugState { position:absolute; bottom:2px; right:4px; font-size:9px; color:#334; z-index:1; }
 
   /* ---------- Intro: game chrome hidden while the intro scene owns the screen ---------- */
@@ -135,9 +147,11 @@
     <div class="bar"><div id="hpFill"></div></div>
     <div class="hud-label" style="margin-top:3px;">XP — Level <span id="levelText">1</span></div>
     <div class="bar"><div id="xpFill"></div></div>
+    <div class="hud-label" style="margin-top:3px;"><span id="resText">RAGE 0</span> (F = burst)</div>
+    <div class="bar"><div id="resFill"></div></div>
   </div>
   <div class="hud-box" id="hud-mid">
-    <div class="hud-label">Time</div>
+    <div class="hud-label" id="timeLabel">Level Time Left</div>
     <div class="hud-value" id="timeText">0:00</div>
     <div class="hud-label" style="margin-top:3px;">Combo <span id="comboText">x0</span></div>
     <div class="bar"><div id="comboFill"></div></div>
@@ -159,6 +173,8 @@
 <button class="ctl-btn" id="pauseBtn" title="Pause (P)">⏸</button>
 <button class="ctl-btn" id="dashBtn">DASH</button>
 <button class="ctl-btn" id="shiftBtn" title="Time Shift (E)">SHIFT</button>
+<button class="ctl-btn" id="tagBtn" title="Tag in partner (T)">TAG ⇄</button>
+<button class="ctl-btn" id="burstBtn" title="Resource burst (F)">BURST</button>
 
 <!-- first-sight teaching tooltip: above every overlay (incl. the card
      screen); captures the tap so a dismiss can never click through -->
@@ -180,14 +196,42 @@
      <b style="color:#9df2ff;">Time Shift: E / SHIFT key</b> — freezes the swarm and slips you
      out through the nearest edge to the opposite side &nbsp;•&nbsp; Pause: P &nbsp;•&nbsp; Mute: M</p>
   <button class="big-btn" id="startBtn">▶ START</button>
+  <p class="small">BUILD <b style="color:#ffe93b;">v3.0.0</b> — the 7-stat wheel build: spin offers, thresholds, Rage, the Level-6 Ape.</p>
+  <div>
+    <button class="diff-btn" data-diff="easy">EASY · 3 LIVES</button>
+    <button class="diff-btn" data-diff="medium">MEDIUM · 1 LIFE</button>
+    <button class="diff-btn" data-diff="hard">HARD · HARDCORE ☠</button>
+  </div>
+  <button class="ghost-btn" id="endlessBtn">♾ ENDLESS: LOCKED (beat the Level 6 boss)</button>
+  <p class="small" id="teamLine"></p>
+  <div id="tombstone" class="hidden"></div>
   <p class="small" id="saveLine"></p>
   <button class="ghost-btn" id="resetSaveBtn">Reset save</button>
 </div>
 
 <div class="overlay hidden" id="levelupScreen">
   <h2>LEVEL UP!</h2>
-  <p>Pick one:</p>
+  <p id="spinLine">Pick one:</p>
   <div id="cards"></div>
+</div>
+
+<div class="overlay hidden" id="stoneScreen">
+  <h2>💎 PICK YOUR STONE</h2>
+  <p>Level 6 prize — an Infinity Stone of YOUR choice. One per stat; the Darkhold is the seventh.
+     A stone buffs the skills of its own colour by +15%.</p>
+  <div id="stoneCards" style="display:flex; gap:12px; margin-top:18px; flex-wrap:wrap; justify-content:center; max-width:860px;"></div>
+</div>
+
+<div class="overlay hidden" id="bossIntro">
+  <h2>🦍 LEVEL 6 — THE APE</h2>
+  <p><i>Panel 1: the maze, quiet. A shadow grows across the paper.</i></p>
+  <p style="margin-top:8px;"><i>Panel 2: a barrel rolls into frame, stops — and explodes. The panel border cracks.</i></p>
+  <p style="margin-top:8px;"><i>Panel 3: the Ape on his girders, chest pounding, barrels stacked like ammunition.
+     “LEVEL 6. HE HAS BEEN THROWING THINGS AT ARCADE HEROES SINCE BEFORE YOU WERE A PIXEL.”</i></p>
+  <p style="margin-top:8px;">Pac, below: <b style="color:#ffe93b;">“Nice barrels. Shame if they went off near your house.”</b></p>
+  <p style="margin-top:8px;">You cannot hurt him up there. <b>Bait the throw, break the scaffold:</b> stand where his barrel
+     will land beside a cracked pylon, be gone when it blows — 4 pylons, then he fights you on the ground.</p>
+  <button class="big-btn" id="bossGoBtn">FIGHT THE APE ▶</button>
 </div>
 
 <div class="overlay hidden" id="gameoverScreen">
