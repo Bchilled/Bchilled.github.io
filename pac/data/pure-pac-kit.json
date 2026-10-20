@@ -3,17 +3,18 @@
     "chartRow": {
       "file": "pac/charts/chart-data.json",
       "repo": "Bchilled/Bchilled.github.io",
-      "commit": "4bbfc378e0ab4e1e3da6a32a0b1a4dcdddaedfaf",
-      "generatedFrom": "ALIGNMENT-7.md + SPOOF-NAMES.md via charts/gen_chart_data.py",
-      "key": "items[id=2142]"
+      "commit": "4b56d958fe419156e212025549ae53aaa49dffdd",
+      "key": "items[id=2142]",
+      "generatedFrom": "ALIGNMENT-7.md + SPOOF-NAMES.md via charts/gen_chart_data.py"
     },
     "kit": {
       "file": "pac/wiki/chars/pure-pac.html",
       "repo": "Bchilled/Bchilled.github.io",
-      "commit": "4bbfc378e0ab4e1e3da6a32a0b1a4dcdddaedfaf",
-      "pageSaysGeneratedFrom": "characters/PURE-PAC.md + STAT-OUT.md (not in the repo)"
+      "pageLastChangedIn": "7927b26fd5a0a248cd26d742a0ab9eab36da92ff",
+      "readAt": "4b56d958fe419156e212025549ae53aaa49dffdd",
+      "pageSaysFactsFrom": "characters/PURE-PAC.md (not in the repo); also cites STAT-OUT, ROSTER, SKILLS-ELEMENTS, LINES.md, MODELS.md (not in the repo)"
     },
-    "note": "chart-data.json holds only Pure Pac's chart row; the kit text below is copied verbatim from the wiki page. 'GAP'/'DRAFT' markers are the source's own."
+    "note": "Re-export from the page as rebuilt in 7927b26 (VS-template rebuild). Text copied verbatim (HTML tags stripped, entities decoded, whitespace collapsed). CANON/DRAFT/PROPOSAL/GAP markers are the page's own. Nothing added or estimated. Supersedes the export in 7ef99d3, which was read from the page before the rebuild."
   },
   "chartRow": {
     "id": 2142,
@@ -31,167 +32,398 @@
     "newDraft": false,
     "serves": ""
   },
-  "facts": {
-    "STAT HOME": "Speciality · S3",
-    "SHADE": "Move speed · movement buff",
-    "RESOURCE": "Energy",
-    "ROLE": "Speed + gather — the team's pace and appetite engine",
-    "PACKAGE": "Appetite + Swiftness"
+  "infobox": {
+    "name": "Pure Tupac",
+    "imageCaption": "Master model — model-01-pure-pac.png",
+    "fields": {
+      "IDENTITY": {
+        "ORIGINAL": "Pure Pac, “the Original”",
+        "STAT HOME": "Speciality · Shade S3 (move speed · movement buff)",
+        "SOURCE SLICE": "Maw — he leads it",
+        "RESOURCE": "Energy",
+        "DESCRIPTION": "Cast-Iron Stomach: bad edibles blunt on him — and buff him instead.",
+        "UNLOCK": "Starter — granted at profile creation",
+        "COST": "0 Rings",
+        "STARTING KIT": "Hella Maw (C) · Arcade Engine (R) · ◆ Transform (M)"
+      },
+      "BASE — LEVEL 1": {
+        "HEALTH": "100 — flat at every level (he files no HP)",
+        "MOVE SPEED": "272 px/s (L1) → 438 px/s (L20)",
+        "CHOMP": "15.78 damage/hit · 1.0 attacks/s",
+        "MAX ENERGY": "100",
+        "COOLDOWN RED.": "0"
+      },
+      "ALSO FILED": {
+        "STAT PACKAGE": "Appetite + Swiftness",
+        "TEAM ROLE": "Speed + Gather",
+        "SMALL BUFF": "+4% Move Speed (shared with his crew)",
+        "+ SLOT": "+ Pet Slot (Speciality’s slot)",
+        "VOICE": "146 lines · 16 trigger categories"
+      }
+    }
   },
-  "subStatGrowth": [
-    {
-      "Sub-stat (Speciality)": "Move Speed",
-      "L1": 9,
-      "L6": 21,
-      "L10": 31,
-      "L20": 55
-    },
-    {
-      "Sub-stat (Speciality)": "Movement Buff",
-      "L1": 7,
-      "L6": 17,
-      "L10": 24,
-      "L20": 43
-    },
-    {
-      "Sub-stat (Speciality)": "Ability Power",
-      "L1": 3,
-      "L6": 7,
-      "L10": 11,
-      "L20": 20
-    },
-    {
-      "Sub-stat (Speciality)": "Rage Magic",
-      "L1": 3,
-      "L6": 7,
-      "L10": 10,
-      "L20": 18
-    },
-    {
-      "Sub-stat (Speciality)": "Total",
-      "L1": 22,
-      "L6": 52,
-      "L10": 76,
-      "L20": 136
-    }
+  "summary": [
+    "Pure Tupac (Pure Pac, “the Original”) is one of the playable characters in PAC — Judgement Day. He is the starter character, granted at profile creation, and the slice leader of Maw, filed under Speciality. His starting kit is Hella Maw, Arcade Engine, and the mythic ◆ Transform.",
+    "His filed package buys no defense, no HP and no damage: his health is a flat 100 at every level and his chomp gets weaker as he levels. He lives by speed (438 px/s at level 20), by what his kit does at +93% Ability Power, and by a cast-iron stomach that turns the game’s junk food into buffs."
   ],
-  "pipelineOutput": [
-    {
-      "Lv": 1,
-      "Move speed": "272 px/s (×1.135)",
-      "EHP": 100,
-      "Chomp DPS": 15.8,
-      "Swarm DPS (area)": 63.1,
-      "TTK vs chaser": "1.52s"
-    },
-    {
-      "Lv": 6,
-      "Move speed": "316 px/s (×1.315)",
-      "EHP": 100,
-      "Chomp DPS": 14.4,
-      "Swarm DPS (area)": 57.4,
-      "TTK vs chaser": "6.27s"
-    },
-    {
-      "Lv": 10,
-      "Move speed": "352 px/s (×1.465)",
-      "EHP": 100,
-      "Chomp DPS": 8.6,
-      "Swarm DPS (area)": 34.4,
-      "TTK vs chaser": "25.55s"
-    },
-    {
-      "Lv": 20,
-      "Move speed": "438 px/s (×1.825)",
-      "EHP": 100,
-      "Chomp DPS": 6.7,
-      "Swarm DPS (area)": 26.9,
-      "TTK vs chaser": "118.93s"
-    }
+  "baseStatsAndGrowth": {
+    "notes": [
+      "Filed base package (level 1, from STAT-OUT), grown in his filed shape to the reference totals. The level-1 line is filed; the growth shape is the math map’s PROPOSAL ruler, the same standing as STAT-MATH’s reference builds.",
+      "Pipeline output, actually computed by backend/stats.js (Order A) and quoted from the working package. His basic attack is the chomp: medium melee, slashing, area hit profile, no gear.",
+      "Also from the run: crit 5 pts / ×1.50 at every level (he buys no crit) · max Energy 100 · CDR 0 · collect-range bonus 0 (a Spirit line; he files none) · chomp vs a spectral target: 7.89/hit at every level — the weakness web halves physical chomps on ghosts before anything else speaks. With his own small buff on himself: 274 / 319 / 356 / 446 px/s. His Speciality total crosses the threshold bands at every reference level: 4 steps at L1, 11 steps from L6 (amounts DRAFT)."
+    ],
+    "subStatGrowth": [
+      {
+        "Sub-stat (Speciality)": "Move Speed",
+        "L1 (filed)": 9,
+        "L6": 21,
+        "L10": 31,
+        "L20": 55
+      },
+      {
+        "Sub-stat (Speciality)": "Movement Buff",
+        "L1 (filed)": 7,
+        "L6": 17,
+        "L10": 24,
+        "L20": 43
+      },
+      {
+        "Sub-stat (Speciality)": "Ability Power",
+        "L1 (filed)": 3,
+        "L6": 7,
+        "L10": 11,
+        "L20": 20
+      },
+      {
+        "Sub-stat (Speciality)": "Rage Magic",
+        "L1 (filed)": 3,
+        "L6": 7,
+        "L10": 10,
+        "L20": 18
+      },
+      {
+        "Sub-stat (Speciality)": "Total",
+        "L1 (filed)": 22,
+        "L6": 52,
+        "L10": 76,
+        "L20": 136
+      }
+    ],
+    "pipelineOutput": [
+      {
+        "Lv": 1,
+        "Move speed": "272 px/s (×1.135)",
+        "Ability Power": "+10.8%",
+        "HP": 100,
+        "EHP": 100,
+        "Time to die in swarm": "5.68s",
+        "Chomp hit": 15.78,
+        "Chomp DPS": 15.8,
+        "Swarm DPS (area)": 63.1,
+        "TTK vs chaser": "1.52s"
+      },
+      {
+        "Lv": 6,
+        "Move speed": "316 px/s (×1.315)",
+        "Ability Power": "+32.6%",
+        "HP": 100,
+        "EHP": 100,
+        "Time to die in swarm": "2.84s",
+        "Chomp hit": 14.35,
+        "Chomp DPS": 14.4,
+        "Swarm DPS (area)": 57.4,
+        "TTK vs chaser": "6.27s"
+      },
+      {
+        "Lv": 10,
+        "Move speed": "352 px/s (×1.465)",
+        "Ability Power": "+51.1%",
+        "HP": 100,
+        "EHP": 100,
+        "Time to die in swarm": "1.75s",
+        "Chomp hit": 8.61,
+        "Chomp DPS": 8.6,
+        "Swarm DPS (area)": 34.4,
+        "TTK vs chaser": "25.55s"
+      },
+      {
+        "Lv": 20,
+        "Move speed": "438 px/s (×1.825)",
+        "Ability Power": "+93.0%",
+        "HP": 100,
+        "EHP": 100,
+        "Time to die in swarm": "0.95s",
+        "Chomp hit": 6.73,
+        "Chomp DPS": 6.7,
+        "Swarm DPS (area)": 26.9,
+        "TTK vs chaser": "118.93s"
+      }
+    ]
+  },
+  "whatTheMathSays": [
+    "His filed package buys zero defense, zero HP, zero damage. EHP is a flat 100 at L1 and L20 alike; standing in the swarm he dies faster every level (5.68s → 0.95s). His survival is not a number on the sheet — it is his speed (438 px/s at L20 against the ghost curve’s 280 px/s ceiling) and the fact that he is never standing still. Pac lives by moving and eating, or not at all.",
+    "His basic chomp does not scale. 15.8 DPS at L1, 6.7 at L20 — the chomp is a gathering tool (dots, XP, junk denial), not a weapon. His offense, if it exists, must be carried by his kit, by EAT MODE, and by what he eats — none of which is priced yet.",
+    "His real scaling lines are Ability Power (+93% at L20) and Movement Buff potency (+129% at L20). Whatever his abilities and movement effects do, they do it at roughly double strength by L20. Until the kit’s numbers are filed, his L20 is a speed stat with a mouth."
+  ],
+  "kitRules": [
+    "Three abilities, owner-dictated (ROSTER): one Common, one Rare, one ◆ Mythic. Costs and cooldowns follow the SKILLS-ELEMENTS convention DRAFT — Common 10 · Rare 25 · Mythic burst 50 — paid from his Energy (regen 12/s while not exerting). Rank-ups pay on the Ranking Law axes (cost down · durations longer · range greater · power up · speeds faster); which axes each ability spends its ranks on is not filed for any of the three.",
+    "Elemental skills held: none filed — his kit is character kit, not an elemental set."
   ],
   "kit": [
     {
-      "rarity": "COMMON",
+      "heading": "(C) Hella Maw",
+      "rarity": "Common",
       "name": "Hella Maw",
       "fields": [
-        "Effect (canon): eat radius and chomp speed up — \"the vacuum mouth the arcade was built on.\"",
-        "Delivery: self-buff / aura class (the maw itself), VS grammar.",
-        "Cost / cooldown (DRAFT convention): Energy 10 · cd 2.5s class.",
-        "Through the pipeline: scales with Ability Power (+10.8% → +93.0%) and, for its chomp-speed half, his attack-speed multiplier (×1.0 — he files no attack-speed points; the buff is the only source).",
-        "Numbers — eat-radius increase %, chomp-speed increase %, duration: GAP (the effect is canon; no magnitude is filed anywhere).",
-        "Rank-up axis spend: GAP (law exists, §30; his spend unfiled)."
+        "Effect CANON: eat radius and chomp speed up — “the vacuum mouth the arcade was built on.” Delivery: self-buff / aura class (the maw itself).",
+        "Cost / cooldown DRAFT: Energy 10 · cd 2.5s class. Scales with Ability Power (+10.8% → +93.0%) and his attack-speed multiplier (×1.0 — the buff is the only source).",
+        "Not filed: eat-radius increase %, chomp-speed increase %, duration, rank-up axis spend."
       ]
     },
     {
-      "rarity": "RARE",
+      "heading": "(R) Arcade Engine",
+      "rarity": "Rare",
       "name": "Arcade Engine",
       "fields": [
-        "Effect (canon): +1 size step AND a speed surge, together — \"bigger AND faster, the two buffs married.\" The marriage is the point: the general size law (DESIGN.md brainstorm layer) trades size against speed; this ability is the filed exception.",
-        "Delivery: self-buff, stacking (see §5).",
-        "Cost / cooldown (DRAFT convention): Energy 25 · cd in the Rare band (8–10s class in SKILLS-ELEMENTS examples) — his exact cooldown: GAP.",
-        "Numbers — speed-surge %, stack cap, per-stack duration: GAP.",
-        "Rank-up axis spend: GAP."
+        "Effect CANON: +1 size step AND a speed surge, together — “bigger AND faster, the two buffs married.” The marriage is the point: the general size law trades size against speed; this ability is the filed exception. Delivery: self-buff, stacking.",
+        "Cost / cooldown DRAFT: Energy 25 · Rare band. Not filed: his exact cooldown, speed-surge %, stack cap, per-stack duration, rank-up axis spend."
       ]
     },
     {
-      "rarity": "◆ MYTHIC",
-      "name": "(M) Transform",
+      "heading": "◆ (M) Transform — Mythic",
+      "rarity": "Mythic",
+      "name": "Transform",
       "fields": [
-        "Effect (canon): shifts form on the mythic dial — \"the huge form and its kin\" — size-class changing mid-run. Also filed as his equivalent (his car-equivalent: he has no car; the form shift is what he has instead — STAT-OUT #2, DRAFT field).",
-        "Delivery: form shift / size-class change (self).",
-        "Cost (DRAFT convention): Energy 50 (mythic burst envelope). Cooldown: GAP (mythic class runs 55–60s in SKILLS-ELEMENTS examples; his is unfiled).",
-        "Socketing: as a mythic, Transform can socket a stone (canon, FULL-SCOPE §41). His aligned stone: POWER → Speciality (§41 stone alignment) — socketed, a stone pays +15% to its own slice's skills (BALANCE §9B, DRAFT).",
-        "THE 13 VARIABLES (canon §37: \"Mythics carry VARIABLES — 13 of them; a mythic is tuned by its variables, not just ranked\"): the count is canon; no file names the 13 variables — all 13 names and values: GAP. This is the single largest hole in the package.",
-        "Rank-up axis spend: GAP. Elemental skills held (SKILLS-ELEMENTS.md): none filed — his kit is character kit, not an elemental set; SKILLS-ELEMENTS names no Pac holder. Not a GAP in his kit (his 3 are above); recorded so nobody goes looking. ---"
+        "Effect CANON: shifts form on the mythic dial — “the huge form and its kin” — size-class changing mid-run. It is also his filed equivalent (his car-equivalent: he has no car; the form shift files instead). As a mythic it can socket a stone; his aligned stone is Power → Speciality.",
+        "Cost DRAFT: Energy 50 (mythic burst envelope). Not filed: cooldown, rank-up axis spend — and the 13 variables: canon fixes that a mythic carries 13 variables; no file names them. All 13 names and values are missing — the single largest hole in this package."
       ]
     }
   ],
   "superUnique": {
     "name": "Cast-Iron Stomach",
     "text": [
-      "Canon rule (ROSTER.md, owner-dictated; restated STAT-OUT #2, DESIGN-ghosts §5): Pure Pac RESISTS the bad edibles — their effects are blunted on him, and eating junk grants him BUFFS instead. He is the one character who can run DENIAL for free: eat a fiending ghost's drug in front of it and the ghost starves into withdrawal while Pac takes the high himself, tuned to Pac (DESIGN-ghosts §5 — \"the economy's kingpin\").",
-      "Filed case — cocaine: FILED: he takes the high himself, tuned to Pac — he redlines without the whittle (DESIGN-ghosts §5). The drain does not land; the surge does."
-    ]
-  },
-  "blueOrb": [
-    "Look: an inverted eclipse — dark core, radiant corona, radiating energy, definitely BLUE.",
-    "On eating one: his character INVERTS and the screen inverts; enemies FLEE; the ghosts SCATTER outward, panic-dispersed, before the hunt begins (§24).",
-    "His expression of the surge: he GROWS in size (≥ 1 size step) and gets EXTRA CHOMPY — where other characters' orb buff speaks their language (extra quick, extra strong, quicker cooldowns), Pac's speaks appetite: size and chomp. This is also the Stage-1 teaching beat (eat the big blue one → EAT MODE → first skill).",
-    "EAT MODE: frightened ghosts are edible; the chain pays 200 / 400 / 800 / 1600 per ghost in sequence (game canon)."
-  ],
-  "gaps": {
-    "summary": "29 of 71 fields",
-    "table": [
+      "CANON Pure Pac resists the bad edibles: their effects are blunted on him, and eating junk grants him buffs instead. He is the one character who can run denial for free — eat a fiending ghost’s drug in front of it and the ghost starves into withdrawal while Pac takes the high himself, tuned to Pac. The blunting magnitude (% reduction) is not filed.",
+      "System consequence (filed): denial costs every other character the junk’s full price and costs Pac nothing — the counterplay to every fiending ghost routes through him."
+    ],
+    "badEdibles": [
       {
-        "Section": "1. Identity",
-        "GAP": "2 of 11",
-        "What's missing": "UI theme content · talent-tree paths"
+        "Bad edible": "WEED (Velocity)",
+        "On everyone else": "Slows you",
+        "On Pure Pac": "Blunted + buff instead — buff form GAP"
       },
       {
-        "Section": "3. Kit",
-        "GAP": "8 of 21",
-        "What's missing": "Hella Maw magnitudes + rank spend · Arcade Engine numbers + cooldown + rank spend · Transform cooldown + rank spend · Transform's 13 variable names/values"
+        "Bad edible": "EXHAUST (Kart)",
+        "On everyone else": "Burst, then exhaustion",
+        "On Pure Pac": "Blunted + buff instead — buff form GAP"
       },
       {
-        "Section": "4. Super-unique",
-        "GAP": "13 of 15",
-        "What's missing": "Blunt magnitude · Pac's buff form for 12 of 13 edibles (cocaine filed)"
+        "Bad edible": "COCAINE (Body)",
+        "On everyone else": "Whittles you down — steady health/strength drain",
+        "On Pure Pac": "Filed: he takes the high himself, tuned to Pac — he redlines without the whittle. The drain does not land; the surge does."
       },
       {
-        "Section": "5. Movement & size",
-        "GAP": "2 of 4",
-        "What's missing": "Movement verb · size-step table"
+        "Bad edible": "MUSHROOMS (Forms)",
+        "On everyone else": "Hallucinations — phantom forms/entities",
+        "On Pure Pac": "Blunted + buff instead — buff form GAP"
       },
       {
-        "Section": "6. Orb",
-        "GAP": "1 of 5",
-        "What's missing": "EAT MODE duration"
+        "Bad edible": "LSD (Elements)",
+        "On everyone else": "Everything Technicolor — full-screen colour delirium",
+        "On Pure Pac": "Blunted + buff instead — buff form GAP"
       },
       {
-        "Section": "7. Gear & crew",
-        "GAP": "3 of 10",
-        "What's missing": "Rig anchors (PENDING) · hero set name · crew roster"
+        "Bad edible": "BEER (Maw)",
+        "On everyone else": "Steering wobbles — direction drift",
+        "On Pure Pac": "Blunted + buff instead — buff form GAP (his own slice’s junk)"
+      },
+      {
+        "Bad edible": "HEROIN (Death)",
+        "On everyone else": "Sleep while HP drops; numbness = reduced damage taken",
+        "On Pure Pac": "Blunted + buff instead — buff form GAP"
+      },
+      {
+        "Bad edible": "GHOST SMOKE (Ghost Hunter) DRAFT",
+        "On everyone else": "Ghosts render eyes-only, radar lies; doubled eat value while smoked",
+        "On Pure Pac": "Pac form GAP"
+      },
+      {
+        "Bad edible": "FOOL’S GOLD (Greed) DRAFT",
+        "On everyone else": "Fake coins; stacking weight-slow; exposed at shops",
+        "On Pure Pac": "Pac form GAP"
+      },
+      {
+        "Bad edible": "RABID MEAT (Beasts) DRAFT",
+        "On everyone else": "Feral — power up, control gone, captures impossible",
+        "On Pure Pac": "Pac form GAP"
+      },
+      {
+        "Bad edible": "CRACKED SUGAR (Mounts) DRAFT",
+        "On everyone else": "Mounted — bolt then stall; on foot — small slow",
+        "On Pure Pac": "Pac form GAP"
+      },
+      {
+        "Bad edible": "HOT LOOT (Theft) DRAFT",
+        "On everyone else": "Your banked power is stolen by a pickpocket ghost",
+        "On Pure Pac": "Pac form GAP"
+      },
+      {
+        "Bad edible": "DUD CRATE (Arsenal) DRAFT",
+        "On everyone else": "Weapon jams; duds are loud, scare ghosts back",
+        "On Pure Pac": "Pac form GAP"
       }
     ]
-  }
+  },
+  "movementAndSize": [
+    "Movement verb: not filed — every character sits under one of the 8 move abilities (Dash · Jump · Fly · Climb · Teleport · Smoke Bomb · Duplicate · Invisible); no file assigns Pac’s. He is filed as on foot, with Transform as his equivalent. His movement expression is filed — raw speed plus Arcade Engine’s surge — the verb itself is not.",
+    "Size: eating a blue orb grows him ≥ 1 size step (Orb Law); Arcade Engine adds +1 size step per stack, with speed; Transform shifts size-class outright. Size itself has no exchange rate in the math map. Not filed: the size-step table — how many steps exist, the max, and what each step is worth."
+  ],
+  "blueOrb": [
+    "Look: an inverted eclipse — dark core, radiant corona, radiating energy, definitely BLUE.",
+    "On eating one: his character inverts and the screen inverts; enemies flee; the ghosts scatter outward, panic-dispersed, before the hunt begins. His expression of the surge: he grows in size (≥ 1 size step) and gets extra chompy — where other characters’ orb buff speaks their language, Pac’s speaks appetite. This is also the Stage-1 teaching beat (eat the big blue one → EAT MODE → first skill).",
+    "EAT MODE: frightened ghosts are edible; the chain pays 200 / 400 / 800 / 1600 per ghost in sequence. Not filed: EAT MODE duration."
+  ],
+  "gearSetAndCrew": [
+    "Gear layout: the standard 11 pieces (Headpiece · Chest · Gloves · Weapon Arm 1 · Weapon Arm 2 · Legs · Boots · Neck · Ring 1 · Ring 2 · Banner). Contents “plain by design” DRAFT — the original wears the layout unadorned. WA1: light weapon · WA2: momentum sidearm (mass-template wording, flagged as such in its source). His + SLOT is Speciality’s + Pet Slot.",
+    "Hero set: every hero has a set built around their main specialty — his is filed (Appetite + Swiftness); the set’s name and pieces are not filed.",
+    "Small buff: +4% Move Speed, drawn from his home sub-stats; shared with his whole crew under crew-buff canon. Crew: no file names his crew (the Pac chair — Pac · Ms. Pac · Trans Pac — is a family chair, not a filed crew). Banner: Speciality guild DRAFT.",
+    "Rig / silhouette: pending anchors — his body is the orb-class body the whole fit question turns on; nothing is claimed here."
+  ],
+  "voice": {
+    "text": [
+      "Pac’s voice is the game’s voice: 146 lines across 16 trigger categories (LINES.md). Style law: full Duke dial; the swearing aims at the swarm, the bosses, the world — never at the player."
+    ],
+    "categories": [
+      {
+        "Category (lines)": "Run Start (10)",
+        "Fires on": "Run start"
+      },
+      {
+        "Category (lines)": "Eating Streaks (10)",
+        "Fires on": "Pellet/dot streak & combo thresholds"
+      },
+      {
+        "Category (lines)": "Ghost Eats — Eat Mode (10)",
+        "Fires on": "Eating a frightened ghost in EAT MODE"
+      },
+      {
+        "Category (lines)": "The Feast (8)",
+        "Fires on": "THE FEAST event"
+      },
+      {
+        "Category (lines)": "Level-Up (10)",
+        "Fires on": "Level-up / offer window"
+      },
+      {
+        "Category (lines)": "Taking Damage (9)",
+        "Fires on": "Hit taken"
+      },
+      {
+        "Category (lines)": "Near-Death (9)",
+        "Fires on": "Low-HP state"
+      },
+      {
+        "Category (lines)": "Captures — Pet-Making (8)",
+        "Fires on": "Successful pet capture (his + Pet Slot)"
+      },
+      {
+        "Category (lines)": "Boss Arrival (10)",
+        "Fires on": "Boss / lair boss spawn"
+      },
+      {
+        "Category (lines)": "Boss Kill (9)",
+        "Fires on": "Boss kill"
+      },
+      {
+        "Category (lines)": "Bomberguy Encounter (9)",
+        "Fires on": "Arch-enemy (Darth Bomberguy) appearance"
+      },
+      {
+        "Category (lines)": "Bomberguy Escape / Curse Answer (9)",
+        "Fires on": "Encore escape — his answer goes in the curse ledger"
+      },
+      {
+        "Category (lines)": "Shop — Kirby & Yoshi (9)",
+        "Fires on": "Entering Kirby’s secret shop / Yoshi’s shop"
+      },
+      {
+        "Category (lines)": "Unlock / New Character (8)",
+        "Fires on": "Character unlock (incl. his Stage-1 instant unlock)"
+      },
+      {
+        "Category (lines)": "Death / Game Over (9)",
+        "Fires on": "Death (Easy 3 lives · Medium 1 · Hardcore = gone)"
+      },
+      {
+        "Category (lines)": "Idle / Ambient (9)",
+        "Fires on": "Idle timer"
+      }
+    ]
+  },
+  "gaps": {
+    "text": [
+      "The working package checks 71 fields against the character schema: 42 filled from sources, 29 gaps. The gaps, by section:",
+      "The three holes that matter most: (1) Transform’s 13 variables — canon fixes the count and nothing else; the mythic can’t be built without them. (2) His kit’s magnitudes — all three effects are canon and all three are unpriced; the numbers above show his sheet has no other offense. (3) Cast-Iron Stomach’s per-edible buffs — the rule that makes him the drug economy’s kingpin is specified for exactly one of thirteen items.",
+      "Open flag on the model itself (MODELS.md): his mouth is the open grin as drawn, vs the wedge-chomp silhouette — an owner call, not resolved in the package."
+    ],
+    "table": [
+      {
+        "Section": "Identity",
+        "Fields": 11,
+        "Gaps": 2,
+        "What’s missing": "UI theme content · talent-tree paths"
+      },
+      {
+        "Section": "Stats & pipeline",
+        "Fields": 4,
+        "Gaps": 0,
+        "What’s missing": "—"
+      },
+      {
+        "Section": "Kit",
+        "Fields": 21,
+        "Gaps": 8,
+        "What’s missing": "Hella Maw magnitudes + rank spend · Arcade Engine numbers + cooldown + rank spend · Transform cooldown + rank spend · Transform’s 13 variable names/values"
+      },
+      {
+        "Section": "Super-unique",
+        "Fields": 15,
+        "Gaps": 13,
+        "What’s missing": "Blunt magnitude · Pac’s buff form for 12 of 13 edibles (cocaine filed)"
+      },
+      {
+        "Section": "Movement & size",
+        "Fields": 4,
+        "Gaps": 2,
+        "What’s missing": "Movement verb · size-step table"
+      },
+      {
+        "Section": "Orb",
+        "Fields": 5,
+        "Gaps": 1,
+        "What’s missing": "EAT MODE duration"
+      },
+      {
+        "Section": "Gear & crew",
+        "Fields": 10,
+        "Gaps": 3,
+        "What’s missing": "Rig anchors (pending) · hero set name · crew roster"
+      },
+      {
+        "Section": "Voice",
+        "Fields": 1,
+        "Gaps": 0,
+        "What’s missing": "—"
+      },
+      {
+        "Section": "Total",
+        "Fields": 71,
+        "Gaps": 29,
+        "What’s missing": ""
+      }
+    ]
+  },
+  "gallery": [
+    "The master model drawing (models/model-01-pure-pac.png) — round bright-yellow hero, huge open grin, red cap worn backwards, thumb up. Locked medium: pencil + coloured pencil on lined notebook paper."
+  ],
+  "footer": "Layout copied from the Vampire Survivors wiki character template (see ../TEMPLATE-SPEC.md). Facts: characters/PURE-PAC.md — the working package; labels mark each fact's standing (CANON owner-ruled · DRAFT assistant-drafted, awaiting ruling · PROPOSAL the math map's ruler · GAP not filed anywhere)."
 }
