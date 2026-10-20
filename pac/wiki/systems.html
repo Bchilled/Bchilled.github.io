@@ -1,0 +1,211 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAC Wiki — Systems</title><style>
+*{box-sizing:border-box} body{margin:0;background:#20242e;font-family:Georgia,'Times New Roman',serif;color:#2a2118}
+.paper{max-width:980px;margin:0 auto;background:#f6f2e6;background-image:repeating-linear-gradient(to bottom,transparent 0 26px,rgba(120,150,200,.25) 26px 27px);padding:18px 20px 40px;min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.5)}
+nav{position:sticky;top:0;background:#f6f2e6;border:2px solid #222;border-radius:3px 8px 4px 9px/8px 4px 9px 3px;padding:8px 10px;margin-bottom:16px;z-index:5}
+nav a{color:#7a2d00;font-weight:bold;text-decoration:none;margin-right:12px;font-size:14px;white-space:nowrap}
+nav a:hover{text-decoration:underline}
+h1{font-size:30px;letter-spacing:1px;margin:6px 0} h2{font-size:22px;border-bottom:2px solid #222;padding-bottom:4px;margin-top:28px} h3{font-size:17px;margin-top:20px}
+p,li{font-size:15.5px;line-height:1.55} ul,ol{padding-left:22px} table{border-collapse:collapse;width:100%;margin:10px 0;background:rgba(255,253,244,.75)}
+th,td{border:1.5px solid #444;padding:6px 8px;font-size:14px;text-align:left;vertical-align:top} th{background:#ffe9a8}
+.badge{display:inline-block;font-size:11px;font-weight:bold;letter-spacing:.5px;padding:2px 7px;border:1.5px solid #222;border-radius:8px 2px 8px 2px;vertical-align:middle}
+.canon{background:#bfe8bf}.draft{background:#ffd94d}.tbd{background:#ffb3c0}.review{background:#ffb066}
+.card{border:2px solid #222;border-radius:2px 7px 3px 8px/7px 3px 8px 2px;background:#fffdf4;padding:10px 14px;margin:12px 0}
+footer{margin-top:34px;border-top:2px dashed #666;padding-top:10px;font-size:12.5px;color:#5a4a30;line-height:1.5}
+input#filter{width:100%;font-size:17px;padding:10px;border:2px solid #222;border-radius:6px 2px 7px 3px;background:#fffdf4;font-family:inherit}
+.small{font-size:13px;color:#5a4a30} a{color:#7a2d00}
+.spec td:first-child{width:130px;font-weight:bold;background:rgba(255,233,168,.4)}
+.gapflag{color:#8b0000;font-weight:bold}
+.ruling{border-top:1.5px dashed #888;margin-top:8px;padding-top:6px;font-size:13.5px;color:#5a4a30}
+svg text{font-family:Georgia,serif}
+</style></head><body><div class="paper"><nav><a href="index.html">🏠 Home</a><a href="stats.html">📊 Stats &amp; Runes</a><a href="mechanics.html">🎡 Mechanics</a><a href="economies.html">🪙 Economies</a><a href="characters.html">🦸 Characters</a><a href="worlds.html">🍕 Worlds</a><a href="bosses.html">👹 Bosses</a><a href="ghosts.html">👻 Ghosts</a><a href="items.html">🎒 Items &amp; Rolls</a><a href="items-coverage.html">📉 Roll Coverage</a><a href="skills.html">✨ Skills</a><a href="slotting.html">🧩 Slotting</a><a href="systems.html">⚙️ Systems</a></nav>
+<h1>⚙️ Systems — levels, the clock, currencies, resources, lives</h1>
+<p>The machinery under the game: how a character levels, what the timer is doing, what unlocks when,
+what the money is, what powers the abilities, and what death costs at each difficulty. Canon shapes
+with DRAFT numbers are marked as such — the numbers are the assistant's until the owner rules.</p>
+<h2>The level system</h2>
+<div class="card"><h3>XP and the tempo law</h3>
+<p><span class="badge canon">CANON</span> <b>leveling is slower than gathering</b> — gathering pellets outruns
+levelling; the swarm grows while you gather, so the run's tension is the overrun loop.</p>
+<p><span class="badge draft">DRAFT numbers</span> Balance draft: L2 at 22, then x1.45/level.
+As built in v3.1.0 (playtest-failed, frozen): 108 x 1.42^(lv-1); time-to-level-2 ~38-50s (harness).
+The final curve is an <span class="badge tbd">OWNER CALL</span> — see the flagged list.</p></div>
+<div class="card"><h3>What an offer holds</h3>
+<p><span class="badge canon">CANON — THE OFFER MIX</span> canon: offers are a mix of every category — never ability-only: level-up offers
+mix abilities, buffs, STATS and resources. Levels 1–3 are curated skills only (the spin geometry:
+Turn 1 showcase, Turn 2 beside your pick, Turn 3 opposite); after the curated picks the windows SPIN,
+casino-style, with a speed-up button (canon presentation).</p>
+<table><tr><th colspan="2">Offer composition — levels 4–6 (DRAFT %)</th></tr><tr><td>buff</td><td>5%</td></tr><tr><td>currency</td><td>5%</td></tr><tr><td>new ability</td><td>35%</td></tr><tr><td>small increase</td><td>5%</td></tr><tr><td>stat increase</td><td>10%</td></tr><tr><td>upgrade/rank-up</td><td>40%</td></tr></table>
+<table><tr><th colspan="2">Offer composition — level 7+ (DRAFT %)</th></tr><tr><td>buff</td><td>8%</td></tr><tr><td>currency</td><td>5%</td></tr><tr><td>new ability</td><td>30%</td></tr><tr><td>small increase</td><td>7%</td></tr><tr><td>stat increase</td><td>20%</td></tr><tr><td>upgrade/rank-up</td><td>30%</td></tr></table>
+<p class="small">Spin landing weights (DRAFT): +/-2 7% each side · neighbour 22% each side · opposite 8% · same slice 34%</p></div>
+<div class="card"><h3>+ Slot growth at stat thresholds (DRAFT amounts)</h3>
+<table><tr><th>Stat points</th><th>Increase</th></tr><tr><td><b>5 points</b></td><td>+1 step</td></tr><tr><td><b>10 points</b></td><td>+1 step; + slot capacity +1</td></tr><tr><td><b>15 points</b></td><td>gated weapon band 1</td></tr><tr><td><b>20 points</b></td><td>movement-effect variant 2</td></tr><tr><td><b>30 points</b></td><td>+2 steps</td></tr><tr><td><b>40 points</b></td><td>gated band 2</td></tr><tr><td><b>50 points</b></td><td>marquee named increase</td></tr></table>
+<p class="small">Canon: slot increases happen AT THRESHOLDS. The amounts are not set — <span class="badge tbd">OWNER CALL</span>.</p></div>
+<h2>The unlock ladder — the setup for EVERY new character (canon)</h2>
+<table><tr><th>Character level</th><th>What it grants</th><th>Status</th></tr><tr><td><b>Level 1-3</b></td><td>curated: skills only; Turn 1 showcase (Melee/Ranged/Pet/Healer/Tank/Magic/Engineer); Turn 2 = +/-1 of Turn-1 pick (50/50); Turn 3 = opposite (3 choices)</td><td><span class="badge canon">CANON</span></td></tr><tr><td><b>Level 4</b></td><td>THE BANK unlocks (capacity 3)</td><td><span class="badge canon">CANON</span></td></tr><tr><td><b>Level 5</b></td><td>WEAPON CHOICE (pick 1 of 3 rolled weapons)</td><td><span class="badge canon">CANON</span></td></tr><tr><td><b>Level 6</b></td><td>INFINITY STONE of the player&#x27;s choice + the APE mini-boss</td><td><span class="badge canon">CANON</span></td></tr><tr><td><b>Level 7-9</b></td><td>random: abilities, ranks, stats, buffs, small increases, currency</td><td><span class="badge canon">CANON</span></td></tr><tr><td><b>Level 10</b></td><td>TEAM UP unlocks (tag in a partner; team max 3)</td><td><span class="badge canon">CANON</span></td></tr><tr><td><b>Level 11+</b></td><td>team grows toward max 3 as it scales; step S is draft parameter (&#x27;every 25&#x27; unconfirmed)</td><td><span class="badge canon">CANON</span></td></tr></table>
+<p class="small">canon: every new character&#x27;s first run climbs skills 1-3 -&gt; Bank 4 -&gt; Weapon 5 -&gt; Stone 6 -&gt; first boss</p>
+<p><span class="badge canon">CANON</span> <b>In-map vs lobby:</b> inside a run, level-ups only UPGRADE
+what you have (plus the offer mix above); NEW abilities are never unlocked in-map — they are learned in
+the shops and the lobby. Pre-boss fairness (canon): offers on the road to a boss seed at least 3 good
+combat spells that work on him.</p>
+<h2>The timer — the swarm IS the clock</h2>
+<div class="card"><h3>Run clock</h3>
+<p>the swarm IS the clock; this is the clock you watch — it counts UP from 0:00 (VS-style) and is always visible on the
+HUD. Level limits run against it:</p>
+<table><tr><th>Levels</th><th>Time limit (DRAFT lengths)</th></tr><tr><td><b>Levels L1-3</b></td><td>6:00</td></tr><tr><td><b>Levels L4-6</b></td><td>8:00</td></tr><tr><td><b>Levels L7-10</b></td><td>10:00</td></tr><tr><td><b>Levels L11+</b></td><td>12:00, +1:00 per 5 levels, cap 20:00</td></tr></table>
+<p class="small">Boss intro and fight: pauses the limit.
+Canon that levels HAVE limits; the lengths are DRAFT. Overtime (DRAFT): limit expires without a boss kill -&gt; level fails; run ends under the difficulty&#x27;s lives rule (Easy 3 / Medium 1 / Hard = character gone — canon)
+Refusing a boss (canon): canon: he becomes a spawner and his escalation timer runs amplified</p></div>
+<table><tr><th>Clock drive</th><th>Spec</th></tr><tr><td><b>blue orbs</b></td><td>every ~34s, max 2 (v3.1.0 built)</td></tr><tr><td><b>boss gate</b></td><td>power threshold, NOT the clock (canon: bosses spawn when game math judges the build strong enough); pre-boss fairness seeds &gt;=3 good combat spells (canon)</td></tr><tr><td><b>dot waves</b></td><td>wave every 14s, stacking (overrun loop); DOT_CAP 1400 (v3.1.0 built)</td></tr><tr><td><b>endless unlock</b></td><td>boss kill unlocks the level&#x27;s endless option permanently (canon); endless is a chosen mode, never a timeout accident; draft: endless drops -20% after 2x normal duration</td></tr><tr><td><b>environmental triggers</b></td><td>trigger clock rolls every 25s; one window at a time (draft)</td></tr><tr><td><b>spawn escalation</b></td><td>swarm target grows with run clock t (canon swarm-is-the-clock; v3.1.0 built curve: 3 + 0.075t + (t/60)^2.2 x 1.8, cap 220)</td></tr><tr><td><b>surges</b></td><td>first at 100s, then every max(45, 75 - 0.012t)s (v3.1.0 built)</td></tr></table>
+<h2>Currencies</h2>
+<table><tr><th>Currency</th><th>Scope</th><th>Job</th></tr>
+<tr><td><b>White pellets</b></td><td>Run currency — some earnings carry OUTSIDE the map into the persistent wallet</td><td>Eat-and-gather: feeds score, XP tempo and the wallet</td></tr>
+<tr><td><b>Coins</b></td><td>Per-character (canon)</td><td>The MENU SHOP currency; skills unlock for purchase after X kills. Also struck out of coin blocks, one per hit, hidden count per block</td></tr>
+<tr><td><b>Sonic Rings</b></td><td>Account-wide spend (canon)</td><td>Character-unlock currency, earned from achievements; unlock cost varies by rarity and distance (+5 per distance step)</td></tr>
+<tr><td><b>Arcade Tickets</b></td><td>Account-wide, scarce (canon)</td><td>Skins, hats, cosmetics, emotes, music — and BUILD-YOUR-OWN-CHARACTER</td></tr>
+<tr><td><b>Crafting materials</b> — Metal · Stone · Wood · Cloth</td><td>Found resources</td><td>Craft weapons at the benches</td></tr>
+<tr><td><b>Rare resources</b></td><td>Extremely rare drops</td><td>Craft Infinity Stones (3 + 200 coins at the stone bench, DRAFT amounts)</td></tr>
+</table>
+<p class="small">The meta game (canon): outside a run you don't level up — no account levels. You
+UNLOCK levels and characters, CRAFT gear, RECYCLE bad gear, and find achievements by exploring
+(achievements are never listed). Full treatment: <a href="economies.html">🪙 Economies</a>.</p>
+<h2>Resources — every character gets exactly ONE (canon)</h2>
+<table><tr><th>Resource</th><th>What it is</th><th>Powers</th></tr>
+<tr><td><b>MANA</b></td><td>The spell resource</td><td>Spells and their costs</td></tr>
+<tr><td><b>ENERGY</b></td><td>Physical exertion</td><td>Physical abilities, dashes, forms</td></tr>
+<tr><td><b>RAGE</b></td><td>Builds up explosive; feeds off being hit</td><td>Burst abilities — the rage-fed builds take damage to deal it</td></tr>
+</table>
+<h2>Difficulty — lives (canon)</h2>
+<table><tr><th>Difficulty</th><th>Lives</th><th>On death</th></tr>
+<tr><td><b>EASY</b></td><td>3</td><td>Lose a life; run continues while lives remain</td></tr>
+<tr><td><b>MEDIUM</b></td><td>1</td><td>The run ends</td></tr>
+<tr><td><b>HARD</b></td><td>Hardcore</td><td>You die once — the CHARACTER IS GONE</td></tr>
+</table>
+<h2>Contested &amp; draft-flagged items on this page (8)</h2>
+<ol>
+<li><b>XP curve final numbers</b> — law is canon (levelling slower than gathering); the curve itself is unruled. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>Level time-limit lengths</b> (6:00 / 8:00 / 10:00 / 12:00+) — limits are canon, lengths DRAFT. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>+ Slot threshold amounts</b> — thresholds are canon; what each step grants is DRAFT. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>Overtime behaviour</b> — limit expiry = level failed is DRAFT (the boss-refusal half is canon). <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>Offer composition percentages</b> — the MIX is canon law; the % tables are DRAFT. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>Spin landing weights</b> — spins are canon; the weights are DRAFT. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>Team growth step</b> — team max 3 is canon; the scaling step ("maybe every 25") is UNCONFIRMED. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>The word "Cloth"</b> — a crafting resource AND a gear material are both named Cloth; two systems, one word. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+</ol>
+<script type="application/json" id="systems-data">{
+ "levels": {
+  "gains": [
+   {
+    "gains": "curated: skills only; Turn 1 showcase (Melee/Ranged/Pet/Healer/Tank/Magic/Engineer); Turn 2 = +/-1 of Turn-1 pick (50/50); Turn 3 = opposite (3 choices)",
+    "level": "1-3",
+    "status": "canon"
+   },
+   {
+    "gains": "THE BANK unlocks (capacity 3)",
+    "level": 4,
+    "status": "canon"
+   },
+   {
+    "gains": "WEAPON CHOICE (pick 1 of 3 rolled weapons)",
+    "level": 5,
+    "status": "canon"
+   },
+   {
+    "gains": "INFINITY STONE of the player's choice + the APE mini-boss",
+    "level": 6,
+    "status": "canon"
+   },
+   {
+    "gains": "random: abilities, ranks, stats, buffs, small increases, currency",
+    "level": "7-9",
+    "status": "canon"
+   },
+   {
+    "gains": "TEAM UP unlocks (tag in a partner; team max 3)",
+    "level": 10,
+    "status": "canon"
+   },
+   {
+    "gains": "team grows toward max 3 as it scales; step S is draft parameter ('every 25' unconfirmed)",
+    "level": "11+",
+    "status": "canon frame; draft parameter"
+   }
+  ],
+  "ladder_is_universal": "canon: every new character's first run climbs skills 1-3 -> Bank 4 -> Weapon 5 -> Stone 6 -> first boss",
+  "offer_composition_draft": {
+   "L1-3": {
+    "new ability": "100%"
+   },
+   "L4-6": {
+    "buff": "5%",
+    "currency": "5%",
+    "new ability": "35%",
+    "small increase": "5%",
+    "stat increase": "10%",
+    "upgrade/rank-up": "40%"
+   },
+   "L7plus": {
+    "buff": "8%",
+    "currency": "5%",
+    "new ability": "30%",
+    "small increase": "7%",
+    "stat increase": "20%",
+    "upgrade/rank-up": "30%"
+   },
+   "offer_mix_law": "canon: offers are a mix of every category \u2014 never ability-only",
+   "spin_weights_draft": {
+    "+/-2": "7% each side",
+    "neighbour": "22% each side",
+    "opposite": "8%",
+    "same slice": "34%"
+   }
+  },
+  "plus_slot_thresholds_draft": {
+   "10": "+1 step; + slot capacity +1",
+   "15": "gated weapon band 1",
+   "20": "movement-effect variant 2",
+   "30": "+2 steps",
+   "40": "gated band 2",
+   "5": "+1 step",
+   "50": "marquee named increase"
+  },
+  "xp_curve": {
+   "balance_draft": "L2 at 22, then x1.45/level",
+   "canon_law": "leveling is slower than gathering",
+   "v3_1_0_built": "108 x 1.42^(lv-1); time-to-level-2 ~38-50s (harness)"
+  }
+ },
+ "timer": {
+  "drives": {
+   "blue_orbs": "every ~34s, max 2 (v3.1.0 built)",
+   "boss_gate": "power threshold, NOT the clock (canon: bosses spawn when game math judges the build strong enough); pre-boss fairness seeds >=3 good combat spells (canon)",
+   "dot_waves": "wave every 14s, stacking (overrun loop); DOT_CAP 1400 (v3.1.0 built)",
+   "endless_unlock": "boss kill unlocks the level's endless option permanently (canon); endless is a chosen mode, never a timeout accident; draft: endless drops -20% after 2x normal duration",
+   "environmental_triggers": "trigger clock rolls every 25s; one window at a time (draft)",
+   "spawn_escalation": "swarm target grows with run clock t (canon swarm-is-the-clock; v3.1.0 built curve: 3 + 0.075t + (t/60)^2.2 x 1.8, cap 220)",
+   "surges": "first at 100s, then every max(45, 75 - 0.012t)s (v3.1.0 built)"
+  },
+  "level_time_limits": {
+   "L1-3": "6:00",
+   "L11+": "12:00, +1:00 per 5 levels, cap 20:00",
+   "L4-6": "8:00",
+   "L7-10": "10:00",
+   "boss_intro_and_fight": "pauses the limit",
+   "status": "canon that levels have them; draft lengths"
+  },
+  "overtime": {
+   "behaviour": "limit expires without a boss kill -> level fails; run ends under the difficulty's lives rule (Easy 3 / Medium 1 / Hard = character gone \u2014 canon)",
+   "refusing_a_boss": "canon: he becomes a spawner and his escalation timer runs amplified",
+   "status": "draft"
+  },
+  "run_clock": {
+   "direction": "counts UP from 0:00 (VS-style)",
+   "role": "the swarm IS the clock; this is the clock you watch",
+   "status": "canon shape; draft presentation",
+   "visibility": "always visible on HUD"
+  }
+ }
+}</script>
+<footer><b>Sources:</b> SYSTEMS-ITEMS.md (§8 the level system &amp; the timer) + systems-items.json (levels/timer data this page is generated from); FULL-SCOPE.md (resources, difficulty, meta game, coin blocks)<br>
+<b>Status:</b> Ladder, resources and difficulty CANON; numbers marked DRAFT are the assistant's inside canon envelopes; eight flagged items above await the owner.<br>
+PAC Wiki — generated from the owner's design files in <code>~/workspace/pac</code>. Canon is the owner's; anything marked <span class="badge draft">DRAFT (assistant)</span> is a proposal until the owner rules, and <span class="badge tbd">TBD</span> means the owner has not decided it yet — it is not invented here.</footer></div></body></html>

@@ -1,0 +1,205 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAC Wiki — Slotting</title><style>
+*{box-sizing:border-box} body{margin:0;background:#20242e;font-family:Georgia,'Times New Roman',serif;color:#2a2118}
+.paper{max-width:980px;margin:0 auto;background:#f6f2e6;background-image:repeating-linear-gradient(to bottom,transparent 0 26px,rgba(120,150,200,.25) 26px 27px);padding:18px 20px 40px;min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.5)}
+nav{position:sticky;top:0;background:#f6f2e6;border:2px solid #222;border-radius:3px 8px 4px 9px/8px 4px 9px 3px;padding:8px 10px;margin-bottom:16px;z-index:5}
+nav a{color:#7a2d00;font-weight:bold;text-decoration:none;margin-right:12px;font-size:14px;white-space:nowrap}
+nav a:hover{text-decoration:underline}
+h1{font-size:30px;letter-spacing:1px;margin:6px 0} h2{font-size:22px;border-bottom:2px solid #222;padding-bottom:4px;margin-top:28px} h3{font-size:17px;margin-top:20px}
+p,li{font-size:15.5px;line-height:1.55} ul,ol{padding-left:22px} table{border-collapse:collapse;width:100%;margin:10px 0;background:rgba(255,253,244,.75)}
+th,td{border:1.5px solid #444;padding:6px 8px;font-size:14px;text-align:left;vertical-align:top} th{background:#ffe9a8}
+.badge{display:inline-block;font-size:11px;font-weight:bold;letter-spacing:.5px;padding:2px 7px;border:1.5px solid #222;border-radius:8px 2px 8px 2px;vertical-align:middle}
+.canon{background:#bfe8bf}.draft{background:#ffd94d}.tbd{background:#ffb3c0}.review{background:#ffb066}
+.card{border:2px solid #222;border-radius:2px 7px 3px 8px/7px 3px 8px 2px;background:#fffdf4;padding:10px 14px;margin:12px 0}
+footer{margin-top:34px;border-top:2px dashed #666;padding-top:10px;font-size:12.5px;color:#5a4a30;line-height:1.5}
+input#filter{width:100%;font-size:17px;padding:10px;border:2px solid #222;border-radius:6px 2px 7px 3px;background:#fffdf4;font-family:inherit}
+.small{font-size:13px;color:#5a4a30} a{color:#7a2d00}
+.spec td:first-child{width:130px;font-weight:bold;background:rgba(255,233,168,.4)}
+.gapflag{color:#8b0000;font-weight:bold}
+.ruling{border-top:1.5px dashed #888;margin-top:8px;padding-top:6px;font-size:13.5px;color:#5a4a30}
+svg text{font-family:Georgia,serif}
+</style></head><body><div class="paper"><nav><a href="index.html">🏠 Home</a><a href="stats.html">📊 Stats &amp; Runes</a><a href="mechanics.html">🎡 Mechanics</a><a href="economies.html">🪙 Economies</a><a href="characters.html">🦸 Characters</a><a href="worlds.html">🍕 Worlds</a><a href="bosses.html">👹 Bosses</a><a href="ghosts.html">👻 Ghosts</a><a href="items.html">🎒 Items &amp; Rolls</a><a href="items-coverage.html">📉 Roll Coverage</a><a href="skills.html">✨ Skills</a><a href="slotting.html">🧩 Slotting</a><a href="systems.html">⚙️ Systems</a></nav>
+<h1>🧩 Slotting — what holds what, and what goes in it</h1>
+<p><span class="badge canon">CANON</span> The loadout has two different systems that are easy to
+confuse: the <b>11 worn gear pieces</b> (below) carry <b>sockets</b>, and the <b>+ SLOT loadout</b> —
+exactly <b>7 slots, ONE PER STAT</b> (owner's law) — holds the character's Food, Weapon, Car, Movement
+effect, Shield, Pet and Orb. Stones are ITEMS, not a slot (canon).</p>
+<h2>The 11 worn pieces — socket map</h2>
+<p class="small">Functional diagram generated from the canon socket table in
+<code>systems-items.json</code>: dots = socket capacity. Pink = owner call outstanding,
+yellow = proposed value. The full wording is in the table under it.</p>
+<svg viewBox="0 0 480 372" width="100%" role="img" aria-label="Worn gear slot map with socket capacities" style="background:rgba(255,253,244,.75);border:2px solid #222;border-radius:3px 8px 4px 9px/8px 4px 9px 3px"><rect x="170" y="10" width="140" height="46" rx="6" fill="#fffdf4" stroke="#222" stroke-width="1.8"/><text x="240.0" y="29" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Headpiece</text><text x="240.0" y="45" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: 3</text><circle cx="184" cy="46" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><circle cx="197" cy="46" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><circle cx="210" cy="46" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><rect x="185" y="64" width="110" height="34" rx="6" fill="#ffb3c0" stroke="#222" stroke-width="1.8"/><text x="240.0" y="83" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Neck (amulet)</text><text x="240.0" y="99" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: TBD — OWNER CALL</text><rect x="10" y="108" width="124" height="54" rx="6" fill="#ffd94d" stroke="#222" stroke-width="1.8"/><text x="72.0" y="127" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Weapon Arm 1</text><text x="72.0" y="143" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: 2</text><circle cx="24" cy="152" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><circle cx="37" cy="152" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><rect x="170" y="106" width="140" height="66" rx="6" fill="#fffdf4" stroke="#222" stroke-width="1.8"/><text x="240.0" y="125" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Chest</text><text x="240.0" y="141" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: 4</text><circle cx="184" cy="162" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><circle cx="197" cy="162" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><circle cx="210" cy="162" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><circle cx="223" cy="162" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><rect x="346" y="108" width="124" height="54" rx="6" fill="#ffd94d" stroke="#222" stroke-width="1.8"/><text x="408.0" y="127" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Weapon Arm 2</text><text x="408.0" y="143" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: 2</text><circle cx="360" cy="152" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><circle cx="373" cy="152" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><rect x="10" y="178" width="124" height="44" rx="6" fill="#fffdf4" stroke="#222" stroke-width="1.8"/><text x="72.0" y="197" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Gloves</text><text x="72.0" y="213" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: 2</text><circle cx="24" cy="212" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><circle cx="37" cy="212" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><rect x="170" y="180" width="140" height="44" rx="6" fill="#ffd94d" stroke="#222" stroke-width="1.8"/><text x="240.0" y="199" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Banner</text><text x="240.0" y="215" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: not a socket host</text><rect x="10" y="238" width="124" height="38" rx="6" fill="#fffdf4" stroke="#222" stroke-width="1.8"/><text x="72.0" y="257" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Ring 1</text><text x="72.0" y="273" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: 0 — zero sockets, ever</text><rect x="170" y="238" width="140" height="62" rx="6" fill="#fffdf4" stroke="#222" stroke-width="1.8"/><text x="240.0" y="257" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Legs</text><text x="240.0" y="273" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: 2</text><circle cx="184" cy="290" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><circle cx="197" cy="290" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><rect x="346" y="238" width="124" height="38" rx="6" fill="#fffdf4" stroke="#222" stroke-width="1.8"/><text x="408.0" y="257" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Ring 2</text><text x="408.0" y="273" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: 0 — zero sockets, ever</text><rect x="170" y="314" width="140" height="46" rx="6" fill="#fffdf4" stroke="#222" stroke-width="1.8"/><text x="240.0" y="333" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#2a2118">Boots</text><text x="240.0" y="349" text-anchor="middle" font-size="10.5" fill="#5a4a30">sockets: 2</text><circle cx="184" cy="350" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/><circle cx="197" cy="350" r="4" fill="#ffe9a8" stroke="#222" stroke-width="1.2"/></svg>
+<table><tr><th>Worn piece</th><th>Socket capacity</th></tr><tr><td><b>Headpiece</b></td><td>3 (canon)</td></tr><tr><td><b>Chest</b></td><td>4 (canon)</td></tr><tr><td><b>Gloves</b></td><td>2 (canon)</td></tr><tr><td><b>Weapon Arm 1</b></td><td>2 (PROPOSED — arm pieces are not in the canon capacity table)</td></tr><tr><td><b>Weapon Arm 2</b></td><td>2 (PROPOSED — arm pieces are not in the canon capacity table)</td></tr><tr><td><b>Legs</b></td><td>2 (canon)</td></tr><tr><td><b>Boots</b></td><td>2 (canon)</td></tr><tr><td><b>Neck (amulet)</b></td><td>TBD — OWNER CALL (canon: amulets can be slotted; the count is not set)</td></tr><tr><td><b>Ring 1</b></td><td>0 — zero sockets, ever (canon)</td></tr><tr><td><b>Ring 2</b></td><td>0 — zero sockets, ever (canon)</td></tr><tr><td><b>Banner</b></td><td>not a socket host (PROPOSED)</td></tr></table>
+<p class="small">Canon capacity table (SYSTEMS-ITEMS §1 / §3): Headpiece ≤3 · Chest (shirt) 4 ·
+Gloves 2 · Legs (pants) 2 · Boots 2 · magic weapons 2 · melee weapons 4 · single-hand weapons 2 ·
+rings 0 · amulets can be slotted, count unset. Weapon capacities live on the
+<a href="items.html">items page</a>; this page covers the worn body.</p>
+<h2>The + SLOT loadout — 7 slots, one per stat (canon)</h2>
+<table><tr><th>+ Slot</th><th>Stat home</th></tr><tr><td><b>+ Weapon Slot</b></td><td>Agility</td></tr><tr><td><b>+ Car (ride) Slot</b></td><td>Intellect</td></tr><tr><td><b>+ Orb Slot</b></td><td>Nature</td></tr><tr><td><b>+ Pet Slot</b></td><td>Speciality</td></tr><tr><td><b>+ Movement effect Slot</b></td><td>Spirit</td></tr><tr><td><b>+ Food Slot</b></td><td>Strength</td></tr><tr><td><b>+ Shield Slot</b></td><td>Vitality</td></tr></table>
+<p class="small">1 slot per stat: canon structure; threshold amounts draft (BALANCE SS3) —
+slot capacity itself grows at stat thresholds (see the <a href="systems.html">Systems page</a>).
+Car slot = mount slot (same slot, canon).</p>
+<h2>The other containers</h2>
+<table><tr><th>Container</th><th>Rule</th><th>Status</th></tr>
+<tr><td><b>The Bank</b></td><td>Save a power-up, use it on demand. Capacity 3 abilities. Unlocks at character level 4 — it is a ladder mechanic, not a + slot.</td><td><span class="badge canon">CANON</span></td></tr>
+<tr><td><b>Copy-power pouch</b></td><td>Holds 3 copied powers; duplicates level the power instead of stacking; swap on keys 1-3.</td><td><span class="badge canon">CANON</span></td></tr>
+<tr><td><b>Fruit bag</b></td><td>stored fruit, eaten on demand; capacity grows by +1 upgrades; a full bag heals on the spot.</td><td><span class="badge canon">CANON</span></td></tr>
+<tr><td><b>Blue slots</b></td><td>Hold stored consumable powers, one-shot summons. separate from + loadout (owner struck it from there).</td><td><span class="badge canon">CANON</span></td></tr>
+<tr><td><b>Team slots</b></td><td>Team Up unlocks at level 10: tag in a partner; team size max 3, each member with their own slots, swappable (canon). Growth step is a DRAFT parameter — see Systems.</td><td><span class="badge canon">CANON</span></td></tr>
+</table>
+<h2>Runes vs Stones — different things (canon)</h2>
+<table><tr><th></th><th>RUNES</th><th>INFINITY STONES</th></tr>
+<tr><td><b>What it is</b></td><td>One of 7 runes, one per stat, each with its symbol. An item-class find at a super rare %.</td><td>One of 7 stones (the Darkhold is the seventh), aligned to a stat. Eaten in-world, or chosen at level 6.</td></tr>
+<tr><td><b>What it does</b></td><td>socketed rune grants stats (any kind to any item, universal injection) — a socketed rune grants stats.</td><td>Buffs its own slice's skills; eating one in-world UNLOCKS TREE ABILITIES.</td></tr>
+<tr><td><b>Where it can sit</b></td><td>Any socket, under the capacity table (max 4 in any one item). Gear slots can also be CRAFTED onto pieces at the slot-crafting bench.</td><td>Only in a <b>MYTHIC skill</b>, a <b>mythic weapon</b>, or a movement effect. Never in ordinary gear.</td></tr>
+<tr><td><b>The hidden layer</b></td><td>right runes in right item(s) -&gt; hidden godly effect; recipes never listed anywhere Resolution is a WORN-SET check across all 11 pieces + held weapon; max 4 sockets in any one item (Shirt/melee); sets of 5-7 complete across multiple worn pieces only. Recipes are never listed anywhere (Discovery Law).</td><td>Only MYTHIC skills can be altered by stones, ONE alteration per slice (canon).</td></tr>
+<tr><td><b>Permanence</b></td><td>Removing any completing rune deactivates the set effect.</td><td>Never lost (canon). Unsocketing costs 50 coins (draft).</td></tr>
+</table>
+<h2>Contested items on this page (6)</h2>
+<ol>
+<li><b>Rings vs the suffix pool.</b> §5.2 lists 5 suffixes as ring-eligible; §6.3 and the roll algorithm give rings NO suffix or prefix — the stat roll is the ring. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>Amulet socket count.</b> Canon says amulets CAN be slotted; the number is unset. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>Banner as socket host.</b> Proposed: not a host — the banner's job is carrying all crew buffs. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>Weapon Arm socket capacity.</b> The canon capacity table does not list the worn arm pieces; 2 is PROPOSED. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>Rune recipe count.</b> How many authored rune-set activations exist is unruled — the DRAFT recommendation is 120 (one per distinct rune set). <span class="badge tbd">OWNER DECISION PENDING</span></li>
+<li><b>"Engaged magic" reading</b> for the magic-weapon capacity line (2) — the wording of the canon table entry is itself flagged in the data. <span class="badge tbd">OWNER DECISION PENDING</span></li>
+</ol>
+<script type="application/json" id="slotting-data">{
+ "inventory": {
+  "bank": {
+   "capacity_abilities": 3,
+   "status": "canon",
+   "unlock_level": 4
+  },
+  "blue_slots": {
+   "holds": [
+    "stored consumable powers",
+    "one-shot summons"
+   ],
+   "note": "separate from + loadout (owner struck it from there)",
+   "status": "canon"
+  },
+  "copy_power_pouch": {
+   "duplicates": "level the power",
+   "hold": 3,
+   "status": "canon",
+   "swap_keys": "1-3"
+  },
+  "fruit_bag": {
+   "capacity_grows": "+1 upgrades",
+   "full_bag": "heals on the spot (v3.1.0 built)",
+   "holds": "stored fruit, eaten on demand",
+   "status": "canon"
+  },
+  "plus_slot_loadout": {
+   "increase_per_stat": "canon structure; threshold amounts draft (BALANCE SS3)",
+   "law": "1 slot per stat",
+   "slots": {
+    "Car (ride)": "Intellect",
+    "Food": "Strength",
+    "Movement effect": "Spirit",
+    "Orb": "Nature",
+    "Pet": "Speciality",
+    "Shield": "Vitality",
+    "Weapon": "Agility"
+   },
+   "status": "canon"
+  },
+  "socket_capacities": {
+   "Boots": 2,
+   "Chest": 4,
+   "Gloves": 2,
+   "Headpiece": 3,
+   "Legs": 2,
+   "amulet": "owner_call",
+   "banner": "proposed: not a socket host",
+   "magic weapons": 2,
+   "melee weapons": 4,
+   "rings": 0,
+   "single-hand weapons": 2,
+   "status": "canon"
+  },
+  "sorting_filtering": {
+   "filters": [
+    "stat-house",
+    "socketed/unslotted",
+    "prefix element",
+    "comparable to worn"
+   ],
+   "sorts": [
+    "slot",
+    "stat",
+    "quality",
+    "most-recent"
+   ],
+   "status": "proposed",
+   "views": [
+    "Worn",
+    "Bag",
+    "Crafting",
+    "Collection"
+   ]
+  },
+  "stacking": {
+   "banked_abilities": 3,
+   "copy_powers": 3,
+   "crafting_materials_and_rare_resources": "inf",
+   "currencies": "inf",
+   "darkhold_scrolls": "99 per type",
+   "gear_weapons_shields_pets_cars": "never stack",
+   "runes": "inf",
+   "status": "proposed",
+   "stored_fruit": "bag capacity"
+  },
+  "wallets": {
+   "coins": "per-character (canon)",
+   "sonic_rings": "spendable on any character (canon)",
+   "tickets": "account-wide, scarce (canon)",
+   "white_pellets": "run currency, eat-and-gather (canon)"
+  },
+  "worn_gear_pieces": [
+   "Headpiece",
+   "Chest",
+   "Gloves",
+   "Weapon Arm 1",
+   "Weapon Arm 2",
+   "Legs",
+   "Boots",
+   "Neck (amulet)",
+   "Ring 1",
+   "Ring 2",
+   "Banner"
+  ]
+ },
+ "rune_combining": {
+  "activation": "right runes in right item(s) -> hidden godly effect; recipes never listed anywhere",
+  "godly_effects": "owner TBD \u2014 invented nowhere",
+  "possible_sets": 120,
+  "recipe_count": "owner_call (draft recommendation: 120 authored activations, 1 per set, bound to its one right piece; 1,200 grid across 10 rune-bearing pieces)",
+  "resolution_steps": [
+   "runes socketed under capacity table",
+   "on every socket action, check the WORN SET (all 11 pieces + held weapon)",
+   "match -> activation confirmed on the card (no recipe shown)",
+   "removing any completing rune deactivates"
+  ],
+  "rune_job": "socketed rune grants stats (any kind to any item, universal injection)",
+  "status": "canon shape; resolution system proposed",
+  "worn_set_law": "max 4 sockets in any one item (Shirt/melee); sets of 5-7 complete across multiple worn pieces only"
+ },
+ "stones": {
+  "also": "eaten in-world to unlock tree abilities; L6 player's choice",
+  "effect": "buffs its own slice's skills; draft +15% mythic hosts, +10% movement hosts",
+  "homes": [
+   "mythic skill",
+   "mythic weapon",
+   "movement effect"
+  ],
+  "never_lost": true,
+  "one_alteration_per_slice": true,
+  "status": "canon",
+  "unsocket_cost": "50 coins (draft)"
+ }
+}</script>
+<footer><b>Sources:</b> SYSTEMS-ITEMS.md (§1 inventory, §2 crafting/runes/stones) + systems-items.json (the data this page is generated from)<br>
+<b>Status:</b> Loadout structure and capacities CANON except where flagged; the six contested items above are shown, not resolved.<br>
+PAC Wiki — generated from the owner's design files in <code>~/workspace/pac</code>. Canon is the owner's; anything marked <span class="badge draft">DRAFT (assistant)</span> is a proposal until the owner rules, and <span class="badge tbd">TBD</span> means the owner has not decided it yet — it is not invented here.</footer></div></body></html>

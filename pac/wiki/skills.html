@@ -1,0 +1,984 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAC Wiki — Skills — Decision Pages</title><style>
+*{box-sizing:border-box} body{margin:0;background:#20242e;font-family:Georgia,'Times New Roman',serif;color:#2a2118}
+.paper{max-width:980px;margin:0 auto;background:#f6f2e6;background-image:repeating-linear-gradient(to bottom,transparent 0 26px,rgba(120,150,200,.25) 26px 27px);padding:18px 20px 40px;min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.5)}
+nav{position:sticky;top:0;background:#f6f2e6;border:2px solid #222;border-radius:3px 8px 4px 9px/8px 4px 9px 3px;padding:8px 10px;margin-bottom:16px;z-index:5}
+nav a{color:#7a2d00;font-weight:bold;text-decoration:none;margin-right:12px;font-size:14px;white-space:nowrap}
+nav a:hover{text-decoration:underline}
+h1{font-size:30px;letter-spacing:1px;margin:6px 0} h2{font-size:22px;border-bottom:2px solid #222;padding-bottom:4px;margin-top:28px} h3{font-size:17px;margin-top:20px}
+p,li{font-size:15.5px;line-height:1.55} ul,ol{padding-left:22px} table{border-collapse:collapse;width:100%;margin:10px 0;background:rgba(255,253,244,.75)}
+th,td{border:1.5px solid #444;padding:6px 8px;font-size:14px;text-align:left;vertical-align:top} th{background:#ffe9a8}
+.badge{display:inline-block;font-size:11px;font-weight:bold;letter-spacing:.5px;padding:2px 7px;border:1.5px solid #222;border-radius:8px 2px 8px 2px;vertical-align:middle}
+.canon{background:#bfe8bf}.draft{background:#ffd94d}.tbd{background:#ffb3c0}.review{background:#ffb066}
+.card{border:2px solid #222;border-radius:2px 7px 3px 8px/7px 3px 8px 2px;background:#fffdf4;padding:10px 14px;margin:12px 0}
+footer{margin-top:34px;border-top:2px dashed #666;padding-top:10px;font-size:12.5px;color:#5a4a30;line-height:1.5}
+input#filter{width:100%;font-size:17px;padding:10px;border:2px solid #222;border-radius:6px 2px 7px 3px;background:#fffdf4;font-family:inherit}
+.small{font-size:13px;color:#5a4a30} a{color:#7a2d00}
+.spec td:first-child{width:130px;font-weight:bold;background:rgba(255,233,168,.4)}
+.gapflag{color:#8b0000;font-weight:bold}
+.ruling{border-top:1.5px dashed #888;margin-top:8px;padding-top:6px;font-size:13.5px;color:#5a4a30}
+svg text{font-family:Georgia,serif}
+</style></head><body><div class="paper"><nav><a href="index.html">🏠 Home</a><a href="stats.html">📊 Stats &amp; Runes</a><a href="mechanics.html">🎡 Mechanics</a><a href="economies.html">🪙 Economies</a><a href="characters.html">🦸 Characters</a><a href="worlds.html">🍕 Worlds</a><a href="bosses.html">👹 Bosses</a><a href="ghosts.html">👻 Ghosts</a><a href="items.html">🎒 Items &amp; Rolls</a><a href="items-coverage.html">📉 Roll Coverage</a><a href="skills.html">✨ Skills</a><a href="slotting.html">🧩 Slotting</a><a href="systems.html">⚙️ Systems</a></nav>
+<h1>✨ Skills — the 42 elemental skills, as DECISION pages</h1>
+<p><span class="badge draft">DRAFT (assistant)</span> <b>Decision state: every skill on this page is
+<span class="badge review">IN REVIEW</span>. Nothing here is approved yet.</b> Per the owner's approval
+loop: a skill is shown, the owner says no → redo, adjusts → "that looks great" → only THEN is it
+implemented, and it has to be THAT. Until a ruling is recorded on a skill's block, the skill does not
+exist as far as the build is concerned.</p>
+<p>The set (canon shape): <b>7 elements × Common / Rare / Mythic × (base + variant) = 42 skills</b>.
+Variants are re-dressed deliveries of the base skill and carry the base's <b>signal name</b> (canon
+SIGNAL NAME LAW). Numbers sit inside BALANCE.md envelopes and are DRAFT until ruled. Elements:
+Frost · Fire · Lightning · Psychic · Holy · Nature · Undead — the seven prefix elements (canon).</p>
+<p class="gapflag">Two calls block sign-off and are flagged again in the list at the bottom:
+<b>Holy's stat home</b> (proposed Spirit — Holy/light has no house in the owner's six colour magics)
+and <b>Death's Ledger's execute band</b> (enemies under 15% life die; bosses immune — DRAFT).</p>
+<input id="filter" type="search" placeholder="🔍 Filter skills… (e.g. mythic, chain, Paladin, HOLY)" aria-label="Filter skills">
+
+<h2>Frost (6)</h2>
+<div class='card skill'><h3>Frost Shard <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FROST SHARD</code> — base skill</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Spirit (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 10 · cooldown 2.5s</td></tr><tr><td>Delivery</td><td>projectile</td></tr><tr><td>Effect</td><td>1-3 shards at nearest, 20% spell dmg each, 1 chill stack (8% slow, 3s); 5 stacks = freeze 2s</td></tr><tr><td>Combo hooks</td><td>Shatter: hit on frozen enemy +50% dmg, clears stacks</td></tr><tr><td>Effects spec</td><td>Shards corkscrew off the character&#x27;s chomp line, crayon ice-blue; frozen enemies go pencil-crack blue, pop into drawn snowflakes</td></tr><tr><td>Holders</td><td>Sub-Zero, Iceman, Killer Frost</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Chill Nade <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FROST SHARD</code> — variant of <b>Frost Shard</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Spirit (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 10 · cooldown 2.5s</td></tr><tr><td>Delivery</td><td>projectile</td></tr><tr><td>Effect</td><td>Lobbed cryo-canister, 90px AoE burst, 20% + 1 chill to all inside</td></tr><tr><td>Combo hooks</td><td>Shatter (same as base)</td></tr><tr><td>Effects spec</td><td>Canister tumbles with a fuse-trail; burst is a sketched snowstorm donut</td></tr><tr><td>Holders</td><td>Mr. Freeze, Captain Cold</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Deep Winter <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FROST GROUND</code> — base skill</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Spirit (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 25 · cooldown 8s</td></tr><tr><td>Delivery</td><td>pool</td></tr><tr><td>Effect</td><td>240px ice field on densest swarm, 8s: 35% slow inside, +1 chill per second</td></tr><tr><td>Combo hooks</td><td>Freeze stacks feed Shatter</td></tr><tr><td>Effects spec</td><td>Frost ferns crawl outward from the drop point, pale blue crayon; enemies inside leave ice trails</td></tr><tr><td>Holders</td><td>Iceman, Sub-Zero</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Whiteout Veil <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FROST GROUND</code> — variant of <b>Deep Winter</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Spirit (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 25 · cooldown 8s</td></tr><tr><td>Delivery</td><td>aura</td></tr><tr><td>Effect</td><td>Blizzard wall follows the character 8s: same slow, enemies inside miss 10% of attacks</td></tr><tr><td>Combo hooks</td><td>Freeze stacks feed Shatter</td></tr><tr><td>Effects spec</td><td>Sketchy white squall ring rides the character, wobbling lines</td></tr><tr><td>Holders</td><td>Killer Frost, Captain Cold</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Absolute Zero <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FROST FIELD</code> — base skill</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Spirit (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 50 · cooldown 55s</td></tr><tr><td>Delivery</td><td>screen pattern</td></tr><tr><td>Effect</td><td>All enemies on screen +3 chill (frozen at 5); frozen take +75% from all sources 6s; frost lattice spreads body-to-edges in 2s; socket Soul: freeze +1s, +15%</td></tr><tr><td>Combo hooks</td><td>Shatter cascade: shattered enemies burst for 15% to neighbours</td></tr><tr><td>Effects spec</td><td>Blue crayon grid blooms off the body; frozen enemies shatter into ice shards hitting neighbours</td></tr><tr><td>Holders</td><td>Iceman, Mr. Freeze, Killer Frost</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Winter&#x27;s Verdict <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FROST FIELD</code> — variant of <b>Absolute Zero</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Spirit (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 50 · cooldown 55s</td></tr><tr><td>Delivery</td><td>screen pattern</td></tr><tr><td>Effect</td><td>Same freeze application as base, delivered as vertical frost pillars in rows across the arena</td></tr><tr><td>Combo hooks</td><td>Shatter cascade (same as base)</td></tr><tr><td>Effects spec</td><td>Pillars thud down in sketched columns with ground-crack doodles</td></tr><tr><td>Holders</td><td>Sub-Zero, Sub-Zero-class Cryomancer</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<h2>Fire (6)</h2>
+<div class='card skill'><h3>Ember Toss <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FIRE SPIT</code> — base skill</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Strength</td></tr><tr><td>Aligned stone</td><td>Reality (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Energy — cost 10 · cooldown 2s</td></tr><tr><td>Delivery</td><td>projectile</td></tr><tr><td>Effect</td><td>2 embers from the mouth at nearest, 25% each + burn 8%/2s for 4s</td></tr><tr><td>Combo hooks</td><td>Burn feeds Burn+Wind wildfire</td></tr><tr><td>Effects spec</td><td>Embers trail crayon flame-tails; burned enemies glow orange-red, leave char doodles</td></tr><tr><td>Holders</td><td>Human Torch, Scorpion, Blaze the Cat</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Cinder Fan <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FIRE SPIT</code> — variant of <b>Ember Toss</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Strength</td></tr><tr><td>Aligned stone</td><td>Reality (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Energy — cost 10 · cooldown 2s</td></tr><tr><td>Delivery</td><td>projectile</td></tr><tr><td>Effect</td><td>5-ember fan cone from the mouth, short range; same 25% + burn profile</td></tr><tr><td>Combo hooks</td><td>Burn feeds Burn+Wind wildfire</td></tr><tr><td>Effects spec</td><td>The fan is a drawn phoenix-wing of flame</td></tr><tr><td>Holders</td><td>Blaze the Cat, Ghost Rider</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Fan the Flames <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FIRE TRAIL</code> — base skill</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Strength</td></tr><tr><td>Aligned stone</td><td>Reality (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Energy — cost 25 · cooldown 10s</td></tr><tr><td>Delivery</td><td>orbit/trail</td></tr><tr><td>Effect</td><td>Burning trail behind the character 6s, 120px wide; 30% + burn inside; width +20% per rank</td></tr><tr><td>Combo hooks</td><td>Burn+Wind wildfire: wind-pushed targets through the trail get doubled burn duration</td></tr><tr><td>Effects spec</td><td>Wavering crayon ribbon of flame off the back foot</td></tr><tr><td>Holders</td><td>Ghost Rider, Human Torch</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Backdraft <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FIRE TRAIL</code> — variant of <b>Fan the Flames</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Strength</td></tr><tr><td>Aligned stone</td><td>Reality (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Energy — cost 25 · cooldown 10s</td></tr><tr><td>Delivery</td><td>orbit/trail</td></tr><tr><td>Effect</td><td>Same trail function delivered as vertical flame geysers pulsing along the trail; hits flying/tall enemies</td></tr><tr><td>Combo hooks</td><td>Burn+Wind wildfire (same as base)</td></tr><tr><td>Effects spec</td><td>Geysers drawn as sketchy orange columns with comic FWOOM puffs</td></tr><tr><td>Holders</td><td>Scorpion, Human Torch</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Promethean Feast <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FIRE STORM</code> — base skill</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Strength</td></tr><tr><td>Aligned stone</td><td>Reality (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Rage — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>screen pattern</td></tr><tr><td>Effect</td><td>Fire rain grid covers screen 5s: 60% per column + burn; character EATS one column/sec, +1s duration per column; socket Reality: +15% column dmg, burn +1 tick</td></tr><tr><td>Combo hooks</td><td>Burn columns feed Burn+Wind wildfire</td></tr><tr><td>Effects spec</td><td>Crayon grid of falling comets, red/orange; maw glows furnace-white; charred enemies crumble to black silhouette dust</td></tr><tr><td>Holders</td><td>Ghost Rider, Scorpion, Human Torch</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Hellmouth Maw <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>FIRE STORM</code> — variant of <b>Promethean Feast</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Strength</td></tr><tr><td>Aligned stone</td><td>Reality (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Rage — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>screen pattern</td></tr><tr><td>Effect</td><td>Same grid and numbers as base, delivered as a giant burning mouth pattern chewing the arena</td></tr><tr><td>Combo hooks</td><td>Burn columns feed Burn+Wind wildfire</td></tr><tr><td>Effects spec</td><td>Sketched teeth ring each column; the chew shakes the screen</td></tr><tr><td>Holders</td><td>Ghost Rider, Blaze the Cat</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<h2>Lightning (6)</h2>
+<div class='card skill'><h3>Static Snap <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>SPARK</code> — base skill</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Intellect (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 10 · cooldown 2.5s</td></tr><tr><td>Delivery</td><td>chain</td></tr><tr><td>Effect</td><td>Zap nearest 20%, chains to 2 more at 60% falloff</td></tr><tr><td>Combo hooks</td><td>Water-&gt;Lightning: soaked targets chain +2 farther, +25%</td></tr><tr><td>Effects spec</td><td>Jagged yellow-white crayon bolts; struck ghosts light up white-blue, pop into sparks</td></tr><tr><td>Holders</td><td>Static, Electro, Raiden</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Rod Tap <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>SPARK</code> — variant of <b>Static Snap</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Intellect (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 10 · cooldown 2.5s</td></tr><tr><td>Delivery</td><td>chain</td></tr><tr><td>Effect</td><td>Melee poke seeds a spark that hops; identical chain numbers to base</td></tr><tr><td>Combo hooks</td><td>Water-&gt;Lightning (same as base)</td></tr><tr><td>Effects spec</td><td>Poke leaves a buzzing drawn spark-nest that crackles off</td></tr><tr><td>Holders</td><td>Raiden, Zeus-class Olympian</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Stormcall <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>SKY STRIKE</code> — base skill</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Intellect (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 30 · cooldown 4s</td></tr><tr><td>Delivery</td><td>screen strike</td></tr><tr><td>Effect</td><td>Every 4s a bolt strikes the densest cluster: 55% to up to 6 in 100px, chains +2</td></tr><tr><td>Combo hooks</td><td>Wet targets chain farther (Water-&gt;Lightning)</td></tr><tr><td>Effects spec</td><td>Telegraphed by a sketchy target-X doodle 0.8s prior; strike is a screen-shaking white column</td></tr><tr><td>Holders</td><td>Thor, Raiden, Storm</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Tesla Coil <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>SKY STRIKE</code> — variant of <b>Stormcall</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Intellect (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 30 · cooldown 4s</td></tr><tr><td>Delivery</td><td>screen strike</td></tr><tr><td>Effect</td><td>Same strikes as base, body-origin: bolts radiate from the character in a ring</td></tr><tr><td>Combo hooks</td><td>Wet targets chain farther (Water-&gt;Lightning)</td></tr><tr><td>Effects spec</td><td>Crackling crayon halo around the character; bolts corkscrew outward</td></tr><tr><td>Holders</td><td>Electro, Static</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Thunderhead <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>STORM CELL</code> — base skill</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Intellect (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>screen pattern</td></tr><tr><td>Effect</td><td>Storm cloud follows character 20s, strikes a cluster every 1.5s for 40%, chains +4; cloud grows 10%/s to 2x; socket Mind: +1 chain, +15%</td></tr><tr><td>Combo hooks</td><td>Water-&gt;Lightning: soaked +2 chain, +25%</td></tr><tr><td>Effects spec</td><td>Looming sketched thunderhead with crayon lightning veins; darkens the paper under it at max size</td></tr><tr><td>Holders</td><td>Thor, Storm, Electro</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Ion Tempest <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>STORM CELL</code> — variant of <b>Thunderhead</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Intellect (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>screen pattern</td></tr><tr><td>Effect</td><td>Same function as base, delivered as a vertical storm wall sweeping the arena</td></tr><tr><td>Combo hooks</td><td>Water-&gt;Lightning (same as base)</td></tr><tr><td>Effects spec</td><td>Marching curtain of drawn rain and bolts</td></tr><tr><td>Holders</td><td>Raiden, Pikachu-class Mouse</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<h2>Psychic (6)</h2>
+<div class='card skill'><h3>Mind Spike <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>PSYCHIC PROD</code> — base skill</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Intellect</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 10 · cooldown 2.5s</td></tr><tr><td>Delivery</td><td>projectile</td></tr><tr><td>Effect</td><td>Psi-dart: 15% + confuse 4s (target wanders / attacks nearest enemy)</td></tr><tr><td>Combo hooks</td><td>Confused kills count as the holder&#x27;s</td></tr><tr><td>Effects spec</td><td>Violet crayon corkscrew off the forehead; spiral-eye doodles on the confused</td></tr><tr><td>Holders</td><td>Professor X, Mewtwo, Martian Manhunter</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Whisper <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>PSYCHIC PROD</code> — variant of <b>Mind Spike</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Intellect</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 10 · cooldown 2.5s</td></tr><tr><td>Delivery</td><td>projectile</td></tr><tr><td>Effect</td><td>Invisible delivery: target simply turns; same 15% backlash + 4s confuse</td></tr><tr><td>Combo hooks</td><td>Confused kills count as the holder&#x27;s</td></tr><tr><td>Effects spec</td><td>Only the spiral-eye doodle appears; enemies fall over themselves</td></tr><tr><td>Holders</td><td>Sabrina, Jean Grey</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Mass Delusion <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>PSYCHIC FOG</code> — base skill</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Intellect</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 25 · cooldown 8s</td></tr><tr><td>Delivery</td><td>aura</td></tr><tr><td>Effect</td><td>180px psi fog rides the character 6s; enemies inside have 35% chance to attack each other (their hits use holder spell scaling at 40%)</td></tr><tr><td>Combo hooks</td><td>Confuse chain: kills inside the fog feed the combo counter</td></tr><tr><td>Effects spec</td><td>Wobbling violet thought-cloud aura; confused kills burst into question-mark doodles</td></tr><tr><td>Holders</td><td>Jean Grey, Professor X, Sabrina</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Dream Eater <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>PSYCHIC FOG</code> — variant of <b>Mass Delusion</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Intellect</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 25 · cooldown 8s</td></tr><tr><td>Delivery</td><td>aura</td></tr><tr><td>Effect</td><td>Same fog as base; enemies dying inside refund 5 Mana</td></tr><tr><td>Combo hooks</td><td>Confuse chain (same as base)</td></tr><tr><td>Effects spec</td><td>Darker fog with tiny skull-scribble motes rising</td></tr><tr><td>Holders</td><td>Mewtwo, Martian Manhunter</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Cerebral Collapse <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>PSYCHIC BREACH</code> — base skill</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Intellect</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>screen pattern</td></tr><tr><td>Effect</td><td>All enemies on screen: 50% confused 8s, 50% flee outward; bosses instead marked (+25% dmg taken, 8s); socket Mind: confuse +5pp, +15%</td></tr><tr><td>Combo hooks</td><td>Confused kills count as the holder&#x27;s (puppet kills)</td></tr><tr><td>Effects spec</td><td>Gorgeous-Moon grammar: violet spiral pattern blooms from the character&#x27;s head across the screen</td></tr><tr><td>Holders</td><td>Professor X, Jean Grey, Mewtwo</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>The Black Room <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>PSYCHIC BREACH</code> — variant of <b>Cerebral Collapse</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Intellect</td></tr><tr><td>Aligned stone</td><td>Mind (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>screen pattern</td></tr><tr><td>Effect</td><td>Same confuse/flee split and boss mark as base, on a dimmed skull-pattern stage</td></tr><tr><td>Combo hooks</td><td>Confused kills count as the holder&#x27;s</td></tr><tr><td>Effects spec</td><td>Ink-black crayon wash with white skull scribbles; confused leave white spiral trails</td></tr><tr><td>Holders</td><td>Emma Frost, Professor X</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<h2>Holy (6)</h2>
+<div class='card skill'><h3>Smite <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>HOLY BOLT</code> — base skill</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Spirit (PROPOSED)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 10 · cooldown 2.5s</td></tr><tr><td>Delivery</td><td>projectile</td></tr><tr><td>Effect</td><td>Bolt of white-gold light at nearest: 25%, +50% vs ghosts/undead (canon bonus)</td></tr><tr><td>Combo hooks</td><td>Holy bonus vs ghosts/undead (canon) doubles on Radiate/Judgement Day carriers</td></tr><tr><td>Effects spec</td><td>Clean golden crayon lance; undead struck flash with halo doodles</td></tr><tr><td>Holders</td><td>D2 Paladin, WoW Priest, Pit</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Censer Swing <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>HOLY BOLT</code> — variant of <b>Smite</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Spirit (PROPOSED)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 10 · cooldown 2.5s</td></tr><tr><td>Delivery</td><td>projectile/melee</td></tr><tr><td>Effect</td><td>Melee-arc delivery of the same bolt profile, point-blank</td></tr><tr><td>Combo hooks</td><td>Holy bonus vs ghosts/undead (same as base)</td></tr><tr><td>Effects spec</td><td>Censer leaves a sketched smoke-curl of gold</td></tr><tr><td>Holders</td><td>Richter Belmont, Simon Belmont</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Radiate <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>HOLY AURA</code> — base skill</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Spirit (PROPOSED)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 25 · cooldown 8s</td></tr><tr><td>Delivery</td><td>aura</td></tr><tr><td>Effect</td><td>Canon flagship RADIATE HOLY: 200px radiance rides the character 8s, 30%/s to ghosts/undead (15%/s to others), undead inside glared (attack speed -20%)</td></tr><tr><td>Combo hooks</td><td>Glare stacks with Holy bonus on Smite/Judgement Day</td></tr><tr><td>Effects spec</td><td>Garlic grammar, holy edition: gold-white halo with crayon ray-lines; undead get drawn X-eyes</td></tr><tr><td>Holders</td><td>WoW Priest, D2 Paladin, Richter Belmont</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Hallowed Ground <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>HOLY AURA</code> — variant of <b>Radiate</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Spirit (PROPOSED)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 25 · cooldown 8s</td></tr><tr><td>Delivery</td><td>pool</td></tr><tr><td>Effect</td><td>Same aura as base, dropped: stays where the character stood, 10s</td></tr><tr><td>Combo hooks</td><td>Glare (same as base)</td></tr><tr><td>Effects spec</td><td>Glowing sketched cathedral-floor pattern blooms on the paper</td></tr><tr><td>Holders</td><td>D2 Paladin, Pit</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Judgement Day <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>HOLY NOVA</code> — base skill</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Spirit (PROPOSED)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>nova</td></tr><tr><td>Effect</td><td>Radiance ring expands to screen edges: 80% to all, DOUBLE to ghosts/undead, scattered outward; character flares gold 3s (Super Saiyan 9000); socket Soul: +15%, vs-undead +10pp</td></tr><tr><td>Combo hooks</td><td>Scatter feeds Orb-Law style follow-ups; holy bonus core</td></tr><tr><td>Effects spec</td><td>Pentagram grammar: nova leaves a fading gold ring-drawn shock; undead crumble to sketched dust with halo marks</td></tr><tr><td>Holders</td><td>D2 Paladin, WoW Priest, Simon Belmont</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>The Seventh Seal <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>HOLY NOVA</code> — variant of <b>Judgement Day</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Spirit (PROPOSED)</td></tr><tr><td>Aligned stone</td><td>Soul (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>screen pattern</td></tr><tr><td>Effect</td><td>Same nova effect as base, delivered as descending light pillars in an inward spiral</td></tr><tr><td>Combo hooks</td><td>Holy bonus (same as base)</td></tr><tr><td>Effects spec</td><td>Descending columns of drawn light, Victory-Sword grammar</td></tr><tr><td>Holders</td><td>Pit-class Angel Captain, WoW Paladin-class</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<h2>Nature (6)</h2>
+<div class='card skill'><h3>Thorn Toss <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>NATURE SPIKE</code> — base skill</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Nature (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Time (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Energy — cost 10 · cooldown 2s</td></tr><tr><td>Delivery</td><td>projectile</td></tr><tr><td>Effect</td><td>Thorn needles: 20% + poison 1 stack (1%/s per stack, stacks to 10, 10s)</td></tr><tr><td>Combo hooks</td><td>Poison stacks feed Entangle/Gaia&#x27;s Maw</td></tr><tr><td>Effects spec</td><td>Green crayon needles spiral off the character; poisoned enemies drip sketched green drops</td></tr><tr><td>Holders</td><td>Poison Ivy, D2 Druid, Erika</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Spore Puff <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>NATURE SPIKE</code> — variant of <b>Thorn Toss</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Nature (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Time (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Energy — cost 10 · cooldown 2s</td></tr><tr><td>Delivery</td><td>projectile</td></tr><tr><td>Effect</td><td>Short-range spore puff, 60px AoE: same 20% + poison application, no travel</td></tr><tr><td>Combo hooks</td><td>Poison (same as base)</td></tr><tr><td>Effects spec</td><td>Puffy green crayon cloud with dot-motes</td></tr><tr><td>Holders</td><td>Swamp Thing, D2 Druid-class</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Entangle <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>NATURE GRASP</code> — base skill</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Nature (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Time (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 25 · cooldown 10s</td></tr><tr><td>Delivery</td><td>pool</td></tr><tr><td>Effect</td><td>Roots erupt in 220px zone at densest swarm: rooted 3s (no move, attacks 25% slower), poison 2 stacks</td></tr><tr><td>Combo hooks</td><td>Rooted targets take full Gaia&#x27;s Maw chew; poison stacks persist</td></tr><tr><td>Effects spec</td><td>Sketched roots burst from the paper itself; vine-bind doodles on the rooted</td></tr><tr><td>Holders</td><td>Swamp Thing, Poison Ivy, D2 Druid</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Creeping Mold <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>NATURE GRASP</code> — variant of <b>Entangle</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Nature (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Time (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 25 · cooldown 10s</td></tr><tr><td>Delivery</td><td>growing pool</td></tr><tr><td>Effect</td><td>Same rooting as base, delivered as fungal growth expanding the zone +40px over 4s</td></tr><tr><td>Combo hooks</td><td>Rooting/poison (same as base)</td></tr><tr><td>Effects spec</td><td>Mold creeps as a bubbling green sketch-froth (La Borra grammar)</td></tr><tr><td>Holders</td><td>Poison Ivy, Groot-class Flora Colossus</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Gaia&#x27;s Maw <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>NATURE FEAST</code> — base skill</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Nature (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Time (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>pool/devour</td></tr><tr><td>Effect</td><td>Giant plant maw opens under densest swarm, chews 5s: 50%/s inside, poison 4 stacks, devoured enemies heal holder 2% life each; socket Time: +15%, heal 2.5%</td></tr><tr><td>Combo hooks</td><td>Poison stacks from Thorn Toss/Entangle pay out in the chew</td></tr><tr><td>Effects spec</td><td>Huge green mouth drawn on the paper, opening and closing with sketch-motion; chewed enemies leave petal-bursts</td></tr><tr><td>Holders</td><td>Swamp Thing, Poison Ivy, D2 Druid</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Venom Bloom <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>NATURE FEAST</code> — variant of <b>Gaia&#x27;s Maw</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Nature (DRAFT)</td></tr><tr><td>Aligned stone</td><td>Time (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>pool/devour</td></tr><tr><td>Effect</td><td>Same numbers as base, delivered as a giant flower exhaling poison over the zone</td></tr><tr><td>Combo hooks</td><td>Poison (same as base)</td></tr><tr><td>Effects spec</td><td>Rolling green crayon fog with flower-petal motes</td></tr><tr><td>Holders</td><td>D2 Druid, Erika</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<h2>Undead (6)</h2>
+<div class='card skill'><h3>Grave Chill <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>UNDEAD TOUCH</code> — base skill</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Vitality</td></tr><tr><td>Aligned stone</td><td>Darkhold (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 10 · cooldown 2.5s</td></tr><tr><td>Delivery</td><td>projectile</td></tr><tr><td>Effect</td><td>Wisp drains one target: 18% + leech 50% as life</td></tr><tr><td>Combo hooks</td><td>Leech feeds Vitality sustain builds</td></tr><tr><td>Effects spec</td><td>Grey-green wisp spirals off the character&#x27;s hand and returns fatter; drain line is a drawn thread (Soul-Eater grammar)</td></tr><tr><td>Holders</td><td>D2 Necromancer, Quan Chi, Lich King</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Soul Sip <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>UNDEAD TOUCH</code> — variant of <b>Grave Chill</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Common</td></tr><tr><td>Stat home</td><td>Vitality</td></tr><tr><td>Aligned stone</td><td>Darkhold (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 10 · cooldown 2.5s</td></tr><tr><td>Delivery</td><td>melee</td></tr><tr><td>Effect</td><td>Point-blank cone delivery: same 18% + 50% leech as base</td></tr><tr><td>Combo hooks</td><td>Leech (same as base)</td></tr><tr><td>Effects spec</td><td>The cone is a sketched inhale — the paper breathes in</td></tr><tr><td>Holders</td><td>D2 Necromancer-class, Spawn</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Raise the Crowd <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>UNDEAD RALLY</code> — base skill</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Vitality</td></tr><tr><td>Aligned stone</td><td>Darkhold (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 30 · cooldown 15s</td></tr><tr><td>Delivery</td><td>minions</td></tr><tr><td>Effect</td><td>Raises 3 skeleton minions 20s (30%/hit); on death they explode 20% in 60px</td></tr><tr><td>Combo hooks</td><td>Explosions can trigger burn/poison carriers&#x27; combos as secondary hits</td></tr><tr><td>Effects spec</td><td>Skeletal hands claw up through the paper with dirt-doodles; sketchy bone-puppet minions (Gatti Amari grammar)</td></tr><tr><td>Holders</td><td>D2 Necromancer, Lich King, Spawn</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Corpse Candle <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>UNDEAD RALLY</code> — variant of <b>Raise the Crowd</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Rare</td></tr><tr><td>Stat home</td><td>Vitality</td></tr><tr><td>Aligned stone</td><td>Darkhold (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Mana — cost 30 · cooldown 15s</td></tr><tr><td>Delivery</td><td>minions</td></tr><tr><td>Effect</td><td>Same minions as base as floating ghost-candles: heal holder 1% per kill they score instead of exploding</td></tr><tr><td>Combo hooks</td><td>Heal-on-kill feeds Vitality sustain</td></tr><tr><td>Effects spec</td><td>Pale blue flames bobbing on drawn wax bodies</td></tr><tr><td>Holders</td><td>Quan Chi, Lich King</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>Death&#x27;s Ledger <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>UNDEAD TIDE</code> — base skill</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Vitality</td></tr><tr><td>Aligned stone</td><td>Darkhold (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Rage — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>sweep</td></tr><tr><td>Effect</td><td>Death&#x27;s hand sweeps the screen in a spiral: touched enemies take 70% + lose 15% max life; enemies under 15% life die (bosses immune to execute); kills in sweep feed Rage +12 each; socket Darkhold: +15%, execute band 18%</td></tr><tr><td>Combo hooks</td><td>Rage feed loops into Rage-resource bursts (canon §8.3 synergy)</td></tr><tr><td>Effects spec</td><td>Infinite-Corridor grammar: giant sketched grey hand drags a spiral across the paper; slain leave fading tombstone marks</td></tr><tr><td>Holders</td><td>Lich King, D2 Necromancer, Spawn</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<div class='card skill'><h3>The Pale Parade <span class='badge review'>IN REVIEW</span></h3><table class='spec'><tr><td>Signal name</td><td><code>UNDEAD TIDE</code> — variant of <b>Death&#x27;s Ledger</b> (same signal: the true function's name carries across holders, canon)</td></tr><tr><td>Rarity</td><td>Mythic</td></tr><tr><td>Stat home</td><td>Vitality</td></tr><tr><td>Aligned stone</td><td>Darkhold (only a Mythic skill can hold a stone, canon)</td></tr><tr><td>Resource</td><td>Rage — cost 50 · cooldown 60s</td></tr><tr><td>Delivery</td><td>sweep</td></tr><tr><td>Effect</td><td>Same sweep and execute band as base, delivered as a ghost procession marching the spiral</td></tr><tr><td>Combo hooks</td><td>Rage feed (same as base)</td></tr><tr><td>Effects spec</td><td>Winding column of sketched mourners with candle-dots</td></tr><tr><td>Holders</td><td>Ermac, Noob Saibot</td></tr></table><p class='ruling'><b>Owner ruling:</b> __________ &nbsp;(approve / redo / change — nothing is implemented until this says APPROVED)</p></div>
+<h2>Contested calls on this page (9)</h2>
+<ol><li>Holy stat home (proposed Spirit) <span class="badge tbd">OWNER DECISION PENDING</span></li><li>Frost -&gt; Spirit (derivation) <span class="badge tbd">OWNER DECISION PENDING</span></li><li>Fire -&gt; Strength (red derivation) <span class="badge tbd">OWNER DECISION PENDING</span></li><li>Lightning -&gt; Intellect (derivation; Agility alternate) <span class="badge tbd">OWNER DECISION PENDING</span></li><li>Nature element -&gt; Nature stat <span class="badge tbd">OWNER DECISION PENDING</span></li><li>Undead -&gt; Vitality (black derivation) <span class="badge tbd">OWNER DECISION PENDING</span></li><li>Resource affinity rule <span class="badge tbd">OWNER DECISION PENDING</span></li><li>Mythic numbers table <span class="badge tbd">OWNER DECISION PENDING</span></li><li>Death&#x27;s Ledger execute band (bosses immune) <span class="badge tbd">OWNER DECISION PENDING</span></li></ol>
+<p class="small">Stat-home marks inside the skill blocks carry the same weight: "(DRAFT)" = derived by
+the assistant from the colour filings, "(PROPOSED)" = the assistant's proposal where canon gives no
+home at all. The owner rules; the page follows.</p>
+<script type="application/json" id="skill-data">{
+ "file": "SKILLS-ELEMENTS",
+ "status": "DRAFT (assistant, from canon rules; owner rules)",
+ "elements": [
+  "Frost",
+  "Fire",
+  "Lightning",
+  "Psychic",
+  "Holy",
+  "Nature",
+  "Undead"
+ ],
+ "count": 42,
+ "skills": [
+  {
+   "name": "Frost Shard",
+   "signal_name": "FROST SHARD",
+   "element": "Frost",
+   "rarity": "Common",
+   "variant_of": null,
+   "stat_home": "Spirit (DRAFT)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 10,
+   "cooldown_s": 2.5,
+   "delivery": "projectile",
+   "effect": "1-3 shards at nearest, 20% spell dmg each, 1 chill stack (8% slow, 3s); 5 stacks = freeze 2s",
+   "combo_hooks": "Shatter: hit on frozen enemy +50% dmg, clears stacks",
+   "effects_spec": "Shards corkscrew off the character's chomp line, crayon ice-blue; frozen enemies go pencil-crack blue, pop into drawn snowflakes",
+   "holders": [
+    "Sub-Zero",
+    "Iceman",
+    "Killer Frost"
+   ]
+  },
+  {
+   "name": "Chill Nade",
+   "signal_name": "FROST SHARD",
+   "element": "Frost",
+   "rarity": "Common",
+   "variant_of": "Frost Shard",
+   "stat_home": "Spirit (DRAFT)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 10,
+   "cooldown_s": 2.5,
+   "delivery": "projectile",
+   "effect": "Lobbed cryo-canister, 90px AoE burst, 20% + 1 chill to all inside",
+   "combo_hooks": "Shatter (same as base)",
+   "effects_spec": "Canister tumbles with a fuse-trail; burst is a sketched snowstorm donut",
+   "holders": [
+    "Mr. Freeze",
+    "Captain Cold"
+   ]
+  },
+  {
+   "name": "Deep Winter",
+   "signal_name": "FROST GROUND",
+   "element": "Frost",
+   "rarity": "Rare",
+   "variant_of": null,
+   "stat_home": "Spirit (DRAFT)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 25,
+   "cooldown_s": 8,
+   "delivery": "pool",
+   "effect": "240px ice field on densest swarm, 8s: 35% slow inside, +1 chill per second",
+   "combo_hooks": "Freeze stacks feed Shatter",
+   "effects_spec": "Frost ferns crawl outward from the drop point, pale blue crayon; enemies inside leave ice trails",
+   "holders": [
+    "Iceman",
+    "Sub-Zero"
+   ]
+  },
+  {
+   "name": "Whiteout Veil",
+   "signal_name": "FROST GROUND",
+   "element": "Frost",
+   "rarity": "Rare",
+   "variant_of": "Deep Winter",
+   "stat_home": "Spirit (DRAFT)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 25,
+   "cooldown_s": 8,
+   "delivery": "aura",
+   "effect": "Blizzard wall follows the character 8s: same slow, enemies inside miss 10% of attacks",
+   "combo_hooks": "Freeze stacks feed Shatter",
+   "effects_spec": "Sketchy white squall ring rides the character, wobbling lines",
+   "holders": [
+    "Killer Frost",
+    "Captain Cold"
+   ]
+  },
+  {
+   "name": "Absolute Zero",
+   "signal_name": "FROST FIELD",
+   "element": "Frost",
+   "rarity": "Mythic",
+   "variant_of": null,
+   "stat_home": "Spirit (DRAFT)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 50,
+   "cooldown_s": 55,
+   "delivery": "screen pattern",
+   "effect": "All enemies on screen +3 chill (frozen at 5); frozen take +75% from all sources 6s; frost lattice spreads body-to-edges in 2s; socket Soul: freeze +1s, +15%",
+   "combo_hooks": "Shatter cascade: shattered enemies burst for 15% to neighbours",
+   "effects_spec": "Blue crayon grid blooms off the body; frozen enemies shatter into ice shards hitting neighbours",
+   "holders": [
+    "Iceman",
+    "Mr. Freeze",
+    "Killer Frost"
+   ]
+  },
+  {
+   "name": "Winter's Verdict",
+   "signal_name": "FROST FIELD",
+   "element": "Frost",
+   "rarity": "Mythic",
+   "variant_of": "Absolute Zero",
+   "stat_home": "Spirit (DRAFT)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 50,
+   "cooldown_s": 55,
+   "delivery": "screen pattern",
+   "effect": "Same freeze application as base, delivered as vertical frost pillars in rows across the arena",
+   "combo_hooks": "Shatter cascade (same as base)",
+   "effects_spec": "Pillars thud down in sketched columns with ground-crack doodles",
+   "holders": [
+    "Sub-Zero",
+    "Sub-Zero-class Cryomancer"
+   ]
+  },
+  {
+   "name": "Ember Toss",
+   "signal_name": "FIRE SPIT",
+   "element": "Fire",
+   "rarity": "Common",
+   "variant_of": null,
+   "stat_home": "Strength",
+   "aligned_stone": "Reality",
+   "resource": "Energy",
+   "cost": 10,
+   "cooldown_s": 2,
+   "delivery": "projectile",
+   "effect": "2 embers from the mouth at nearest, 25% each + burn 8%/2s for 4s",
+   "combo_hooks": "Burn feeds Burn+Wind wildfire",
+   "effects_spec": "Embers trail crayon flame-tails; burned enemies glow orange-red, leave char doodles",
+   "holders": [
+    "Human Torch",
+    "Scorpion",
+    "Blaze the Cat"
+   ]
+  },
+  {
+   "name": "Cinder Fan",
+   "signal_name": "FIRE SPIT",
+   "element": "Fire",
+   "rarity": "Common",
+   "variant_of": "Ember Toss",
+   "stat_home": "Strength",
+   "aligned_stone": "Reality",
+   "resource": "Energy",
+   "cost": 10,
+   "cooldown_s": 2,
+   "delivery": "projectile",
+   "effect": "5-ember fan cone from the mouth, short range; same 25% + burn profile",
+   "combo_hooks": "Burn feeds Burn+Wind wildfire",
+   "effects_spec": "The fan is a drawn phoenix-wing of flame",
+   "holders": [
+    "Blaze the Cat",
+    "Ghost Rider"
+   ]
+  },
+  {
+   "name": "Fan the Flames",
+   "signal_name": "FIRE TRAIL",
+   "element": "Fire",
+   "rarity": "Rare",
+   "variant_of": null,
+   "stat_home": "Strength",
+   "aligned_stone": "Reality",
+   "resource": "Energy",
+   "cost": 25,
+   "cooldown_s": 10,
+   "delivery": "orbit/trail",
+   "effect": "Burning trail behind the character 6s, 120px wide; 30% + burn inside; width +20% per rank",
+   "combo_hooks": "Burn+Wind wildfire: wind-pushed targets through the trail get doubled burn duration",
+   "effects_spec": "Wavering crayon ribbon of flame off the back foot",
+   "holders": [
+    "Ghost Rider",
+    "Human Torch"
+   ]
+  },
+  {
+   "name": "Backdraft",
+   "signal_name": "FIRE TRAIL",
+   "element": "Fire",
+   "rarity": "Rare",
+   "variant_of": "Fan the Flames",
+   "stat_home": "Strength",
+   "aligned_stone": "Reality",
+   "resource": "Energy",
+   "cost": 25,
+   "cooldown_s": 10,
+   "delivery": "orbit/trail",
+   "effect": "Same trail function delivered as vertical flame geysers pulsing along the trail; hits flying/tall enemies",
+   "combo_hooks": "Burn+Wind wildfire (same as base)",
+   "effects_spec": "Geysers drawn as sketchy orange columns with comic FWOOM puffs",
+   "holders": [
+    "Scorpion",
+    "Human Torch"
+   ]
+  },
+  {
+   "name": "Promethean Feast",
+   "signal_name": "FIRE STORM",
+   "element": "Fire",
+   "rarity": "Mythic",
+   "variant_of": null,
+   "stat_home": "Strength",
+   "aligned_stone": "Reality",
+   "resource": "Rage",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "screen pattern",
+   "effect": "Fire rain grid covers screen 5s: 60% per column + burn; character EATS one column/sec, +1s duration per column; socket Reality: +15% column dmg, burn +1 tick",
+   "combo_hooks": "Burn columns feed Burn+Wind wildfire",
+   "effects_spec": "Crayon grid of falling comets, red/orange; maw glows furnace-white; charred enemies crumble to black silhouette dust",
+   "holders": [
+    "Ghost Rider",
+    "Scorpion",
+    "Human Torch"
+   ]
+  },
+  {
+   "name": "Hellmouth Maw",
+   "signal_name": "FIRE STORM",
+   "element": "Fire",
+   "rarity": "Mythic",
+   "variant_of": "Promethean Feast",
+   "stat_home": "Strength",
+   "aligned_stone": "Reality",
+   "resource": "Rage",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "screen pattern",
+   "effect": "Same grid and numbers as base, delivered as a giant burning mouth pattern chewing the arena",
+   "combo_hooks": "Burn columns feed Burn+Wind wildfire",
+   "effects_spec": "Sketched teeth ring each column; the chew shakes the screen",
+   "holders": [
+    "Ghost Rider",
+    "Blaze the Cat"
+   ]
+  },
+  {
+   "name": "Static Snap",
+   "signal_name": "SPARK",
+   "element": "Lightning",
+   "rarity": "Common",
+   "variant_of": null,
+   "stat_home": "Intellect (DRAFT)",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 10,
+   "cooldown_s": 2.5,
+   "delivery": "chain",
+   "effect": "Zap nearest 20%, chains to 2 more at 60% falloff",
+   "combo_hooks": "Water->Lightning: soaked targets chain +2 farther, +25%",
+   "effects_spec": "Jagged yellow-white crayon bolts; struck ghosts light up white-blue, pop into sparks",
+   "holders": [
+    "Static",
+    "Electro",
+    "Raiden"
+   ]
+  },
+  {
+   "name": "Rod Tap",
+   "signal_name": "SPARK",
+   "element": "Lightning",
+   "rarity": "Common",
+   "variant_of": "Static Snap",
+   "stat_home": "Intellect (DRAFT)",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 10,
+   "cooldown_s": 2.5,
+   "delivery": "chain",
+   "effect": "Melee poke seeds a spark that hops; identical chain numbers to base",
+   "combo_hooks": "Water->Lightning (same as base)",
+   "effects_spec": "Poke leaves a buzzing drawn spark-nest that crackles off",
+   "holders": [
+    "Raiden",
+    "Zeus-class Olympian"
+   ]
+  },
+  {
+   "name": "Stormcall",
+   "signal_name": "SKY STRIKE",
+   "element": "Lightning",
+   "rarity": "Rare",
+   "variant_of": null,
+   "stat_home": "Intellect (DRAFT)",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 30,
+   "cooldown_s": 4,
+   "delivery": "screen strike",
+   "effect": "Every 4s a bolt strikes the densest cluster: 55% to up to 6 in 100px, chains +2",
+   "combo_hooks": "Wet targets chain farther (Water->Lightning)",
+   "effects_spec": "Telegraphed by a sketchy target-X doodle 0.8s prior; strike is a screen-shaking white column",
+   "holders": [
+    "Thor",
+    "Raiden",
+    "Storm"
+   ]
+  },
+  {
+   "name": "Tesla Coil",
+   "signal_name": "SKY STRIKE",
+   "element": "Lightning",
+   "rarity": "Rare",
+   "variant_of": "Stormcall",
+   "stat_home": "Intellect (DRAFT)",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 30,
+   "cooldown_s": 4,
+   "delivery": "screen strike",
+   "effect": "Same strikes as base, body-origin: bolts radiate from the character in a ring",
+   "combo_hooks": "Wet targets chain farther (Water->Lightning)",
+   "effects_spec": "Crackling crayon halo around the character; bolts corkscrew outward",
+   "holders": [
+    "Electro",
+    "Static"
+   ]
+  },
+  {
+   "name": "Thunderhead",
+   "signal_name": "STORM CELL",
+   "element": "Lightning",
+   "rarity": "Mythic",
+   "variant_of": null,
+   "stat_home": "Intellect (DRAFT)",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "screen pattern",
+   "effect": "Storm cloud follows character 20s, strikes a cluster every 1.5s for 40%, chains +4; cloud grows 10%/s to 2x; socket Mind: +1 chain, +15%",
+   "combo_hooks": "Water->Lightning: soaked +2 chain, +25%",
+   "effects_spec": "Looming sketched thunderhead with crayon lightning veins; darkens the paper under it at max size",
+   "holders": [
+    "Thor",
+    "Storm",
+    "Electro"
+   ]
+  },
+  {
+   "name": "Ion Tempest",
+   "signal_name": "STORM CELL",
+   "element": "Lightning",
+   "rarity": "Mythic",
+   "variant_of": "Thunderhead",
+   "stat_home": "Intellect (DRAFT)",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "screen pattern",
+   "effect": "Same function as base, delivered as a vertical storm wall sweeping the arena",
+   "combo_hooks": "Water->Lightning (same as base)",
+   "effects_spec": "Marching curtain of drawn rain and bolts",
+   "holders": [
+    "Raiden",
+    "Pikachu-class Mouse"
+   ]
+  },
+  {
+   "name": "Mind Spike",
+   "signal_name": "PSYCHIC PROD",
+   "element": "Psychic",
+   "rarity": "Common",
+   "variant_of": null,
+   "stat_home": "Intellect",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 10,
+   "cooldown_s": 2.5,
+   "delivery": "projectile",
+   "effect": "Psi-dart: 15% + confuse 4s (target wanders / attacks nearest enemy)",
+   "combo_hooks": "Confused kills count as the holder's",
+   "effects_spec": "Violet crayon corkscrew off the forehead; spiral-eye doodles on the confused",
+   "holders": [
+    "Professor X",
+    "Mewtwo",
+    "Martian Manhunter"
+   ]
+  },
+  {
+   "name": "Whisper",
+   "signal_name": "PSYCHIC PROD",
+   "element": "Psychic",
+   "rarity": "Common",
+   "variant_of": "Mind Spike",
+   "stat_home": "Intellect",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 10,
+   "cooldown_s": 2.5,
+   "delivery": "projectile",
+   "effect": "Invisible delivery: target simply turns; same 15% backlash + 4s confuse",
+   "combo_hooks": "Confused kills count as the holder's",
+   "effects_spec": "Only the spiral-eye doodle appears; enemies fall over themselves",
+   "holders": [
+    "Sabrina",
+    "Jean Grey"
+   ]
+  },
+  {
+   "name": "Mass Delusion",
+   "signal_name": "PSYCHIC FOG",
+   "element": "Psychic",
+   "rarity": "Rare",
+   "variant_of": null,
+   "stat_home": "Intellect",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 25,
+   "cooldown_s": 8,
+   "delivery": "aura",
+   "effect": "180px psi fog rides the character 6s; enemies inside have 35% chance to attack each other (their hits use holder spell scaling at 40%)",
+   "combo_hooks": "Confuse chain: kills inside the fog feed the combo counter",
+   "effects_spec": "Wobbling violet thought-cloud aura; confused kills burst into question-mark doodles",
+   "holders": [
+    "Jean Grey",
+    "Professor X",
+    "Sabrina"
+   ]
+  },
+  {
+   "name": "Dream Eater",
+   "signal_name": "PSYCHIC FOG",
+   "element": "Psychic",
+   "rarity": "Rare",
+   "variant_of": "Mass Delusion",
+   "stat_home": "Intellect",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 25,
+   "cooldown_s": 8,
+   "delivery": "aura",
+   "effect": "Same fog as base; enemies dying inside refund 5 Mana",
+   "combo_hooks": "Confuse chain (same as base)",
+   "effects_spec": "Darker fog with tiny skull-scribble motes rising",
+   "holders": [
+    "Mewtwo",
+    "Martian Manhunter"
+   ]
+  },
+  {
+   "name": "Cerebral Collapse",
+   "signal_name": "PSYCHIC BREACH",
+   "element": "Psychic",
+   "rarity": "Mythic",
+   "variant_of": null,
+   "stat_home": "Intellect",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "screen pattern",
+   "effect": "All enemies on screen: 50% confused 8s, 50% flee outward; bosses instead marked (+25% dmg taken, 8s); socket Mind: confuse +5pp, +15%",
+   "combo_hooks": "Confused kills count as the holder's (puppet kills)",
+   "effects_spec": "Gorgeous-Moon grammar: violet spiral pattern blooms from the character's head across the screen",
+   "holders": [
+    "Professor X",
+    "Jean Grey",
+    "Mewtwo"
+   ]
+  },
+  {
+   "name": "The Black Room",
+   "signal_name": "PSYCHIC BREACH",
+   "element": "Psychic",
+   "rarity": "Mythic",
+   "variant_of": "Cerebral Collapse",
+   "stat_home": "Intellect",
+   "aligned_stone": "Mind",
+   "resource": "Mana",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "screen pattern",
+   "effect": "Same confuse/flee split and boss mark as base, on a dimmed skull-pattern stage",
+   "combo_hooks": "Confused kills count as the holder's",
+   "effects_spec": "Ink-black crayon wash with white skull scribbles; confused leave white spiral trails",
+   "holders": [
+    "Emma Frost",
+    "Professor X"
+   ]
+  },
+  {
+   "name": "Smite",
+   "signal_name": "HOLY BOLT",
+   "element": "Holy",
+   "rarity": "Common",
+   "variant_of": null,
+   "stat_home": "Spirit (PROPOSED)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 10,
+   "cooldown_s": 2.5,
+   "delivery": "projectile",
+   "effect": "Bolt of white-gold light at nearest: 25%, +50% vs ghosts/undead (canon bonus)",
+   "combo_hooks": "Holy bonus vs ghosts/undead (canon) doubles on Radiate/Judgement Day carriers",
+   "effects_spec": "Clean golden crayon lance; undead struck flash with halo doodles",
+   "holders": [
+    "D2 Paladin",
+    "WoW Priest",
+    "Pit"
+   ]
+  },
+  {
+   "name": "Censer Swing",
+   "signal_name": "HOLY BOLT",
+   "element": "Holy",
+   "rarity": "Common",
+   "variant_of": "Smite",
+   "stat_home": "Spirit (PROPOSED)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 10,
+   "cooldown_s": 2.5,
+   "delivery": "projectile/melee",
+   "effect": "Melee-arc delivery of the same bolt profile, point-blank",
+   "combo_hooks": "Holy bonus vs ghosts/undead (same as base)",
+   "effects_spec": "Censer leaves a sketched smoke-curl of gold",
+   "holders": [
+    "Richter Belmont",
+    "Simon Belmont"
+   ]
+  },
+  {
+   "name": "Radiate",
+   "signal_name": "HOLY AURA",
+   "element": "Holy",
+   "rarity": "Rare",
+   "variant_of": null,
+   "stat_home": "Spirit (PROPOSED)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 25,
+   "cooldown_s": 8,
+   "delivery": "aura",
+   "effect": "Canon flagship RADIATE HOLY: 200px radiance rides the character 8s, 30%/s to ghosts/undead (15%/s to others), undead inside glared (attack speed -20%)",
+   "combo_hooks": "Glare stacks with Holy bonus on Smite/Judgement Day",
+   "effects_spec": "Garlic grammar, holy edition: gold-white halo with crayon ray-lines; undead get drawn X-eyes",
+   "holders": [
+    "WoW Priest",
+    "D2 Paladin",
+    "Richter Belmont"
+   ]
+  },
+  {
+   "name": "Hallowed Ground",
+   "signal_name": "HOLY AURA",
+   "element": "Holy",
+   "rarity": "Rare",
+   "variant_of": "Radiate",
+   "stat_home": "Spirit (PROPOSED)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 25,
+   "cooldown_s": 8,
+   "delivery": "pool",
+   "effect": "Same aura as base, dropped: stays where the character stood, 10s",
+   "combo_hooks": "Glare (same as base)",
+   "effects_spec": "Glowing sketched cathedral-floor pattern blooms on the paper",
+   "holders": [
+    "D2 Paladin",
+    "Pit"
+   ]
+  },
+  {
+   "name": "Judgement Day",
+   "signal_name": "HOLY NOVA",
+   "element": "Holy",
+   "rarity": "Mythic",
+   "variant_of": null,
+   "stat_home": "Spirit (PROPOSED)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "nova",
+   "effect": "Radiance ring expands to screen edges: 80% to all, DOUBLE to ghosts/undead, scattered outward; character flares gold 3s (Super Saiyan 9000); socket Soul: +15%, vs-undead +10pp",
+   "combo_hooks": "Scatter feeds Orb-Law style follow-ups; holy bonus core",
+   "effects_spec": "Pentagram grammar: nova leaves a fading gold ring-drawn shock; undead crumble to sketched dust with halo marks",
+   "holders": [
+    "D2 Paladin",
+    "WoW Priest",
+    "Simon Belmont"
+   ]
+  },
+  {
+   "name": "The Seventh Seal",
+   "signal_name": "HOLY NOVA",
+   "element": "Holy",
+   "rarity": "Mythic",
+   "variant_of": "Judgement Day",
+   "stat_home": "Spirit (PROPOSED)",
+   "aligned_stone": "Soul",
+   "resource": "Mana",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "screen pattern",
+   "effect": "Same nova effect as base, delivered as descending light pillars in an inward spiral",
+   "combo_hooks": "Holy bonus (same as base)",
+   "effects_spec": "Descending columns of drawn light, Victory-Sword grammar",
+   "holders": [
+    "Pit-class Angel Captain",
+    "WoW Paladin-class"
+   ]
+  },
+  {
+   "name": "Thorn Toss",
+   "signal_name": "NATURE SPIKE",
+   "element": "Nature",
+   "rarity": "Common",
+   "variant_of": null,
+   "stat_home": "Nature (DRAFT)",
+   "aligned_stone": "Time",
+   "resource": "Energy",
+   "cost": 10,
+   "cooldown_s": 2,
+   "delivery": "projectile",
+   "effect": "Thorn needles: 20% + poison 1 stack (1%/s per stack, stacks to 10, 10s)",
+   "combo_hooks": "Poison stacks feed Entangle/Gaia's Maw",
+   "effects_spec": "Green crayon needles spiral off the character; poisoned enemies drip sketched green drops",
+   "holders": [
+    "Poison Ivy",
+    "D2 Druid",
+    "Erika"
+   ]
+  },
+  {
+   "name": "Spore Puff",
+   "signal_name": "NATURE SPIKE",
+   "element": "Nature",
+   "rarity": "Common",
+   "variant_of": "Thorn Toss",
+   "stat_home": "Nature (DRAFT)",
+   "aligned_stone": "Time",
+   "resource": "Energy",
+   "cost": 10,
+   "cooldown_s": 2,
+   "delivery": "projectile",
+   "effect": "Short-range spore puff, 60px AoE: same 20% + poison application, no travel",
+   "combo_hooks": "Poison (same as base)",
+   "effects_spec": "Puffy green crayon cloud with dot-motes",
+   "holders": [
+    "Swamp Thing",
+    "D2 Druid-class"
+   ]
+  },
+  {
+   "name": "Entangle",
+   "signal_name": "NATURE GRASP",
+   "element": "Nature",
+   "rarity": "Rare",
+   "variant_of": null,
+   "stat_home": "Nature (DRAFT)",
+   "aligned_stone": "Time",
+   "resource": "Mana",
+   "cost": 25,
+   "cooldown_s": 10,
+   "delivery": "pool",
+   "effect": "Roots erupt in 220px zone at densest swarm: rooted 3s (no move, attacks 25% slower), poison 2 stacks",
+   "combo_hooks": "Rooted targets take full Gaia's Maw chew; poison stacks persist",
+   "effects_spec": "Sketched roots burst from the paper itself; vine-bind doodles on the rooted",
+   "holders": [
+    "Swamp Thing",
+    "Poison Ivy",
+    "D2 Druid"
+   ]
+  },
+  {
+   "name": "Creeping Mold",
+   "signal_name": "NATURE GRASP",
+   "element": "Nature",
+   "rarity": "Rare",
+   "variant_of": "Entangle",
+   "stat_home": "Nature (DRAFT)",
+   "aligned_stone": "Time",
+   "resource": "Mana",
+   "cost": 25,
+   "cooldown_s": 10,
+   "delivery": "growing pool",
+   "effect": "Same rooting as base, delivered as fungal growth expanding the zone +40px over 4s",
+   "combo_hooks": "Rooting/poison (same as base)",
+   "effects_spec": "Mold creeps as a bubbling green sketch-froth (La Borra grammar)",
+   "holders": [
+    "Poison Ivy",
+    "Groot-class Flora Colossus"
+   ]
+  },
+  {
+   "name": "Gaia's Maw",
+   "signal_name": "NATURE FEAST",
+   "element": "Nature",
+   "rarity": "Mythic",
+   "variant_of": null,
+   "stat_home": "Nature (DRAFT)",
+   "aligned_stone": "Time",
+   "resource": "Mana",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "pool/devour",
+   "effect": "Giant plant maw opens under densest swarm, chews 5s: 50%/s inside, poison 4 stacks, devoured enemies heal holder 2% life each; socket Time: +15%, heal 2.5%",
+   "combo_hooks": "Poison stacks from Thorn Toss/Entangle pay out in the chew",
+   "effects_spec": "Huge green mouth drawn on the paper, opening and closing with sketch-motion; chewed enemies leave petal-bursts",
+   "holders": [
+    "Swamp Thing",
+    "Poison Ivy",
+    "D2 Druid"
+   ]
+  },
+  {
+   "name": "Venom Bloom",
+   "signal_name": "NATURE FEAST",
+   "element": "Nature",
+   "rarity": "Mythic",
+   "variant_of": "Gaia's Maw",
+   "stat_home": "Nature (DRAFT)",
+   "aligned_stone": "Time",
+   "resource": "Mana",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "pool/devour",
+   "effect": "Same numbers as base, delivered as a giant flower exhaling poison over the zone",
+   "combo_hooks": "Poison (same as base)",
+   "effects_spec": "Rolling green crayon fog with flower-petal motes",
+   "holders": [
+    "D2 Druid",
+    "Erika"
+   ]
+  },
+  {
+   "name": "Grave Chill",
+   "signal_name": "UNDEAD TOUCH",
+   "element": "Undead",
+   "rarity": "Common",
+   "variant_of": null,
+   "stat_home": "Vitality",
+   "aligned_stone": "Darkhold",
+   "resource": "Mana",
+   "cost": 10,
+   "cooldown_s": 2.5,
+   "delivery": "projectile",
+   "effect": "Wisp drains one target: 18% + leech 50% as life",
+   "combo_hooks": "Leech feeds Vitality sustain builds",
+   "effects_spec": "Grey-green wisp spirals off the character's hand and returns fatter; drain line is a drawn thread (Soul-Eater grammar)",
+   "holders": [
+    "D2 Necromancer",
+    "Quan Chi",
+    "Lich King"
+   ]
+  },
+  {
+   "name": "Soul Sip",
+   "signal_name": "UNDEAD TOUCH",
+   "element": "Undead",
+   "rarity": "Common",
+   "variant_of": "Grave Chill",
+   "stat_home": "Vitality",
+   "aligned_stone": "Darkhold",
+   "resource": "Mana",
+   "cost": 10,
+   "cooldown_s": 2.5,
+   "delivery": "melee",
+   "effect": "Point-blank cone delivery: same 18% + 50% leech as base",
+   "combo_hooks": "Leech (same as base)",
+   "effects_spec": "The cone is a sketched inhale \u2014 the paper breathes in",
+   "holders": [
+    "D2 Necromancer-class",
+    "Spawn"
+   ]
+  },
+  {
+   "name": "Raise the Crowd",
+   "signal_name": "UNDEAD RALLY",
+   "element": "Undead",
+   "rarity": "Rare",
+   "variant_of": null,
+   "stat_home": "Vitality",
+   "aligned_stone": "Darkhold",
+   "resource": "Mana",
+   "cost": 30,
+   "cooldown_s": 15,
+   "delivery": "minions",
+   "effect": "Raises 3 skeleton minions 20s (30%/hit); on death they explode 20% in 60px",
+   "combo_hooks": "Explosions can trigger burn/poison carriers' combos as secondary hits",
+   "effects_spec": "Skeletal hands claw up through the paper with dirt-doodles; sketchy bone-puppet minions (Gatti Amari grammar)",
+   "holders": [
+    "D2 Necromancer",
+    "Lich King",
+    "Spawn"
+   ]
+  },
+  {
+   "name": "Corpse Candle",
+   "signal_name": "UNDEAD RALLY",
+   "element": "Undead",
+   "rarity": "Rare",
+   "variant_of": "Raise the Crowd",
+   "stat_home": "Vitality",
+   "aligned_stone": "Darkhold",
+   "resource": "Mana",
+   "cost": 30,
+   "cooldown_s": 15,
+   "delivery": "minions",
+   "effect": "Same minions as base as floating ghost-candles: heal holder 1% per kill they score instead of exploding",
+   "combo_hooks": "Heal-on-kill feeds Vitality sustain",
+   "effects_spec": "Pale blue flames bobbing on drawn wax bodies",
+   "holders": [
+    "Quan Chi",
+    "Lich King"
+   ]
+  },
+  {
+   "name": "Death's Ledger",
+   "signal_name": "UNDEAD TIDE",
+   "element": "Undead",
+   "rarity": "Mythic",
+   "variant_of": null,
+   "stat_home": "Vitality",
+   "aligned_stone": "Darkhold",
+   "resource": "Rage",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "sweep",
+   "effect": "Death's hand sweeps the screen in a spiral: touched enemies take 70% + lose 15% max life; enemies under 15% life die (bosses immune to execute); kills in sweep feed Rage +12 each; socket Darkhold: +15%, execute band 18%",
+   "combo_hooks": "Rage feed loops into Rage-resource bursts (canon \u00a78.3 synergy)",
+   "effects_spec": "Infinite-Corridor grammar: giant sketched grey hand drags a spiral across the paper; slain leave fading tombstone marks",
+   "holders": [
+    "Lich King",
+    "D2 Necromancer",
+    "Spawn"
+   ]
+  },
+  {
+   "name": "The Pale Parade",
+   "signal_name": "UNDEAD TIDE",
+   "element": "Undead",
+   "rarity": "Mythic",
+   "variant_of": "Death's Ledger",
+   "stat_home": "Vitality",
+   "aligned_stone": "Darkhold",
+   "resource": "Rage",
+   "cost": 50,
+   "cooldown_s": 60,
+   "delivery": "sweep",
+   "effect": "Same sweep and execute band as base, delivered as a ghost procession marching the spiral",
+   "combo_hooks": "Rage feed (same as base)",
+   "effects_spec": "Winding column of sketched mourners with candle-dots",
+   "holders": [
+    "Ermac",
+    "Noob Saibot"
+   ]
+  }
+ ],
+ "owner_calls": [
+  "Holy stat home (proposed Spirit)",
+  "Frost -> Spirit (derivation)",
+  "Fire -> Strength (red derivation)",
+  "Lightning -> Intellect (derivation; Agility alternate)",
+  "Nature element -> Nature stat",
+  "Undead -> Vitality (black derivation)",
+  "Resource affinity rule",
+  "Mythic numbers table",
+  "Death's Ledger execute band (bosses immune)"
+ ]
+}</script>
+<script>
+var inp=document.getElementById('filter');
+inp.addEventListener('input',function(){var q=inp.value.toLowerCase();
+document.querySelectorAll('.skill').forEach(function(e){e.style.display=e.textContent.toLowerCase().includes(q)?'':'none';});});
+</script>
+<footer><b>Sources:</b> SKILLS-ELEMENTS.md + skills-elements.json (the data this page is generated from)<br>
+<b>Status:</b> All 42 skills DRAFT (assistant), state IN REVIEW — zero approved. Contested calls flagged in place, never silently resolved.<br>
+PAC Wiki — generated from the owner's design files in <code>~/workspace/pac</code>. Canon is the owner's; anything marked <span class="badge draft">DRAFT (assistant)</span> is a proposal until the owner rules, and <span class="badge tbd">TBD</span> means the owner has not decided it yet — it is not invented here.</footer></div></body></html>
