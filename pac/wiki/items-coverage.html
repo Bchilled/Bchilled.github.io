@@ -1,0 +1,154 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAC Wiki — Roll Coverage</title><style>
+*{box-sizing:border-box} body{margin:0;background:#20242e;font-family:Georgia,'Times New Roman',serif;color:#2a2118}
+.paper{max-width:980px;margin:0 auto;background:#f6f2e6;background-image:repeating-linear-gradient(to bottom,transparent 0 26px,rgba(120,150,200,.25) 26px 27px);padding:18px 20px 40px;min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.5)}
+nav{position:sticky;top:0;background:#f6f2e6;border:2px solid #222;border-radius:3px 8px 4px 9px/8px 4px 9px 3px;padding:8px 10px;margin-bottom:16px;z-index:5}
+nav a{color:#7a2d00;font-weight:bold;text-decoration:none;margin-right:12px;font-size:14px;white-space:nowrap}
+nav a:hover{text-decoration:underline}
+h1{font-size:30px;letter-spacing:1px;margin:6px 0} h2{font-size:22px;border-bottom:2px solid #222;padding-bottom:4px;margin-top:28px} h3{font-size:17px;margin-top:20px}
+p,li{font-size:15.5px;line-height:1.55} ul{padding-left:22px} table{border-collapse:collapse;width:100%;margin:10px 0;background:rgba(255,253,244,.75)}
+th,td{border:1.5px solid #444;padding:6px 8px;font-size:14px;text-align:left;vertical-align:top} th{background:#ffe9a8}
+.badge{display:inline-block;font-size:11px;font-weight:bold;letter-spacing:.5px;padding:2px 7px;border:1.5px solid #222;border-radius:8px 2px 8px 2px;vertical-align:middle}
+.canon{background:#bfe8bf}.draft{background:#ffd94d}.tbd{background:#ffb3c0}
+.card{border:2px solid #222;border-radius:2px 7px 3px 8px/7px 3px 8px 2px;background:#fffdf4;padding:10px 14px;margin:12px 0}
+footer{margin-top:34px;border-top:2px dashed #666;padding-top:10px;font-size:12.5px;color:#5a4a30;line-height:1.5}
+input#filter{width:100%;font-size:17px;padding:10px;border:2px solid #222;border-radius:6px 2px 7px 3px;background:#fffdf4;font-family:inherit}
+.names{columns:2;column-gap:28px;font-size:14.5px;line-height:1.7} @media(max-width:600px){.names{columns:1} h1{font-size:24px}}
+.names div{break-inside:avoid} .small{font-size:13px;color:#5a4a30} a{color:#7a2d00}
+.item{border:2px solid #222;border-radius:2px 7px 3px 8px/7px 3px 8px 2px;background:#fffdf4;padding:10px 14px;margin:12px 0}
+.item h3{margin-top:2px}
+.count{display:inline-block;font-size:12px;font-weight:bold;padding:2px 8px;border:1.5px solid #222;border-radius:8px 2px 8px 2px;background:#ffe9a8}
+.count.thin{background:#ffb3c0}.count.slim{background:#ffd94d}.count.ok{background:#bfe8bf}
+.rolltable td:first-child{width:110px;font-weight:bold;background:rgba(255,233,168,.4)}
+.gapflag{color:#8b0000;font-weight:bold}
+</style></head><body><div class="paper"><nav><a href="index.html">🏠 Home</a><a href="stats.html">📊 Stats &amp; Runes</a><a href="mechanics.html">🎡 Mechanics</a><a href="economies.html">🪙 Economies</a><a href="characters.html">🦸 Characters</a><a href="worlds.html">🍕 Worlds</a><a href="bosses.html">👹 Bosses</a><a href="ghosts.html">👻 Ghosts</a><a href="items.html">🎒 Items &amp; Rolls</a><a href="items-coverage.html">📉 Roll Coverage</a></nav>
+<h1>📉 Roll Coverage — who can roll a lot, who can roll almost nothing</h1>
+<p><b>How a count is made:</b> one point per distinct line that can appear on the finished item —
+base pool lines + material axis lines (armor) + possible prefix lines + possible suffix lines + special lines.
+Mythic's third variable draws from the same base pool (more draws, not more distinct lines) and is not counted.
+Contested lines (sources disagree) are shown separately and never counted. Full lists per item:
+<a href="items.html">🎒 Items &amp; Rolls</a>.</p>
+<h2>⚠ The gap list — thinnest first</h2>
+<table><tr><th>Item</th><th>Slot</th><th>Base</th><th>Material</th><th>Prefix</th><th>Suffix</th><th>Special</th><th>Contested</th><th>TOTAL</th><th>Verdict</th></tr>
+<tr><td class="gapflag">Crew banner</td><td>Banner</td><td>2</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td><b>2</b></td><td>⚠ GAP — thin</td></tr>
+<tr><td class="gapflag">Gear ring</td><td>Ring (×2 worn)</td><td>7</td><td>0</td><td>0</td><td>0</td><td>0</td><td>5</td><td><b>7</b></td><td>⚠ GAP — thin</td></tr>
+<tr><td>Air Shooter</td><td>Weapon · filed Nature</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Alucard Sword</td><td>Weapon · filed Agility</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Andúril</td><td>Weapon · filed Strength</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Arm Cannon</td><td>Weapon · filed Intellect</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Ash&#x27;s Boomstick</td><td>Weapon · filed Agility</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Auto-9</td><td>Weapon · filed Agility</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>BFG 9000</td><td>Weapon · filed Strength</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Binding Blade</td><td>Weapon · filed Strength</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Biotic Rifle</td><td>Weapon · filed Vitality</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Buster Sword</td><td>Weapon · filed Strength</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Caduceus</td><td>Weapon · filed Vitality</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Charged Cards</td><td>Weapon · filed Spirit</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Cosmic Rod</td><td>Weapon · filed Speciality</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Cryo Cannon</td><td>Weapon · filed Spirit</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Elder Wand</td><td>Weapon · filed Intellect</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Excalibur</td><td>Weapon · filed gated · GATED (canon)</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>FLUDD</td><td>Weapon · filed Nature</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Gravity Gun</td><td>Weapon · filed Intellect</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Gryffindor&#x27;s sword</td><td>Weapon · filed gated · GATED (canon)</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Home-Run Bat</td><td>Weapon · filed Strength</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Kirby&#x27;s Star Rod</td><td>Weapon · filed Intellect</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Magnet Mines</td><td>Weapon · filed Spirit</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Master Sword</td><td>Weapon · filed gated · GATED (canon)</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Medigun</td><td>Weapon · filed Vitality</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Mjolnir</td><td>Weapon · filed gated · GATED (canon)</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Moon Stick</td><td>Weapon · filed Vitality</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Nenya</td><td>Weapon · filed Speciality</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Poltergust 5000</td><td>Weapon · filed Nature</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Portal Gun</td><td>Weapon · filed Intellect</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Proton Pack</td><td>Weapon · filed Intellect</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Sonic Amplifier</td><td>Weapon · filed Speciality</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Steel Chair</td><td>Weapon · filed Strength</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Sun Wukong&#x27;s Ruyi Jingu Bang</td><td>Weapon · filed Agility</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Tesla Cannon</td><td>Weapon · filed Intellect</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Tessaiga</td><td>Weapon · filed Nature</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>The Sledgehammer</td><td>Weapon · filed Strength</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Wabbajack</td><td>Weapon · filed Intellect</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>cold gun</td><td>Weapon · filed Spirit</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>flamethrower</td><td>Weapon · filed Strength</td><td>0</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>12</b></td><td>slim — watch</td></tr>
+<tr><td>Aegis</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Azarath Ward</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Barrier Field</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Captain America&#x27;s Shield</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Claw Shield</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Golden Fleece</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Hex Shield</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Holy Shield</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Hylian Shield</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Ice Shield</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Mana Shield</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Psi-Shield</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>construct bubble</td><td>Shield</td><td>3</td><td>0</td><td>7</td><td>3</td><td>0</td><td>0</td><td><b>13</b></td><td>slim — watch</td></tr>
+<tr><td>Exotic (type profile)</td><td>Weapon Arm</td><td>3</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>15</b></td><td>healthy</td></tr>
+<tr><td>Fast melee (type profile)</td><td>Weapon Arm</td><td>3</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>15</b></td><td>healthy</td></tr>
+<tr><td>Heavy melee (type profile)</td><td>Weapon Arm</td><td>3</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>15</b></td><td>healthy</td></tr>
+<tr><td>Ranged (type profile)</td><td>Weapon Arm</td><td>3</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>15</b></td><td>healthy</td></tr>
+<tr><td>Shields-as-weapons (type profile)</td><td>Weapon Arm</td><td>3</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>15</b></td><td>healthy</td></tr>
+<tr><td>Spell foci (type profile)</td><td>Weapon Arm</td><td>3</td><td>0</td><td>9</td><td>2</td><td>1</td><td>0</td><td><b>15</b></td><td>healthy</td></tr>
+<tr><td>Amulet (neck)</td><td>Neck / Amulet</td><td>5</td><td>0</td><td>7</td><td>4</td><td>0</td><td>0</td><td><b>16</b></td><td>healthy</td></tr>
+<tr><td>Boots</td><td>Boots · Leather</td><td>2</td><td>3</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>17</b></td><td>healthy</td></tr>
+<tr><td>Leggings</td><td>Legs · Leather</td><td>2</td><td>3</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>17</b></td><td>healthy</td></tr>
+<tr><td>Shoes</td><td>Boots · Cloth</td><td>2</td><td>3</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>17</b></td><td>healthy</td></tr>
+<tr><td>Trousers</td><td>Legs · Cloth</td><td>2</td><td>3</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>17</b></td><td>healthy</td></tr>
+<tr><td>Chausses</td><td>Legs · Chainmail</td><td>2</td><td>4</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>18</b></td><td>healthy</td></tr>
+<tr><td>Cuisses</td><td>Legs · Plate</td><td>2</td><td>4</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>18</b></td><td>healthy</td></tr>
+<tr><td>Mail shoes</td><td>Boots · Chainmail</td><td>2</td><td>4</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>18</b></td><td>healthy</td></tr>
+<tr><td>Sabatons</td><td>Boots · Plate</td><td>2</td><td>4</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>18</b></td><td>healthy</td></tr>
+<tr><td>Cap</td><td>Helm · Leather</td><td>4</td><td>3</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>19</b></td><td>healthy</td></tr>
+<tr><td>Hood</td><td>Helm · Cloth</td><td>4</td><td>3</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>19</b></td><td>healthy</td></tr>
+<tr><td>Coif</td><td>Helm · Chainmail</td><td>4</td><td>4</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>20</b></td><td>healthy</td></tr>
+<tr><td>Great helm</td><td>Helm · Plate</td><td>4</td><td>4</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>20</b></td><td>healthy</td></tr>
+<tr><td>Bracers</td><td>Weapon Arm · Leather</td><td>5</td><td>3</td><td>7</td><td>6</td><td>0</td><td>0</td><td><b>21</b></td><td>healthy</td></tr>
+<tr><td>Cuirass</td><td>Chest · Leather</td><td>6</td><td>3</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>21</b></td><td>healthy</td></tr>
+<tr><td>Grip wraps</td><td>Weapon Arm · Cloth</td><td>5</td><td>3</td><td>7</td><td>6</td><td>0</td><td>0</td><td><b>21</b></td><td>healthy</td></tr>
+<tr><td>Robe</td><td>Chest · Cloth</td><td>6</td><td>3</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>21</b></td><td>healthy</td></tr>
+<tr><td>Arm guards</td><td>Weapon Arm · Chainmail</td><td>5</td><td>4</td><td>7</td><td>6</td><td>0</td><td>0</td><td><b>22</b></td><td>healthy</td></tr>
+<tr><td>Gloves</td><td>Gloves · Leather</td><td>5</td><td>3</td><td>7</td><td>7</td><td>0</td><td>0</td><td><b>22</b></td><td>healthy</td></tr>
+<tr><td>Hauberk</td><td>Chest · Chainmail</td><td>6</td><td>4</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>22</b></td><td>healthy</td></tr>
+<tr><td>Pauldrons / rerebraces</td><td>Weapon Arm · Plate</td><td>5</td><td>4</td><td>7</td><td>6</td><td>0</td><td>0</td><td><b>22</b></td><td>healthy</td></tr>
+<tr><td>Plate cuirass</td><td>Chest · Plate</td><td>6</td><td>4</td><td>7</td><td>5</td><td>0</td><td>0</td><td><b>22</b></td><td>healthy</td></tr>
+<tr><td>Wraps</td><td>Gloves · Cloth</td><td>5</td><td>3</td><td>7</td><td>7</td><td>0</td><td>0</td><td><b>22</b></td><td>healthy</td></tr>
+<tr><td>Gauntlets</td><td>Gloves · Plate</td><td>5</td><td>4</td><td>7</td><td>7</td><td>0</td><td>0</td><td><b>23</b></td><td>healthy</td></tr>
+<tr><td>Mail gloves</td><td>Gloves · Chainmail</td><td>5</td><td>4</td><td>7</td><td>7</td><td>0</td><td>0</td><td><b>23</b></td><td>healthy</td></tr>
+</table>
+<h2>Per-slot averages</h2><table><tr><th>Slot</th><th>Items</th><th>Avg possible rolls</th><th>Thinnest</th></tr>
+<tr><td>Banner</td><td>1</td><td>2.0</td><td>2</td></tr>
+<tr><td>Ring (×2 worn)</td><td>1</td><td>7.0</td><td>7</td></tr>
+<tr><td>Weapon</td><td>39</td><td>12.0</td><td>12</td></tr>
+<tr><td>Shield</td><td>13</td><td>13.0</td><td>13</td></tr>
+<tr><td>Neck / Amulet</td><td>1</td><td>16.0</td><td>16</td></tr>
+<tr><td>Boots</td><td>4</td><td>17.5</td><td>17</td></tr>
+<tr><td>Legs</td><td>4</td><td>17.5</td><td>17</td></tr>
+<tr><td>Weapon Arm</td><td>10</td><td>17.6</td><td>15</td></tr>
+<tr><td>Helm</td><td>4</td><td>19.5</td><td>19</td></tr>
+<tr><td>Chest</td><td>4</td><td>21.5</td><td>21</td></tr>
+<tr><td>Gloves</td><td>4</td><td>22.5</td><td>22</td></tr>
+</table>
+<h2>What the coverage exposes</h2>
+<ul>
+<li><span class="gapflag">Crew banner — 2 possible rolls.</span> The thinnest real item in the game: two base lines, no prefix, and its one listed suffix is contested (conflict #2). If any item needs more rolls, it is this one.</li>
+<li><span class="gapflag">Gear ring — 7 possible rolls, all one line deep.</span> A ring can only ever say "+N of one stat". Its 5 contested suffixes (conflict #1) would take it to 12 if the owner rules §5.2 over §6.3.</li>
+<li><b>Legs and Boots draw from 2-line base pools</b> — the thinnest pools among armor. Every legs/boots item is those same two lines plus material and affixes; the variety lives entirely in the affixes.</li>
+<li><b>Named weapons show 12</b> — but 3 of those lines (their type profile) are not yet filed per weapon (conflict #5); counted without them so the gap stays visible.</li>
+<li><b>Shields sit mid-pack per item (13)</b> but are the thinnest SLOT on the map: 23 filed shields cover only 3 of the 21 stat × shade cells (FILL-MATH) — 18 DRAFT-target cells hold no shield at all.</li>
+<li><b>Gloves are the richest slot (22–23)</b> — 5 base lines and 7 eligible suffixes. If balance wants a donor for thin slots, this is the fat end.</li>
+</ul>
+<h2>Conflicts &amp; open calls this view depends on</h2>
+<ol>
+<li><b>Rings vs the suffix pool.</b> §5.2 lists 5 suffixes as ring-eligible (of the Collector, of Fortune, of Greed by name; of Regeneration, of the Well via "jewelry"); §6.3 and algorithm step 7 give rings NO suffix/prefix. Engine follows §6.3. <span class="badge tbd">OWNER CALL</span></li>
+<li><b>Banner vs 'of the Phoenix'.</b> §5.2 lists it banner-eligible; §6.3 says the banner rolls no prefix/suffix (PROPOSED). <span class="badge tbd">OWNER CALL</span></li>
+<li><b>Amulet socket count.</b> Canon: amulets can be slotted; the count is unset. <span class="badge tbd">OWNER CALL</span></li>
+<li><b>Weapon Arm worn piece — which pool?</b> The armor arm piece (bracers, pauldrons…) is counted on the melee weapon-arm table (5 lines); the magic table has 4. <span class="badge tbd">OWNER CALL</span></li>
+<li><b>Named weapons' type profiles are not filed per weapon</b> — and the counts disagree: the JSON shelf list names 35 + 4 gated = 39, while SYSTEMS-ITEMS §3.8 says 42 (38 named + 4 gated). The list on the items page is the 39 actually named. <span class="badge tbd">OWNER CALL</span></li>
+<li><b>Socket caps missing from the canon table</b> for arm pieces, ranged weapons, shields-as-weapons, shields and Exotics — PROPOSED 2s are shown on the items page, flagged in place. Sockets are not roll lines and never enter the counts.</li>
+</ol>
+<p class="small">Consumables &amp; eatables (19) are excluded from the ranking on purpose: each does one fixed canon job and rolls nothing — that is the unique-use law, not a gap.</p>
+<footer><b>Sources:</b> systems-items.json via build_items.py (same derivation as the items page); FILL-MATH.md (shield cells); SYSTEMS-ITEMS.md §5–§6 (the conflicts)<br>
+<b>Status:</b> Counts are a mechanical derivation from filed data, generated — edit systems-items.json and re-run build_items.py to change any number here.<br>
+PAC Wiki — generated from the owner's design files in <code>~/workspace/pac</code>. Canon is the owner's; <span class="badge tbd">TBD</span> means the owner has not decided it yet — it is not invented here.</footer>
+</div></body></html>
