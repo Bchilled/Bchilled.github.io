@@ -41,7 +41,7 @@
 <body>
 <header>
   <h1>PAC — Game Flow Chart</h1>
-  <p>Layer 1: <b>the 23</b> (13 stats + 7 loadout options + 3 rarities) &nbsp;·&nbsp; Layer 2: <b>characters per slice</b> (heat = how many are filed there). Draft counts from the factory files.</p>
+  <p>Layer 1: <b>the 23</b> (13 stats + 7 loadout options + 3 rarities) &nbsp;·&nbsp; Layer 2: <b>the character split — 6 per slice, 3 variants of each</b> (78 slots, 234 builds). Heat on this layer shows the factory pool each slice's 6 are picked from.</p>
 </header>
 <div class="wrap">
   <aside>
@@ -140,7 +140,7 @@ function draw(){
   svg.querySelectorAll('path.slice').forEach(p=>p.addEventListener('click',()=>select(+p.dataset.i)));
   document.getElementById('pieNote').textContent = mode==="stats"
     ? "Layer 1: equal slices — every category is one of the 13. Tap a slice for its definition."
-    : "Layer 2: heat map — the hotter the slice, the more characters are filed there (draft factory counts). Tap for detail.";
+    : "Layer 2: heat map — the hotter the slice, the deeper the factory pool its 6 slots are picked from. Every slice ends at 6 characters x 3 variants. Tap for detail.";
 }
 function rel(i,off){ return SLICES[(i+off+13)%13].name; }
 function select(i){
@@ -149,7 +149,8 @@ function select(i){
    `<h2 style="color:${s.color}">${s.name}</h2>
     <p class="fn">${s.fn}</p>
     <dl>
-      <dt>Characters filed (draft count)</dt><dd><b>${s.count}</b></dd>
+      <dt>Slots in this slice</dt><dd><b>6 characters x 3 variants = 18 builds</b></dd>
+      <dt>Factory pool to pick from (draft)</dt><dd>${s.count} filed</dd>
       <dt>Neighbours (neutral, similar)</dt><dd>${rel(i,-1)} · ${rel(i,1)}</dd>
       <dt>Opposite (weak against)</dt><dd>${rel(i,6)} · ${rel(i,7)}</dd>
       <dt>Triadic (strong)</dt><dd>${rel(i,4)} · ${rel(i,9)}</dd>
