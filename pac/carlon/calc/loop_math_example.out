@@ -1,0 +1,36 @@
+
+== Build A melee crit ==
+  lane phase to L6                            208.3 s   level after: L6
+  break tower 1 (3000 HP) at L6                45.9 s   level after: L6
+  farm/defend gap before tower 2              120.0 s   level after: L7
+  break tower 2 (4500 HP) at L7                68.5 s   level after: L7
+  farm/defend gap before tower 3              120.0 s   level after: L8
+  break tower 3 (6000 HP) at L8                91.0 s   level after: L8
+  lair (5 micro towers + maze)                135.5 s   level after: L9
+  boss (9000 HP at L9)                        210.9 s   level after: L9
+  TOTAL   1000.1 s =  16.7 min; pellets eaten 3,372
+
+== Build C heavy tank ==
+  lane phase to L6                            208.3 s   level after: L6
+  break tower 1 (3000 HP) at L6               106.8 s   level after: L6
+  farm/defend gap before tower 2              120.0 s   level after: L7
+  break tower 2 (4500 HP) at L7               151.2 s   level after: L8
+  farm/defend gap before tower 3              120.0 s   level after: L9
+  break tower 3 (6000 HP) at L9               181.2 s   level after: L9
+  lair (5 micro towers + maze)                180.6 s   level after: L9
+  boss (9000 HP at L9)                        596.0 s   level after: L9
+  TOTAL   1664.1 s =  27.7 min; pellets eaten 3,930
+
+C/A match-length ratio: 1.66x
+own tower tier 0: units 1.2 -> undefended lane flips at wave 4 = 2.0 min
+own tower tier 1: units 1.5 -> undefended lane flips at wave 9 = 4.5 min
+own tower tier 2: units 1.9 -> undefended lane flips at wave 14 = 7.0 min
+3 lanes: hero can cover at most 33% of each lane's time
+5 lanes: hero can cover at most 20% of each lane's time
+7 lanes: hero can cover at most 14% of each lane's time
+
+Full own-tower upgrade (3 steps) = 1425 pellets = 238 s of farm income
+Rebuild at 70% of spent (BTD6 sell-rate anchor) for a tier-2 tower = 525 pellets
+Upgrade ladder share of A melee crit run's pellets: 42.3%
+Upgrade ladder share of C heavy tank run's pellets: 36.3%
+X-B LoL-shape: to L6 = 2400, to L10 = 6120 (asserted)
