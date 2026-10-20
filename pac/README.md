@@ -24,6 +24,13 @@ Pac eating the crawl row by row while the narrator gives up mid-word and Pac
 grows per row, Pac eating the whole Death Star, the burp, the fart-powered
 black-hole exit, the Q-Wing vow, the Legendary Salty Dawg Saloon, the chrome
 assassin snack, the T2 walk — then the title card: **PAC — JUDGEMENT DAY**.
+It plays as a **comic on the notebook paper** (INTRO.md, "Presentation:
+comic windows"): 15 framed panels with hand-inked borders and paper gutters,
+the page-shift as the transition between panels, narration in caption boxes
+at each panel's top-left, and dialogue in speech bubbles — the Emperor's
+"DO IT.", Bomberguy's vow from the Q-Wing, and the narrator's caption box,
+which Pac eats along with the text until the narration runs out. Same beats,
+same 97 seconds; only the presentation changed.
 **Skip anytime** with a click, any key, or a tap; the start menu follows.
 Intro sounds use the same WebAudio synth and stay silent until the browser
 allows audio (first interaction), respecting the saved mute setting.

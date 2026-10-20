@@ -412,3 +412,73 @@ element is a different build toy.
   captures, near-deaths, boss arrivals: "Hail to the chomp, baby." "I've got
   pellets of steel." Ghosts get flirted with before they're eaten. The humour is
   adult, confident, and constant — innuendo and attitude, wall to wall.
+
+## Playtest feedback v2 (owner, live play 2026-10-20)
+- UI needs to be better — cleaner HUD, clearer menus.
+- MORE pellets between upgrades: denser dots, slower level curve — eating is the
+  game, upgrades are the punctuation. Some pellets MOVE in patterns (rivers,
+  spirals, formations), not just static fields.
+- Every card/ability must EXPLAIN ITSELF in plain words on its face (owner hit a
+  "Blue Rage" that never said what it does — that's a defect, not a mystery).
+- Abilities start BASIC; depth arrives progressively. No complexity dump early.
+- INFINITY STONES are eaten in-world and UNLOCK TREE ABILITIES — stones gate the
+  trees. Any ability can have a stone SOCKETED into it to alter the ability
+  (the materia rule, with stones as the top tier).
+- EAT MODE needs a GHOST RADAR (or corner indicator) showing where the edible
+  ghosts are, so the hunt is efficient before the timer dies.
+- A LOT MORE WALLS: real maze structure — corridors, corners, and ESCAPE routes.
+  The arena must be navigable, not an open field.
+- TIME SHIFT: a button that stops the screen/swarm briefly and lets Pac slip
+  through an edge — out the left, in from the right; top to bottom — classic
+  tunnel logic as an escape weapon.
+- FRUIT HEALS. Fruit around the map is health, not stat upgrades.
+
+### Boss introductions (owner, 2026-10-20)
+- Bosses get CHARACTER INTRODUCTIONS — a comic-window entrance before the fight,
+  so the player knows who's arrived before they throw hands.
+- FIRST MINI-BOSS at LEVEL 6: a giant APE in the Donkey Kong mould — instantly
+  recognizable silhouette, and he THROWS BARRELS THAT EXPLODE (area denial: the
+  arena gets carved up by rolling blast zones you must navigate).
+
+### Boss fight doctrine (owner, 2026-10-20)
+- Boss fights are EPIC and LONG: multi-phase set pieces measured in minutes,
+  not seconds — phases that escalate patterns, change the arena, and force the
+  build to adapt. A boss is an event the run bends around, never a big trash mob
+  with a health bar. The level-6 Ape is the short tutorial form of this.
+
+### Pre-boss fairness (owner, 2026-10-20)
+- Nobody walks into a boss empty-handed because RNG starved them: the upgrade
+  offers in the run-up to a boss are seeded so the player already holds at least
+  3 good combat spells that work on him. The fight tests the player, not the
+  dice. (Applies from the level-6 Ape onward.)
+
+### Onboarding: build-spotlight levels (owner, 2026-10-20)
+- The FIRST 3 LEVELS are driven and focused — each one spotlights ONE build: its
+  upgrade offers lean hard into that build's tree, so the player learns each
+  playstyle cleanly, one at a time, before the game opens into free choice.
+  Focus first, freedom after.
+
+### The progression curve (owner, 2026-10-20)
+- LEVELS 1-3: every level-up option is a SKILL — never stats, never filler. Each
+  pick NARROWS the path: choosing is committing to a direction (the spotlight
+  builds from the onboarding rule).
+- LEVELS 4-6: offers become UPGRADES to what you hold — plus ONE INFINITY STONE
+  OF THE PLAYER'S CHOICE to socket/alter a spell. Depth over breadth.
+- AFTER: the player branches on their own — taking a tree opens what's BESIDE it
+  on the ring (the adjacency rule), so the build grows outward from the
+  committed core, one neighbourhood at a time.
+
+### The pause window (owner, 2026-10-20)
+- A pause screen opens your TALENT TREES and STATS — inspect the build mid-run,
+  game frozen behind it.
+- FOG RULE: it shows ONLY what's unlocked and explored. Unexplored trees and
+  branches don't render at all — no greyed previews, no spoilers of the map.
+  Your character sheet is exactly as much world as you've earned.
+
+### Roster doctrine, sharpened (owner, 2026-10-20)
+- Target: 1,000-2,000 pop-culture characters. Every ability mapped into 12
+  ability categories; the roster is built by brainstorming broadly, then keeping
+  the MOST COMPATIBLE (readable silhouette, a power that translates to this
+  game's verbs, a sound bite).
+- DISTINCTNESS LAW: no reskins. Every character's kit must FEEL different —
+  unique signature power + distinct behaviour, not palette swaps of one template.

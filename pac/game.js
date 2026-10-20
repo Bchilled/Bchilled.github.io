@@ -1272,6 +1272,48 @@ const NARRATOR_LINES = [
   'NARRATOR: "…and so the galax—"',
   'NARRATOR: "…"'
 ];
+// ---- Comic presentation (INTRO.md: "Presentation: comic windows") ----
+// The intro plays as framed PANELS on the notebook paper: gutters between
+// panels, narration in caption boxes, dialogue in speech bubbles, and the
+// page-shift is the transition. Panels are pure presentation — each one is a
+// window onto a scene, and their durations sum to the unchanged 97s. (The
+// saloon scene gets three panels: the landing, the outside, the inside.)
+const PANELS = [
+  { scene: 0,  t0: 0, dur: 3.5 },   // 1  darkness
+  { scene: 1,  t0: 0, dur: 11.5 },  // 2  crawl
+  { scene: 2,  t0: 0, dur: 7 },     // 3  emperor
+  { scene: 3,  t0: 0, dur: 9 },     // 4  crime
+  { scene: 4,  t0: 0, dur: 17 },    // 5–7 eatrows / the narrator fails / growth
+  { scene: 5,  t0: 0, dur: 8 },     // 8  the Death Star
+  { scene: 6,  t0: 0, dur: 6 },     // 9  the exit
+  { scene: 7,  t0: 0, dur: 7 },     // 10 the vow
+  { scene: 8,  t0: 0, dur: 2 },     // 11a the landing
+  { scene: 8,  t0: 2, dur: 3 },     // 11b the Salty Dawg, outside
+  { scene: 8,  t0: 5, dur: 6 },     // 11c the Salty Dawg, inside
+  { scene: 9,  t0: 0, dur: 4 },     // 12 the assassin
+  { scene: 10, t0: 0, dur: 3 },     // 13 the snack
+  { scene: 11, t0: 0, dur: 5 },     // 14 the walk
+  { scene: 12, t0: 0, dur: 5 }      // 15 title
+];
+const PANEL_CAPTIONS = [
+  'FIRST — DARKNESS.',
+  'THE LOG OF THE RULES, AND THE STORY:',
+  'EVERY STORY NEEDS A VILLAIN.',
+  'THE CRIME.',
+  null,   // eatrows: the narrator gets his own caption box — and Pac eats it
+  'FULLY GROWN, HE EATS THE DEATH STAR.',
+  'THE EXIT.',
+  'THE VOW.',
+  'THE LANDING.',
+  'THE LEGENDARY SALTY DAWG SALOON.',
+  'SAD. DEPRESSED. DOING SHOTS.',
+  'SENT TO KILL HIM.',
+  'PAC EATS HIM.',
+  'LEATHERS. SHADES. THE WALK.',
+  null    // the title panel speaks for itself
+];
+const PANEL_TRANS = 0.5;   // seconds: the page-shift as a new panel snaps in
+
 function easeOutCubic(p) { return 1 - Math.pow(1 - p, 3); }
 function easeInOut(p) { return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
 function seededRnd(seed) { const x = Math.sin(seed * 127.1) * 43758.5453; return x - Math.floor(x); }
@@ -1304,6 +1346,15 @@ const Intro = {
     return { i: BEAT_DURS.length - 1, lt: BEAT_DURS[BEAT_DURS.length - 1], d: BEAT_DURS[BEAT_DURS.length - 1] };
   },
   beatName() { return BEAT_NAMES[this.beatAt(this.t).i]; },
+  panelAt(t) {
+    let acc = 0;
+    for (let i = 0; i < PANELS.length; i++) {
+      if (t < acc + PANELS[i].dur) return { idx: i, def: PANELS[i], plt: t - acc };
+      acc += PANELS[i].dur;
+    }
+    const last = PANELS[PANELS.length - 1];
+    return { idx: PANELS.length - 1, def: last, plt: last.dur };
+  },
   fire(key, fn) { if (!this.fired[key]) { this.fired[key] = 1; fn(); } },
   spawnP(x, y, vx, vy, ttl, color, size, grav) {
     if (this.parts.length > 260) this.parts.shift();
@@ -1476,6 +1527,128 @@ function drawPage(alpha) {
   ctx.restore();
   return { x, y, w, h };
 }
+// ---- comic stage helpers: panels on the notebook paper ----
+function panelRect() {
+  // the panel lives on the page (same footprint drawPage uses), with paper
+  // gutters on every side; it keeps the screen's aspect so scene art drawn in
+  // virtual VW×VH coords maps in undistorted
+  const pageW = Math.min(VW * 0.86, 920), pageH = VH * 0.82;
+  const pageX = VW / 2 - pageW / 2, pageY = VH * 0.09;
+  let w = pageW - 52, h = w * (VH / VW);
+  const maxH = pageH - 44;
+  if (h > maxH) { h = maxH; w = h * (VW / VH); }
+  return { x: VW / 2 - w / 2, y: pageY + (pageH - h) / 2, w, h };
+}
+function tracePanelPath(r, seed, grow) {
+  // a rectangle the way a hand draws it: corners and edge-midpoints nudged by
+  // seeded amounts, so the wobble is the panel's own and never flickers
+  const g = grow || 0;
+  const x0 = r.x - g, y0 = r.y - g, x1 = r.x + r.w + g, y1 = r.y + r.h + g;
+  const j = (n, amt) => (seededRnd(seed * 97.3 + n * 13.7) - 0.5) * amt;
+  const pts = [
+    [x0 + j(1, 3), y0 + j(2, 3)], [(x0 + x1) / 2 + j(3, 4), y0 + j(4, 2.5)],
+    [x1 + j(5, 3), y0 + j(6, 3)], [x1 + j(7, 2.5), (y0 + y1) / 2 + j(8, 4)],
+    [x1 + j(9, 3), y1 + j(10, 3)], [(x0 + x1) / 2 + j(11, 4), y1 + j(12, 2.5)],
+    [x0 + j(13, 3), y1 + j(14, 3)], [x0 + j(15, 2.5), (y0 + y1) / 2 + j(16, 4)]
+  ];
+  ctx.beginPath();
+  ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  ctx.closePath();
+}
+function strokePanelFrame(r, seed) {
+  // double-inked border: one bold pass, one thinner pass just outside it
+  ctx.save();
+  ctx.strokeStyle = '#23232f'; ctx.lineWidth = 5;
+  tracePanelPath(r, seed, 0); ctx.stroke();
+  ctx.strokeStyle = 'rgba(35,35,47,0.5)'; ctx.lineWidth = 1.6;
+  tracePanelPath(r, seed + 40, 4); ctx.stroke();
+  ctx.restore();
+}
+function drawPanelPaper(alpha) {
+  // notebook paper filling the whole (virtual) panel: panel interiors that
+  // are "on the page" — the crawl, the text-eating — use this
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = '#ddd6c2';
+  ctx.fillRect(0, 0, VW, VH);
+  ctx.strokeStyle = 'rgba(70,110,180,0.28)'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let ly = 34; ly < VH - 8; ly += 34) { ctx.moveTo(8, ly); ctx.lineTo(VW - 8, ly); }
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(220,80,80,0.35)';
+  ctx.beginPath(); ctx.moveTo(46, 6); ctx.lineTo(46, VH - 6); ctx.stroke();
+  ctx.restore();
+}
+function drawCaptionBox(r, text, appear) {
+  // the rectangular narration box, top-left of the panel: cream paper, ink
+  // frame, serif caps — the voice of the comic itself
+  if (!text || appear <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = clamp(appear, 0, 1);
+  ctx.font = '700 ' + clamp(r.w * 0.02, 12, 16.5) + 'px Georgia, serif';
+  const bw = ctx.measureText(text).width + 22, bh = 30;
+  const bx = r.x + 14, by = r.y + 14 - (1 - clamp(appear, 0, 1)) * 6;
+  ctx.fillStyle = '#f6f0da';
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeStyle = '#23232f'; ctx.lineWidth = 2.2;
+  ctx.strokeRect(bx, by, bw, bh);
+  ctx.strokeStyle = 'rgba(35,35,47,0.5)'; ctx.lineWidth = 1;
+  ctx.strokeRect(bx - 2.5, by - 2.5, bw + 5, bh + 5);
+  ctx.fillStyle = '#23232f';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, bx + 11, by + bh / 2 + 1);
+  ctx.restore();
+}
+function drawNarratorBox(r, es, appear) {
+  // The narrator reads from his own caption box at the panel's top-left —
+  // and Pac eats the box along with the text: each row, the box's right edge
+  // is chewed away in step with the row being eaten, until nothing is left
+  // to narrate with. By the last row there is only "…", then silence.
+  if (appear <= 0) return;
+  const line = NARRATOR_LINES[es.row];
+  ctx.save();
+  ctx.font = 'italic 700 ' + clamp(r.w * 0.02, 12, 16.5) + 'px Georgia, serif';
+  const fullW = ctx.measureText(line).width + 22, bh = 30;
+  const rowLen = Math.max(1, CRAWL_LINES[es.row].length);
+  const remain = fullW * (1 - clamp(es.eaten / rowLen, 0, 1));
+  ctx.globalAlpha = clamp(appear, 0, 1);
+  if (remain > 26) {
+    const bx = r.x + 14, by = r.y + 14;
+    ctx.fillStyle = '#f6f0da';
+    ctx.fillRect(bx, by, remain, bh);
+    ctx.strokeStyle = '#23232f'; ctx.lineWidth = 2.2;
+    ctx.strokeRect(bx, by, remain, bh);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(bx, by, remain, bh); ctx.clip();
+    ctx.fillStyle = '#23232f';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(line, bx + 11, by + bh / 2 + 1);
+    ctx.restore();
+    // the bite marks on the eaten edge
+    ctx.fillStyle = '#ddd6c2';
+    for (let k = 0; k < 3; k++) {
+      ctx.beginPath();
+      ctx.arc(bx + remain + 1, by + 6 + k * 9, 3.4, 0, TAU);
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+function drawPanel(def, idx, plt, dx, r) {
+  // one framed panel: scene art clipped inside, the ink frame on top
+  const lt = def.t0 + plt;
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,16,8,0.35)';
+  ctx.fillRect(r.x + dx + 6, r.y + 7, r.w, r.h);
+  ctx.beginPath(); ctx.rect(r.x + dx, r.y, r.w, r.h); ctx.clip();
+  ctx.translate(r.x + dx, r.y);
+  ctx.scale(r.w / VW, r.h / VH);
+  renderIntroScene(def.scene, lt);
+  ctx.restore();
+  strokePanelFrame({ x: r.x + dx, y: r.y, w: r.w, h: r.h }, idx + 1);
+}
+
 function spotlight(alpha) {
   // stage-light wash: bright pool in the middle, darkness at the edges
   const r = Math.max(VW, VH) * 0.62;
@@ -1592,21 +1765,34 @@ function drawBomberGuy(x, y, s, fistUp) {
   }
   ctx.restore();
 }
-function drawSpeech(x, y, text, size, color, bg) {
+function drawSpeech(x, y, text, size, color, opts) {
+  // a COMIC speech bubble: white balloon, ink border, and a tail that points
+  // at the speaker (opts.tail: 'down' by default, 'up' when the bubble hangs
+  // below the speaker; opts.tailDx leans the tail sideways)
+  opts = opts || {};
   ctx.save();
   ctx.font = '800 ' + size + 'px "Segoe UI", sans-serif';
-  const w = ctx.measureText(text).width + 30;
-  ctx.fillStyle = bg || 'rgba(10,10,24,0.88)';
-  ctx.strokeStyle = 'rgba(160,175,255,0.5)'; ctx.lineWidth = 1.5;
+  const w = ctx.measureText(text).width + 34;
+  const h = size * 1.75;
+  const bx = x - w / 2, by = y - h / 2;
+  ctx.fillStyle = '#fffdf2';
+  ctx.strokeStyle = '#14141c'; ctx.lineWidth = 2.4;
+  // tail first, so the balloon body covers its base
   ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(x - w / 2, y - size * 0.95, w, size * 1.7, 10); else ctx.rect(x - w / 2, y - size * 0.95, w, size * 1.7);
+  if (opts.tail === 'up') {
+    ctx.moveTo(x - 9, by + 2); ctx.lineTo(x + 9, by + 2);
+    ctx.lineTo(x + (opts.tailDx || 0), by - size * 0.9);
+  } else {
+    ctx.moveTo(x - 9, by + h - 2); ctx.lineTo(x + 9, by + h - 2);
+    ctx.lineTo(x + (opts.tailDx || 0), by + h + size * 0.9);
+  }
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(bx, by, w, h, size * 0.55); else ctx.rect(bx, by, w, h);
   ctx.fill(); ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x - 8, y + size * 0.72); ctx.lineTo(x + 8, y + size * 0.72); ctx.lineTo(x, y + size * 1.18);
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle = color || '#fff';
+  ctx.fillStyle = color || '#14141c';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(text, x, y);
+  ctx.fillText(text, x, y + 1);
   ctx.restore();
 }
 function drawIntroParts() {
@@ -1618,28 +1804,26 @@ function drawIntroParts() {
   ctx.globalAlpha = 1;
 }
 
-// ---- intro scene renderer ----
-Intro.render = function () {
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  const b = this.beatAt(this.t);
-  const lt = b.lt, d = b.d;
+// ---- intro scene renderer: ONE beat-group, drawn in virtual full-screen ----
+// coords. The comic stage (Intro.render, below) frames it inside a panel.
+function renderIntroScene(i, lt) {
+  const d = BEAT_DURS[i];
   const U = Math.min(VW, VH);
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
-  if (b.i === 0) {
+  if (i === 0) {
     // 1 — Darkness. The spotlight snaps on.
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
     if (lt > 1.0) {
       const snap = clamp((lt - 1.0) / 0.18, 0, 1);
       const flick = (lt < 1.35 && Math.random() < 0.4) ? 0.55 : 1;
-      drawPage(0.55 * snap * flick);
+      drawPanelPaper(0.55 * snap * flick);
       spotlight((1 - 0.25 * snap) * flick);
     }
-  } else if (b.i === 1) {
+  } else if (i === 1) {
     // 2 — The crawl rises through the light, line by line, into its rows.
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
-    drawPage(0.6);
-    const g = this.geom();
+    drawPanelPaper(0.92);
+    const g = Intro.geom();
     ctx.font = '700 ' + g.fs + 'px "Courier New", monospace';
     ctx.textAlign = 'left';
     for (let i = 0; i < g.lines.length; i++) {
@@ -1658,7 +1842,7 @@ Intro.render = function () {
     }
     ctx.textAlign = 'center';
     spotlight(0.75);
-  } else if (b.i === 2) {
+  } else if (i === 2) {
     // 3 — The Emperor. He laughs. He says the word.
     drawIntroBG('#05050d', '#010104');
     drawIntroStars(0.5);
@@ -1698,8 +1882,8 @@ Intro.render = function () {
       ctx.fillText(dots, cx, cy - 128 * s);
       ctx.restore();
     }
-    if (lt >= 4.3) drawSpeech(cx, cy + 148 * s, 'DO IT.', clamp(U * 0.055, 22, 38), '#ffd93b');
-  } else if (b.i === 3) {
+    if (lt >= 4.3) drawSpeech(cx, cy + 148 * s, 'DO IT.', clamp(U * 0.055, 22, 38), '#a01616', { tail: 'up' });
+  } else if (i === 3) {
     // 4 — The crime: the Death Star takes out an arcade-booth planet.
     drawIntroBG('#04040e', '#010103');
     drawIntroStars(0.85);
@@ -1746,7 +1930,7 @@ Intro.render = function () {
       }
       ctx.save();
       ctx.translate(rand(-1, 1) * Math.max(0, 7 - et * 6), rand(-1, 1) * Math.max(0, 7 - et * 6));
-      for (const db of this.debris) {
+      for (const db of Intro.debris) {
         const dx = px + Math.cos(db.a) * db.sp * et, dy = py + Math.sin(db.a) * db.sp * et + et * et * 22;
         ctx.save();
         ctx.translate(dx, dy); ctx.rotate(db.rot + db.rs * et);
@@ -1757,12 +1941,12 @@ Intro.render = function () {
       }
       ctx.restore();
     }
-  } else if (b.i === 4) {
+  } else if (i === 4) {
     // 5–7 — Pac's entrance: he eats the crawl row by row, the narrator fails, he GROWS.
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
-    drawPage(0.6);
-    const g = this.geom();
-    const es = this.eatState(lt);
+    drawPanelPaper(0.92);
+    const g = Intro.geom();
+    const es = Intro.eatState(lt);
     ctx.font = '700 ' + g.fs + 'px "Courier New", monospace';
     for (let i = 0; i < g.lines.length; i++) {
       const line = g.lines[i];
@@ -1788,14 +1972,10 @@ Intro.render = function () {
     const mouth = 0.25 + (0.5 + 0.5 * Math.sin(animT * 22)) * 0.85;
     drawIntroPac(px2, py2, es.r, 0, mouth, {});
     if (ang) { /* spin conveyed by the arc of the tumble itself */ }
-    // the narrator, failing in real time
-    ctx.save();
-    ctx.font = 'italic 600 ' + clamp(VW * 0.019, 13, 19) + 'px Georgia, serif';
-    ctx.fillStyle = 'rgba(200,208,255,0.85)';
-    ctx.fillText(NARRATOR_LINES[es.row], VW / 2, VH * 0.9);
-    ctx.restore();
+    // the narrator fails in real time — from his caption box in the panel
+    // layer (Intro.render), which Pac is eating along with the text
     spotlight(0.75);
-  } else if (b.i === 5) {
+  } else if (i === 5) {
     // 8 — Fully grown, he eats the entire Death Star.
     drawIntroBG('#05050f', '#010103');
     drawIntroStars(0.8);
@@ -1819,8 +1999,7 @@ Intro.render = function () {
       ctx.fillText('GULP.', VW / 2, VH * 0.13);
       ctx.restore();
     }
-    drawIntroParts();
-  } else if (b.i === 6) {
+  } else if (i === 6) {
     // 9 — The burp. Then he farts himself into a black hole. (That's travel.)
     drawIntroBG('#030309', '#000');
     drawIntroStars(0.55);
@@ -1875,8 +2054,7 @@ Intro.render = function () {
         ctx.restore();
       }
     }
-    drawIntroParts();
-  } else if (b.i === 7) {
+  } else if (i === 7) {
     // 10 — The vow: Darth Bomberguy escapes in the Q-Wing and swears the hunt.
     drawIntroBG('#02020a', '#000');
     drawIntroStars(0.9);
@@ -1904,17 +2082,16 @@ Intro.render = function () {
       ctx.beginPath(); ctx.arc(-16, -20 + Math.sin(animT * 26) * 2, 5, 0, TAU); ctx.fill();
     }
     ctx.restore();
-    drawIntroParts();
     if (lt >= 1.1) {
+      // the vow, sworn from the cockpit: a speech bubble under the Q-Wing,
+      // its tail pointing up at the ship
       ctx.save();
       ctx.globalAlpha = clamp((lt - 1.1) / 0.8, 0, 1);
-      ctx.font = '900 ' + clamp(VW * 0.036, 22, 40) + 'px "Segoe UI", sans-serif';
-      ctx.fillStyle = '#ff5e3a';
-      ctx.shadowColor = 'rgba(255,60,30,0.6)'; ctx.shadowBlur = 14;
-      ctx.fillText('I WILL HUNT YOU DOWN.', VW / 2, VH * 0.74);
+      drawSpeech(clamp(p.x, VW * 0.2, VW * 0.8), p.y + clamp(VH * 0.17, 90, 130),
+        'I WILL HUNT YOU DOWN.', clamp(VW * 0.026, 17, 27), '#a01616', { tail: 'up' });
       ctx.restore();
     }
-  } else if (b.i === 8) {
+  } else if (i === 8) {
     // 11 — The landing, the neon saloon, and a very sad Pac at the bar.
     if (lt < 2) {
       // landed planet
@@ -1995,7 +2172,7 @@ Intro.render = function () {
         ctx.restore();
       }
     }
-  } else if (b.i === 9) {
+  } else if (i === 9) {
     // 12 — Outside: a crackling portal, and something chrome steps out.
     drawSaloonExterior(0.4, false);
     const gx = VW * 0.71, gy = VH * 0.8;
@@ -2027,7 +2204,7 @@ Intro.render = function () {
     // the assassin emerges
     const ep = clamp((lt - 0.8) / 1.6, 0, 1);
     if (ep > 0) drawChromeFigure(gx - 74 * ep, gy, 118 * Math.min(1, ep * 1.6), lt > 2.4);
-  } else if (b.i === 10) {
+  } else if (i === 10) {
     // 13 — The snack.
     drawSaloonExterior(0.4, false);
     const gx = VW * 0.71 - 74, gy = VH * 0.8;
@@ -2047,7 +2224,7 @@ Intro.render = function () {
       ctx.fillText('✦', px4 + 26, gy - 62);
       ctx.restore();
     }
-  } else if (b.i === 11) {
+  } else if (i === 11) {
     // 14 — The walk: leathers, shades, and not a care in the world.
     drawSaloonExterior(0.55, false);
     ctx.save();
@@ -2062,7 +2239,7 @@ Intro.render = function () {
     const wr = 23 + 17 * wp;
     const bob = Math.abs(Math.sin(lt * 3.4)) * 3.2 * (wp < 1 ? 1 : 0.3);
     drawIntroPac(wx, VH * 0.8 - wr - bob, wr, 0, 0.05, { leather: true, shades: true });
-  } else if (b.i === 12) {
+  } else if (i === 12) {
     // 15 — TITLE.
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
     const fadeOut = lt > d - 0.7 ? clamp((d - lt) / 0.7, 0, 1) : 1;
@@ -2088,7 +2265,38 @@ Intro.render = function () {
   }
 
   drawIntroParts();
-  // SKIP affordance — always visible, never subtle about existing
+}
+
+// ---- the comic stage: the notebook page, and the panel the story lives in ----
+Intro.render = function () {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  // darkness beyond the page; the page itself is the stage (dimmer while the
+  // first panel is still dark)
+  ctx.fillStyle = '#000'; ctx.fillRect(0, 0, VW, VH);
+  const P = this.panelAt(this.t);
+  drawPage(P.idx === 0 ? 0.45 : 1);
+  const r = panelRect();
+  if (P.idx > 0 && P.plt < PANEL_TRANS) {
+    // the page-turn: the old panel slides out left, the new one snaps in —
+    // the gap between them is the gutter, and the gutter is paper
+    const pr = easeOutCubic(clamp(P.plt / PANEL_TRANS, 0, 1));
+    const prev = PANELS[P.idx - 1];
+    drawPanel(prev, P.idx - 1, prev.dur, -pr * (r.w * 0.55 + 30), r);
+    drawPanel(P.def, P.idx, P.plt, (1 - pr) * (r.w * 0.55 + 30), r);
+  } else {
+    drawPanel(P.def, P.idx, P.plt, 0, r);
+  }
+  // the panel's voice: narration box top-left — or, on the eatrows panel,
+  // the narrator's own box, which is being eaten along with his lines
+  if (P.def.scene === 4) {
+    drawNarratorBox(r, this.eatState(P.plt), clamp(P.plt / 0.4, 0, 1));
+  } else {
+    const a = P.idx === 0 ? clamp(P.plt / 0.5, 0, 1)
+      : clamp((P.plt - PANEL_TRANS * 0.6) / 0.5, 0, 1);
+    drawCaptionBox(r, PANEL_CAPTIONS[P.idx], a);
+  }
+  // SKIP affordance — in the page margin, always visible
   ctx.save();
   ctx.globalAlpha = 0.45 + 0.3 * Math.sin(animT * 3);
   ctx.font = '600 13px "Segoe UI", sans-serif';
