@@ -10,14 +10,19 @@ const WORLD_W = 3400;            // arena width  (world wraps on both axes)
 const WORLD_H = 2600;            // arena height
 const TAU = Math.PI * 2;
 
-const DOT_TARGET   = 300;        // dots kept alive on the field
-const DOT_CAP      = 420;
+const DOT_TARGET   = 430;        // dots kept alive on the field — v2: the field is a feast
+const DOT_CAP      = 640;
 const GHOST_CAP    = 220;   // swarm ceiling — ghost pressure is the lose condition
 const TRAIL_CAP    = 240;
 const PARTICLE_CAP = 350;
 
 const PELLET_INTERVAL = 20;      // seconds between power-pellet spawns
 const FRUIT_INTERVAL  = 38;      // seconds between fruit spawns
+const PATTERN_INTERVAL = 5;      // seconds between moving pellet-formation spawns
+
+// ---- Time Shift (v2): freeze the swarm, slip through an edge, land opposite ----
+const SHIFT_CD = 6;              // seconds between shifts
+const SHIFT_FREEZE = 1.1;        // seconds the world holds its breath
 
 // ---------------- Canvas ----------------
 const canvas = document.getElementById('game');
@@ -56,6 +61,114 @@ function fmtTime(s) {
   s = Math.floor(s);
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 }
+
+// ---------------- Maze walls (v2) ----------------
+// Rect wall segments {x, y, w, h} in world coords (center-x, center-y, size).
+// The layout is built from mirrored templates so the maze is exactly symmetric
+// under x -> WORLD_W - x and y -> WORLD_H - y. That symmetry is load-bearing:
+// the world wraps, so a wall that visually crosses an edge re-enters on the
+// other side — mirrored placement guarantees the piece waiting there is
+// identical, and the seam reads as a corridor, not a glitch.
+// Corridor gaps between neighbouring segments are >= ~190px, wall thickness
+// 22px, and every cluster keeps a >= ~150px moat from the next feature, so
+// there is always more than one way around: this maze has escape routes,
+// not dead-end traps.
+const WALL_T = 22;               // wall thickness (px)
+const WALL_LIST = [];
+function addWall(cx, cy, w, h) {
+  WALL_LIST.push({ x: cx, y: cy, w, h });
+  const mx = WORLD_W - cx, my = WORLD_H - cy;
+  if (mx !== cx) WALL_LIST.push({ x: mx, y: cy, w, h });
+  if (my !== cy) WALL_LIST.push({ x: cx, y: my, w, h });
+  if (mx !== cx && my !== cy) WALL_LIST.push({ x: mx, y: my, w, h });
+}
+// (a) corner L-brackets — they channel the wrap lanes and guard the four
+//     Time Shift landing pads (the pads sit inside the L, wall-free)
+addWall(185, 30, 250, WALL_T); addWall(30, 185, WALL_T, 250);
+addWall(1135, 30, 250, WALL_T); addWall(30, 955, WALL_T, 250);
+// (b) Time Shift landing channels: broken rails that leave the pads open
+addWall(480, 30, 150, WALL_T); addWall(30, 480, WALL_T, 150);
+addWall(965, 30, 190, WALL_T); addWall(30, 785, WALL_T, 190);
+// (c) inner corner brackets — partial boxes with two mouths each
+addWall(620, 470, 300, WALL_T); addWall(470, 590, WALL_T, 220); addWall(620, 710, 150, WALL_T);
+// (d) quadrant bars — long runs with ~200px gaps between them
+addWall(1030, 480, WALL_T, 300); addWall(1030, 870, WALL_T, 220);
+addWall(1340, 470, 260, WALL_T); addWall(1340, 700, 260, WALL_T);
+// (e) centre cross — broken on all four arms, ~190px from every quadrant feature
+addWall(1700, 1090, 420, WALL_T); addWall(1700, 1510, 420, WALL_T);
+addWall(1410, 1300, WALL_T, 230); addWall(1990, 1300, WALL_T, 230);
+// (f) mid-edge baffles (on the mirror axes, so they pair with themselves)
+addWall(1700, 90, 420, WALL_T); addWall(1700, 2510, 420, WALL_T);
+addWall(90, 1300, WALL_T, 420); addWall(3310, 1300, WALL_T, 420);
+// (g) centre diamonds — small blocks to break sightlines around the cross
+addWall(1585, 1185, 92, 92); addWall(1815, 1185, 92, 92);
+const WALLS = WALL_LIST;
+// grid lookup: 9 lookups answer any position without scanning the full list
+const WALL_CELL = 200;
+const WALL_GRID = new Map();
+WALLS.forEach((w, i) => {
+  const x0 = Math.floor((w.x - w.w / 2) / WALL_CELL), x1 = Math.floor((w.x + w.w / 2) / WALL_CELL);
+  const y0 = Math.floor((w.y - w.h / 2) / WALL_CELL), y1 = Math.floor((w.y + w.h / 2) / WALL_CELL);
+  for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) {
+    const k = cx + ',' + cy;
+    let a = WALL_GRID.get(k); if (!a) { a = []; WALL_GRID.set(k, a); }
+    a.push(i);
+  }
+});
+function wallSegsNear(x, y) {
+  // the point's cell PLUS its 8 neighbours, indices wrapped: a wall whose
+  // rect ends just across a cell boundary (including the world seam itself)
+  // is still within collision range of the point, and a single-cell lookup
+  // is blind to it — that blind spot let pattern dots settle inside walls
+  // near the seam. Positions may arrive unwrapped; normalise first.
+  const COLS = WORLD_W / WALL_CELL, ROWS = WORLD_H / WALL_CELL;
+  const cx = Math.floor(wrapPos(x, WORLD_W) / WALL_CELL);
+  const cy = Math.floor(wrapPos(y, WORLD_H) / WALL_CELL);
+  let out = null;
+  for (let ox = -1; ox <= 1; ox++) {
+    for (let oy = -1; oy <= 1; oy++) {
+      const a = WALL_GRID.get(((cx + ox + COLS) % COLS) + ',' + ((cy + oy + ROWS) % ROWS));
+      if (!a) continue;
+      if (!out) out = a.slice();
+      else for (const i of a) if (!out.includes(i)) out.push(i);
+    }
+  }
+  return out;
+}
+// circle vs the rects near (x,y); the world wraps, so a rect is tested in
+// whichever wrapped position is closest to the circle
+function circleHitsWall(x, y, r) {
+  const idxs = wallSegsNear(x, y);
+  if (!idxs) return false;
+  for (const i of idxs) {
+    const w = WALLS[i];
+    const dx = wrapDelta(w.x - x, WORLD_W), dy = wrapDelta(w.y - y, WORLD_H);
+    if (Math.abs(dx) > w.w / 2 + r || Math.abs(dy) > w.h / 2 + r) continue;
+    const qx = clamp(dx, -w.w / 2, w.w / 2), qy = clamp(dy, -w.h / 2, w.h / 2);
+    const ex = dx - qx, ey = dy - qy;
+    if (ex * ex + ey * ey < r * r) return true;
+  }
+  return false;
+}
+// push a circle out of any wall it overlaps (axis of least penetration wins,
+// so movers SLIDE along walls instead of sticking); returns corrected x/y
+function pushOutWalls(x, y, r) {
+  const idxs = wallSegsNear(x, y);
+  if (!idxs) return { x, y };
+  for (const i of idxs) {
+    let dx = wrapDelta(WALLS[i].x - x, WORLD_W), dy = wrapDelta(WALLS[i].y - y, WORLD_H);
+    const w = WALLS[i], hw = w.w / 2 + r, hh = w.h / 2 + r;
+    if (Math.abs(dx) >= hw || Math.abs(dy) >= hh) continue;
+    const qx = clamp(dx, -w.w / 2, w.w / 2), qy = clamp(dy, -w.h / 2, w.h / 2);
+    const ex = dx - qx, ey = dy - qy;
+    if (ex * ex + ey * ey >= r * r) continue;
+    const penX = hw - Math.abs(dx), penY = hh - Math.abs(dy);
+    if (penX < penY) x = wrapPos(x + (dx > 0 ? -penX : penX), WORLD_W);
+    else y = wrapPos(y + (dy > 0 ? -penY : penY), WORLD_H);
+  }
+  return { x, y };
+}
+function isWallAt(x, y) { return circleHitsWall(x, y, 1); }
 
 // ---------------- Audio (all synthesized) ----------------
 const Snd = {
@@ -153,56 +266,87 @@ let touchMove = null;      // {dx, dy} unit-ish vector from touch drag
 let touchDashQueued = false;
 window.addEventListener('keydown', (e) => {
   if (G.state === 'intro') { endIntro(); return; }   // any key skips the intro
+  if (Teach.active) { Teach.dismiss(); e.preventDefault(); return; }   // any key dismisses a first-sight lesson
   keys[e.key.toLowerCase()] = true;
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) e.preventDefault();
   if (e.key === ' ') G.wantDash = true;
+  if (e.key.toLowerCase() === 'e' || e.key === 'Shift') G.wantShift = true;
   if (e.key === '1' || e.key === '2' || e.key === '3') setActivePower(Number(e.key) - 1);
   if (e.key.toLowerCase() === 'm') toggleMute();
   if (e.key.toLowerCase() === 'p') togglePause();
 });
 window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
-let touchId = null, touchStartX = 0, touchStartY = 0;
+// ---- floating analog drag-stick (touch, v2.1) ----
+// One-thumb play: the stick base lands wherever the thumb lands, the knob
+// tracks it, and speed is ANALOG — a small push walks, a push to the rim
+// sprints. If the thumb drifts too far, the base quietly re-anchors under it
+// so control never runs out of screen. The math lives in computeStick so it
+// is testable without a touchscreen.
+const STICK_R = 64, STICK_DEAD = 8, STICK_FULL = 60;
+let stick = null;   // {id, baseX, baseY, knobX, knobY}
+function computeStick(baseX, baseY, x, y) {
+  const dx = x - baseX, dy = y - baseY;
+  const len = Math.hypot(dx, dy);
+  if (len <= STICK_DEAD) return { dx: 0, dy: 0, mag: 0, kx: baseX, ky: baseY, len, ux: 0, uy: 0 };
+  const ux = dx / len, uy = dy / len;
+  const mag = clamp((len - STICK_DEAD) / (STICK_FULL - STICK_DEAD), 0, 1);
+  const kr = Math.min(len, STICK_R);
+  return { dx: ux * mag, dy: uy * mag, mag, kx: baseX + ux * kr, ky: baseY + uy * kr, len, ux, uy };
+}
 canvas.addEventListener('touchstart', (e) => {
+  if (Teach.active) { Teach.dismiss(); e.preventDefault(); return; }   // a tap dismisses a lesson; it does not start the stick
   document.body.classList.add('touch');
   for (const t of e.changedTouches) {
-    if (touchId === null) { touchId = t.identifier; touchStartX = t.clientX; touchStartY = t.clientY; }
+    if (!stick) stick = { id: t.identifier, baseX: t.clientX, baseY: t.clientY, knobX: t.clientX, knobY: t.clientY };
   }
   e.preventDefault();
 }, { passive: false });
 canvas.addEventListener('touchmove', (e) => {
   for (const t of e.changedTouches) {
-    if (t.identifier === touchId) {
-      let dx = t.clientX - touchStartX, dy = t.clientY - touchStartY;
-      const len = Math.hypot(dx, dy);
-      if (len > 12) { touchMove = { dx: dx / len, dy: dy / len }; }
-      else touchMove = null;
+    if (stick && t.identifier === stick.id) {
+      let cs = computeStick(stick.baseX, stick.baseY, t.clientX, t.clientY);
+      if (cs.len > STICK_R + 36) {
+        // thumb has wandered off the stick: slide the base under it
+        stick.baseX = t.clientX - cs.ux * STICK_R;
+        stick.baseY = t.clientY - cs.uy * STICK_R;
+        cs = computeStick(stick.baseX, stick.baseY, t.clientX, t.clientY);
+      }
+      stick.knobX = cs.kx; stick.knobY = cs.ky;
+      touchMove = cs.mag > 0 ? { dx: cs.dx, dy: cs.dy } : null;
     }
   }
   e.preventDefault();
 }, { passive: false });
 function endTouch(e) {
   for (const t of e.changedTouches) {
-    if (t.identifier === touchId) { touchId = null; touchMove = null; }
+    if (stick && t.identifier === stick.id) { stick = null; touchMove = null; }
   }
 }
 canvas.addEventListener('touchend', endTouch);
 canvas.addEventListener('touchcancel', endTouch);
+// no accidental page gestures: no long-press callout menu, no iOS pinch page-zoom
+window.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+document.addEventListener('gesturestart', (e) => { e.preventDefault(); });
 document.getElementById('dashBtn').addEventListener('touchstart', (e) => {
   e.preventDefault(); e.stopPropagation(); touchDashQueued = true;
 }, { passive: false });
 document.getElementById('dashBtn').addEventListener('click', () => { G.wantDash = true; });
+document.getElementById('shiftBtn').addEventListener('touchstart', (e) => {
+  e.preventDefault(); e.stopPropagation(); G.wantShift = true;
+}, { passive: false });
+document.getElementById('shiftBtn').addEventListener('click', () => { G.wantShift = true; });
 
 // ---------------- Copy powers (the Kirby layer) ----------------
 // Eating a ghost copies ITS power. Ghost type -> power it carries:
 const GHOST_POWER = { chaser: 'fire', ambusher: 'dash', flanker: 'magnet', wildcard: null };
 const POWER_DEFS = {
   fire:   { name: 'Fire Trail', icon: '🔥',
-            desc: 'While active, you leave a burning trail. Ghosts that touch it burn up (+score, +XP).' },
+            desc: 'While this is your ACTIVE power (keys 1–3), moving leaves a burning trail for about 2 seconds. A ghost that stays on it for half a second burns up: +150 points and +2 XP, without touching you.' },
   dash:   { name: 'Chomp Dash', icon: '💨',
-            desc: 'SPACE: burst forward — invulnerable mid-dash and you can EAT ghosts, copying their powers.' },
+            desc: 'Press SPACE: burst forward at 3× speed for a split second. You cannot be hurt mid-dash, and any ghost you hit is EATEN (+300 points, +3 XP) — and you copy its power.' },
   magnet: { name: 'Magnet Maw', icon: '🧲',
-            desc: 'While active, dots and fruit stream toward your mouth from far away.' }
+            desc: 'While this is your ACTIVE power (keys 1–3), dots and fruit stream toward your mouth from more than twice the normal magnet range.' }
 };
 function randomPowerId() {
   const ids = Object.keys(POWER_DEFS);
@@ -218,6 +362,7 @@ function defaultSave() {
     totals: { runs: 0, ghostsEaten: 0, dots: 0 },  // lifetime, across all runs
     unlocks: ['pac'],          // roster — the design bible's unlock system lands here
     curses: [],                // Bomberguy curse ledger (structure ready, nothing writes yet)
+    seen: [],                  // first-sight teaching registry — ids already taught, never repeated
     settings: { muted: false }
   };
 }
@@ -240,6 +385,7 @@ function saneSave(raw) {
   }
   if (!d.unlocks.includes('pac')) d.unlocks.unshift('pac');
   if (Array.isArray(raw.curses)) d.curses = raw.curses;
+  if (Array.isArray(raw.seen)) d.seen = raw.seen.filter((u) => typeof u === 'string');
   if (raw.settings) d.settings.muted = !!raw.settings.muted;
   return d;
 }
@@ -280,6 +426,7 @@ const Save = {
       },
       unlocks: d.unlocks.slice(),
       curses: d.curses.slice(),
+      seen: d.seen.slice(),
       settings: { muted: Snd.muted }
     };
   },
@@ -306,12 +453,97 @@ const Save = {
 };
 Save.load();
 
+// ---------------- First-sight teaching ----------------
+// Owner mechanic: the FIRST time a new thing appears — an eatable, an enemy,
+// a hazard, a bad edible, a mechanic, a card — play briefly pauses, the thing
+// is highlighted, and a plain-language tooltip explains it. Each lesson fires
+// ONCE EVER: its id is written into the save's `seen` registry the moment it
+// is shown, so it never repeats in later runs. This is a framework, not a
+// one-off: teaching a new thing later = one TEACH entry + one Teach.fire()
+// call at the place it appears (or a visibility rule in Teach.scan()).
+
+// TEACH_LIVE is switched off under the automated test hooks at the bottom of
+// this file — lessons must never freeze a scripted run.
+let TEACH_LIVE = true;
+
+const TEACH = {
+  dot:       { title: 'PELLETS', text: 'Eat them. Each pellet is +1 XP and +10 score, and eating without stopping builds your COMBO — more speed, more score. Pellets are how you level up.' },
+  wall:      { title: 'WALLS', text: 'The maze is real. You slide along walls; ghosts must go around them. Corners are escape routes — and TIME SHIFT (E) is your emergency exit.' },
+  ghost:     { title: 'GHOST', text: 'It wants you. A touch costs 13 HP while it is not blue. Four kinds hunt differently — chaser, ambusher, flanker, wildcard. Do not get cornered.' },
+  elite:     { title: 'CROWNED ELITE', text: 'Bigger, faster, harder to corner. Eat one during EAT MODE and it drops a Melon (+60 HP). Worth it when you are strong; a bad idea when you are not.' },
+  pellet:    { title: 'POWER PELLET', text: 'Eat this to flip the hunt: EAT MODE. Ghosts turn blue and edible for a few seconds — follow the arrows at the screen edge and hunt fast.' },
+  eatmode:   { title: 'EAT MODE!', text: 'Ghosts are food now: 200, 400, 800, 1600 points chained. Eating one also COPIES its power. The arrows point at your nearest prey — the clock is the blue timer.' },
+  pattern:   { title: 'MOVING PELLETS', text: 'Some pellets travel in formations — rivers, rings, spirals. Chase the current for a combo feast. They dissolve on schedule, so do not wait around.' },
+  fruit:     { title: 'FRUIT — HEALS', text: 'Fruit restores exactly the HP printed on it (+25 to +60) and does nothing else. Route to one when you are hurt — if you dare cross the swarm to reach it.' },
+  copy:      { title: 'POWER COPIED', text: 'You hold up to 3 copied powers. Press 1 / 2 / 3 (or tap a power slot) to choose the active one. Eating a ghost whose power you already hold levels that power up instead.' },
+  levelup:   { title: 'LEVEL UP', text: 'Pick 1 of 3 cards. Early levels offer SKILLS only; deeper upgrades arrive from level 4. Every card says in plain words what it does — read it, then commit. Picking can never hurt you: you resume under a grace shield.' },
+  grace:     { title: 'GRACE', text: 'After every pick you get 1.5 seconds like this: ghosts frozen solid, you untouchable. Use it to aim your first move — choosing a card never costs health.' },
+  timeshift: { title: 'DANGER CLOSE — TIME SHIFT', text: 'Press E (or the SHIFT button) for TIME SHIFT: the swarm freezes and you slip out through the nearest edge, reappearing on the opposite side. 6-second cooldown. It is your escape hatch — spend it to live.' }
+};
+
+const Teach = {
+  active: null,   // {id, def, ax, ay} — ax/ay = world anchor for the highlight ring (null = panel only)
+  queue: [],
+  isSeen(id) { return Save.data.seen.indexOf(id) >= 0; },
+  fire(id, ax, ay) {
+    if (!TEACH_LIVE) return false;
+    const def = TEACH[id];
+    if (!def || this.isSeen(id)) return false;
+    if (this.active && this.active.id === id) return false;
+    if (this.queue.some((q) => q.id === id)) return false;
+    const item = { id, def, ax: (ax === undefined ? null : ax), ay: (ay === undefined ? null : ay) };
+    if (this.active) this.queue.push(item); else this.show(item);
+    return true;
+  },
+  show(item) {
+    this.active = item;
+    // the lesson counts as seen the moment it is SHOWN — persisted at once,
+    // so it never repeats even if the tab closes on the tooltip
+    if (!this.isSeen(item.id)) { Save.data.seen.push(item.id); Save.write(true); }
+    document.getElementById('teachTitle').textContent = item.def.title;
+    document.getElementById('teachText').textContent = item.def.text;
+    document.getElementById('teachTip').classList.remove('hidden');
+  },
+  dismiss() {
+    if (!this.active) return;
+    this.active = null;
+    document.getElementById('teachTip').classList.add('hidden');
+    if (this.queue.length) this.show(this.queue.shift());
+  },
+  // visibility-driven lessons: the first time the thing is ON SCREEN.
+  // Runs at the end of update() while playing; fires at most one per call.
+  scan() {
+    if (!TEACH_LIVE || this.active) return;
+    const unseen = (id) => !this.isSeen(id) && !this.queue.some((q) => q.id === id);
+    const vis = (x, y, m) => { const sx = SX(x), sy = SY(y); return sx > -m && sx < VW + m && sy > -m && sy < VH + m; };
+    if (unseen('dot')) { for (const d of dots) { if (vis(d.x, d.y, 10)) { this.fire('dot', d.x, d.y); return; } } }
+    if (unseen('pattern')) { for (const d of dots) { if (d.pat && vis(d.x, d.y, 10)) { this.fire('pattern', d.x, d.y); return; } } }
+    if (unseen('wall')) { for (const w of WALLS) { if (vis(w.x, w.y, Math.max(w.w, w.h) / 2)) { this.fire('wall', w.x, w.y); return; } } }
+    if (unseen('pellet')) { for (const p of pellets) { if (vis(p.x, p.y, 20)) { this.fire('pellet', p.x, p.y); return; } } }
+    if (unseen('fruit')) { for (const f of fruits) { if (vis(f.x, f.y, 20)) { this.fire('fruit', f.x, f.y); return; } } }
+    if (unseen('ghost') || unseen('elite')) {
+      for (const g of ghosts) {
+        if (!g.alive || !vis(g.x, g.y, 30)) continue;
+        if (g.elite && unseen('elite')) { this.fire('elite', g.x, g.y); return; }
+        if (unseen('ghost')) { this.fire('ghost', g.x, g.y); return; }
+      }
+    }
+    // Time Shift has no "appearance" of its own — it is taught at the first
+    // moment of need: a hunter close enough to matter while the shift is ready
+    if (unseen('timeshift') && player.shiftCd <= 0) {
+      for (const g of ghosts) {
+        if (g.alive && tDist(g.x, g.y, player.x, player.y) < 150) { this.fire('timeshift', player.x, player.y); return; }
+      }
+    }
+  }
+};
+
 // ---------------- Game state ----------------
 const G = {
   state: 'menu',           // menu | playing | levelup | paused | gameover
   time: 0, score: 0, best: 0, eaten: 0, dots: 0,
   runCounted: true,        // false while a run is live and not yet folded into the save
-  wantDash: false,
+  wantDash: false, wantShift: false,
   shake: 0, toastT: 0, hudT: 0
 };
 G.best = Save.data.best.score;
@@ -330,6 +562,10 @@ const player = {
   activePower: 0,
   // dash
   dashT: 0, dashCd: 0, dashDirX: 1, dashDirY: 0,
+  // time shift (v2)
+  shiftCd: 0, freezeT: 0, shiftCdMax: SHIFT_CD,
+  // post-pick grace (v2.1): seconds of held ghosts + invulnerability after a level-up pick
+  graceT: 0,
   // eat mode
   eatT: 0, eatChain: 0,
   trailAcc: 0
@@ -342,9 +578,11 @@ let ghosts = [];      // see spawnGhost
 let trail = [];       // {x,y,ttl,max}
 let particles = [];   // {x,y,vx,vy,ttl,max,color,size}
 let floaters = [];    // {x,y,ttl,text,color}
-let pelletTimer = 8, fruitTimer = 20, ghostTimer = 0, dotTimer = 0, surgeTimer = 55;
+let pelletTimer = 8, fruitTimer = 20, ghostTimer = 0, dotTimer = 0, surgeTimer = 55, patternTimer = 2;
 
-function xpForLevel(lv) { return Math.floor(9 * Math.pow(1.26, lv - 1)) + lv * 2; }
+// v2 curve: eating is the game, upgrades are the punctuation — level 2 takes
+// ~22 dots (was ~11) and each next level ~35% more than the last
+function xpForLevel(lv) { return Math.floor(20 * Math.pow(1.35, lv - 1)) + lv * 2; }
 function hasPower(id) { return player.powers.find((p) => p.id === id) || null; }
 function activePowerId() {
   const p = player.powers[player.activePower];
@@ -353,9 +591,16 @@ function activePowerId() {
 
 // ---------------- Spawning ----------------
 function spawnDotCluster() {
-  // dots stream in trails/clusters, Vampire-Survivors style
-  let x = rand(0, WORLD_W), y = rand(0, WORLD_H);
-  const n = randi(6, 14);
+  // dots stream in trails/clusters, Vampire-Survivors style — seeded away from
+  // the player so crossing the map always passes through fresh food, and never
+  // inside a wall
+  let x = 0, y = 0, ok = false;
+  for (let t = 0; t < 10 && !ok; t++) {
+    x = rand(0, WORLD_W); y = rand(0, WORLD_H);
+    ok = !circleHitsWall(x, y, 16) && tDist(x, y, player.x, player.y) > 200;
+  }
+  if (!ok) return;
+  const n = randi(8, 16);
   const style = randi(0, 2);
   const ang = rand(0, TAU);
   for (let i = 0; i < n && dots.length < DOT_CAP; i++) {
@@ -363,27 +608,65 @@ function spawnDotCluster() {
     if (style === 0) { px = x + Math.cos(ang) * i * 27; py = y + Math.sin(ang) * i * 27; }
     else if (style === 1) { const a = (i / n) * TAU; px = x + Math.cos(a) * 44; py = y + Math.sin(a) * 44; }
     else { px = x + rand(-55, 55); py = y + rand(-55, 55); }
-    dots.push({ x: wrapPos(px, WORLD_W), y: wrapPos(py, WORLD_H), r: 5, pulse: rand(0, TAU) });
+    px = wrapPos(px, WORLD_W); py = wrapPos(py, WORLD_H);
+    if (circleHitsWall(px, py, 8)) continue;
+    dots.push({ x: px, y: py, r: 5, pulse: rand(0, TAU) });
+  }
+}
+// moving pellet formations (v2): an arc of dots that TRAVELS the arena together
+// for ~26 seconds — a river that drifts, a ring that orbits, a spiral that
+// rotates. The flow is computed from each dot's own clock, so formations never
+// need steering around walls; a dot whose path clips a wall dissolves instead
+// of getting stuck inside it.
+const PATTERN_KINDS = ['river', 'ring', 'spiral'];
+function spawnDotPattern() {
+  let cx = 0, cy = 0, ok = false;
+  for (let t = 0; t < 10 && !ok; t++) {
+    cx = rand(0, WORLD_W); cy = rand(0, WORLD_H);
+    ok = !circleHitsWall(cx, cy, 30) && tDist(cx, cy, player.x, player.y) > 300;
+  }
+  if (!ok) return;
+  const kind = PATTERN_KINDS[randi(0, PATTERN_KINDS.length - 1)];
+  const dur = 26, ang = rand(0, TAU);
+  if (kind === 'river') {
+    const n = 15;
+    for (let i = 0; i < n && dots.length < DOT_CAP; i++) {
+      dots.push({ x: cx, y: cy, r: 5, pulse: rand(0, TAU),
+        pat: { kind, cx, cy, ang, i, n, t: -i * 0.28, dur } });   // staggered ages = a flowing stream
+    }
+  } else if (kind === 'ring') {
+    const n = 16;
+    for (let i = 0; i < n && dots.length < DOT_CAP; i++) {
+      dots.push({ x: cx, y: cy, r: 5, pulse: rand(0, TAU), pat: { kind, cx, cy, ang, i, n, t: 0, dur } });
+    }
+  } else {
+    const n = 18;
+    for (let i = 0; i < n && dots.length < DOT_CAP; i++) {
+      dots.push({ x: cx, y: cy, r: 5, pulse: rand(0, TAU), pat: { kind, cx, cy, ang, i, n, t: 0, dur } });
+    }
   }
 }
 function spawnPellet() {
   for (let tries = 0; tries < 12; tries++) {
     const x = rand(0, WORLD_W), y = rand(0, WORLD_H);
-    if (tDist(x, y, player.x, player.y) > 260) { pellets.push({ x, y, ttl: 30 }); return; }
+    if (tDist(x, y, player.x, player.y) > 260 && !circleHitsWall(x, y, 16)) { pellets.push({ x, y, ttl: 30 }); return; }
   }
 }
+// v2: fruit is HEALING, full stop — no XP, no score, no stats. The value of a
+// fruit is the HP on its label, and it restores exactly that.
 const FRUIT_KINDS = [
-  { name: 'Cherry', xp: 12, score: 500, color: '#ff2e4d' },
-  { name: 'Strawberry', xp: 18, score: 800, color: '#ff4d7e' },
-  { name: 'Orange', xp: 26, score: 1200, color: '#ff9a3b' },
-  { name: 'Melon', xp: 40, score: 2000, color: '#37e08b' }
+  { name: 'Cherry', heal: 25, color: '#ff2e4d' },
+  { name: 'Strawberry', heal: 35, color: '#ff4d7e' },
+  { name: 'Orange', heal: 45, color: '#ff9a3b' },
+  { name: 'Melon', heal: 60, color: '#37e08b' }
 ];
-function spawnFruit(x, y) {
-  const kind = FRUIT_KINDS[randi(0, FRUIT_KINDS.length - 1)];
+function spawnFruit(x, y, kindIdx) {
+  const kind = kindIdx !== undefined ? FRUIT_KINDS[kindIdx]
+    : FRUIT_KINDS[randi(0, FRUIT_KINDS.length - 1)];
   if (x === undefined) {
     for (let tries = 0; tries < 12; tries++) {
       const fx = rand(0, WORLD_W), fy = rand(0, WORLD_H);
-      if (tDist(fx, fy, player.x, player.y) > 320) { x = fx; y = fy; break; }
+      if (tDist(fx, fy, player.x, player.y) > 320 && !circleHitsWall(fx, fy, 16)) { x = fx; y = fy; break; }
     }
     if (x === undefined) return;
   }
@@ -408,11 +691,18 @@ function ghostTargetCount() {
 }
 
 function placeGhostAtEdge(g, ang, dist) {
-  // (re)enter off-screen, at a wrapped distance from the player
-  const a = ang !== undefined ? ang : rand(0, TAU);
+  // (re)enter off-screen, at a wrapped distance from the player — and never
+  // inside a wall: if the first landing spot is walled, probe nearby angles
+  const a0 = ang !== undefined ? ang : rand(0, TAU);
   const d = dist !== undefined ? dist : rand(680, 860);
-  g.x = wrapPos(player.x + Math.cos(a) * d, WORLD_W);
-  g.y = wrapPos(player.y + Math.sin(a) * d, WORLD_H);
+  let px = 0, py = 0;
+  for (let k = 0; k < 10; k++) {
+    const a = a0 + k * 0.63;
+    px = wrapPos(player.x + Math.cos(a) * d, WORLD_W);
+    py = wrapPos(player.y + Math.sin(a) * d, WORLD_H);
+    if (!circleHitsWall(px, py, g.r + 4)) break;
+  }
+  g.x = px; g.y = py;
   g.vx = 0; g.vy = 0; g.burnT = 0; g.touchCd = 0;
   g.alive = true; g.respawnAt = 0;
 }
@@ -441,8 +731,53 @@ function killGhost(g, grantPower, basePoints) {
     const pid = GHOST_POWER[g.type] || randomPowerId();
     grantCopyPower(pid);
   }
-  if (g.elite) { spawnFruit(g.x, g.y); floater(g.x, g.y - 30, 'ELITE DOWN!', '#ffd93b'); }
+  if (g.elite) { spawnFruit(g.x, g.y, 3); floater(g.x, g.y - 30, 'ELITE DOWN!', '#ffd93b'); }
   return basePoints;
+}
+
+// ---------------- Time Shift (v2) ----------------
+// The escape weapon: the swarm freezes for SHIFT_FREEZE seconds and Pac exits
+// through the nearest edge — or the edge he's already running at — and lands
+// on the opposite side, classic tunnel logic. Landing pads are kept wall-free
+// by the maze layout (corner L-brackets); the landing is briefly invulnerable
+// so a camper on the far side can't tax the escape.
+function doTimeShift() {
+  const spd = Math.hypot(player.vx, player.vy);
+  const driveX = spd > 40 ? Math.abs(player.vx) >= Math.abs(player.vy)
+    : Math.min(player.x, WORLD_W - player.x) <= Math.min(player.y, WORLD_H - player.y);
+  if (driveX) {
+    const exitLeft = spd > 40 ? player.vx < 0 : player.x <= WORLD_W - player.x;
+    player.x = exitLeft ? WORLD_W - 26 : 26;
+  } else {
+    const exitUp = spd > 40 ? player.vy < 0 : player.y <= WORLD_H - player.y;
+    player.y = exitUp ? WORLD_H - 26 : 26;
+  }
+  if (circleHitsWall(player.x, player.y, player.r)) {
+    // the landing lane is walled at this height — slide along the edge to
+    // the nearest open lane (rails never run more than ~420px unbroken)
+    const base = driveX ? player.y : player.x;
+    let placed = false;
+    for (let off = 12; off <= 560 && !placed; off += 12) {
+      for (const s of [-1, 1]) {
+        const v = base + s * off;
+        const tx = driveX ? player.x : wrapPos(v, WORLD_W);
+        const ty = driveX ? wrapPos(v, WORLD_H) : player.y;
+        if (!circleHitsWall(tx, ty, player.r)) { player.x = tx; player.y = ty; placed = true; break; }
+      }
+    }
+    const slidL = pushOutWalls(player.x, player.y, player.r);
+    player.x = slidL.x; player.y = slidL.y;
+  }
+  player.freezeT = SHIFT_FREEZE;
+  player.shiftCd = player.shiftCdMax;
+  player.invulnUntil = Math.max(player.invulnUntil, G.time + SHIFT_FREEZE + 0.5);
+  G.shake = Math.max(G.shake, 5);
+  burst(player.x, player.y, '#9df2ff', 12);
+  floater(player.x, player.y - 32, 'TIME SHIFT!', '#9df2ff');
+  Snd.tone(880, 0.22, 'sine', 0.14, 110);
+}
+function requestShift() {
+  if (G.state === 'playing' && player.shiftCd <= 0 && player.freezeT <= 0) doTimeShift();
 }
 
 // ---------------- Particles / floaters ----------------
@@ -466,6 +801,7 @@ function toast(text) {
 
 // ---------------- Kirby layer: gaining powers ----------------
 function grantCopyPower(id) {
+  const isNew = !hasPower(id);
   const held = hasPower(id);
   if (held) {
     if (held.lvl < 3) { held.lvl++; toast('POWER UP: ' + POWER_DEFS[id].name + ' Lv' + held.lvl + '!'); }
@@ -480,6 +816,7 @@ function grantCopyPower(id) {
     player.activePower = player.powers.length - 1;
     toast('COPIED: ' + POWER_DEFS[id].name + ' (dropped ' + POWER_DEFS[old.id].name + ')');
   }
+  if (isNew) Teach.fire('copy', player.x, player.y);   // first-sight: first power ever copied
   Snd.copySting();
   renderPowerSlots();
 }
@@ -488,34 +825,53 @@ function setActivePower(i) {
 }
 
 // ---------------- Level-up choices ----------------
+// PROGRESSION SHAPING (DESIGN.md, "The progression curve"): levels 1–3 offer
+// SKILLS ONLY — new powers and basic, single-number stat skills, every card a
+// real choice that narrows the build. From level 4 the pool deepens: power
+// upgrades (Lv2/Lv3) and advanced cards (eat-mode duration, combo window,
+// full-restores) start weighting in. The full 13-tree ring system doesn't
+// exist in code yet, so this two-band pool is the honest approximation:
+// band = 'early' (skills only) for levels 1–3, 'deep' afterwards.
+// CARD CLARITY LAW (playtest v2): every card says in plain words what it
+// does, with the number in the text. A card name is a label, never the rules.
 function buildChoices() {
-  const pool = [];
+  const early = player.level <= 3;
+  const skills = [];   // new powers + upgrades — the "spells" of this system
+  const basics = [];   // early-band stat skills
+  const deep = [];     // level 4+ cards
   for (const id of Object.keys(POWER_DEFS)) {
     const held = hasPower(id);
     if (!held && player.powers.length < 3) {
-      pool.push({ tag: 'New Power', power: true, icon: POWER_DEFS[id].icon,
+      skills.push({ tag: 'New Skill', power: true, icon: POWER_DEFS[id].icon,
         name: POWER_DEFS[id].name, desc: POWER_DEFS[id].desc,
         apply: () => { player.powers.push({ id, lvl: 1 }); player.activePower = player.powers.length - 1; } });
-    } else if (held && held.lvl < 3) {
-      const upDesc = { fire: 'Trail lasts longer and burns ghosts faster.',
-        dash: 'Dash cooldown −30%, dash lasts longer.',
-        magnet: 'Magnet radius +45%.' }[id];
-      pool.push({ tag: 'Upgrade Power', power: true, icon: POWER_DEFS[id].icon,
+    } else if (held && held.lvl < 3 && !early) {
+      const upDesc = {
+        fire: 'Upgrade: the flame trail lasts about +0.35s longer and burns a ghost up in about 0.42s instead of 0.5s.',
+        dash: 'Upgrade: dash cooldown drops by about 28% (2.6s → 1.9s at Lv2, → 1.35s at Lv3) and each dash lasts slightly longer.',
+        magnet: 'Upgrade: the Magnet Maw pull radius grows by +45% of its base reach.' }[id];
+      skills.push({ tag: 'Upgrade Skill', power: true, icon: POWER_DEFS[id].icon,
         name: POWER_DEFS[id].name + ' Lv' + (held.lvl + 1), desc: upDesc,
         apply: () => { held.lvl++; } });
     }
   }
-  const stats = [
-    { icon: '👟', name: 'Zoom Grease', desc: 'Move speed +9%.', apply: () => { player.speedMul *= 1.09; } },
-    { icon: '❤️', name: 'Thick Peel', desc: 'Max HP +25 and heal 25.', apply: () => { player.maxHp += 25; player.hp = Math.min(player.maxHp, player.hp + 25); } },
-    { icon: '🧲', name: 'Wide Gullet', desc: 'Passive dot-magnet radius +45.', apply: () => { player.magnetR += 45; } },
-    { icon: '🦷', name: 'Mega Chomp', desc: 'Chomp radius +5 — eat dots & ghosts from further.', apply: () => { player.chompBonus += 5; } },
-    { icon: '🔵', name: 'Blue Rage', desc: 'Eat Mode lasts +1.6s per pellet.', apply: () => { player.eatBonus += 1.6; } },
-    { icon: '🔥', name: 'Combo Lube', desc: 'Combo lasts +0.6s before it drains.', apply: () => { player.comboWindow += 0.6; } },
-    { icon: '🍒', name: 'Fruit Feast', desc: 'Heal 45 HP right now.', apply: () => { player.hp = Math.min(player.maxHp, player.hp + 45); } }
+  const basicStats = [
+    { icon: '👟', name: 'Zoom Grease', desc: 'Your move speed goes up by 9%. You move at ' + Math.round(272 * player.speedMul) + ' now — this makes it about ' + Math.round(272 * player.speedMul * 1.09) + '.', apply: () => { player.speedMul *= 1.09; } },
+    { icon: '❤️', name: 'Thick Peel', desc: 'Your maximum health goes up by 25 (now ' + player.maxHp + ' → ' + (player.maxHp + 25) + ') and you heal 25 HP right away.', apply: () => { player.maxHp += 25; player.hp = Math.min(player.maxHp, player.hp + 25); } },
+    { icon: '🧲', name: 'Wide Gullet', desc: 'Your passive magnet — the range that pulls nearby dots into your mouth — grows by 45 (now ' + Math.round(player.magnetR) + ' → ' + Math.round(player.magnetR + 45) + ').', apply: () => { player.magnetR += 45; } },
+    { icon: '🦷', name: 'Mega Chomp', desc: 'Your mouth counts as 5 bigger: you eat dots and ghosts from 5 further away, every time.', apply: () => { player.chompBonus += 5; } },
+    { icon: '🍒', name: 'Fruit Feast', desc: 'Heal 45 HP right now. (One-time — fruit on the map also heals, every time you eat it.)', apply: () => { player.hp = Math.min(player.maxHp, player.hp + 45); } }
   ];
-  for (const s of stats) pool.push({ tag: 'Stat', power: false, icon: s.icon, name: s.name, desc: s.desc, apply: s.apply });
-  // shuffle, take 3
+  const deepStats = [
+    { icon: '🔵', name: 'Blue Rage', desc: 'Eat Mode — the blue-ghost hunting window you get from a power pellet — lasts +1.6 seconds longer per pellet (now ' + (6 + player.eatBonus).toFixed(1) + 's → ' + (7.6 + player.eatBonus).toFixed(1) + 's).', apply: () => { player.eatBonus += 1.6; } },
+    { icon: '🔥', name: 'Combo Lube', desc: 'Your combo survives +0.6s longer without eating before it resets to zero (now ' + player.comboWindow.toFixed(1) + 's → ' + (player.comboWindow + 0.6).toFixed(1) + 's). Combo raises your score multiplier and move speed.', apply: () => { player.comboWindow += 0.6; } },
+    { icon: '⏪', name: 'Shift Grease', desc: 'Time Shift (E / Shift key) recharges 1.5s faster: every 4.5s instead of every 6s.', apply: () => { player.shiftCdMax = Math.max(3, player.shiftCdMax - 1.5); } }
+  ];
+  for (const s of basicStats) basics.push({ tag: 'Skill', power: false, icon: s.icon, name: s.name, desc: s.desc, apply: s.apply });
+  for (const s of deepStats) deep.push({ tag: 'Upgrade', power: false, icon: s.icon, name: s.name, desc: s.desc, apply: s.apply });
+  // early band: ONLY skills (new powers first, then basic stats). Deep band:
+  // everything — power upgrades and advanced cards join the pool.
+  const pool = early ? skills.concat(basics) : skills.concat(basics, deep);
   for (let i = pool.length - 1; i > 0; i--) { const j = randi(0, i); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
   return pool.slice(0, 3);
 }
@@ -529,30 +885,44 @@ function gainXP(n) {
     pendingLevels++;
   }
 }
+let levelChoices = [];
 function openLevelUp() {
   G.state = 'levelup';
   Save.write(true);        // progress checkpoint (new best level, live totals)
   Snd.levelUp();
+  levelChoices = buildChoices();
   const wrap = document.getElementById('cards');
   wrap.innerHTML = '';
-  for (const choice of buildChoices()) {
+  levelChoices.forEach((choice, i) => {
     const d = document.createElement('div');
     d.className = 'card';
     d.innerHTML = '<div class="tag' + (choice.power ? ' power' : '') + '">' + choice.tag + '</div>' +
       '<div class="ico">' + choice.icon + '</div>' +
       '<div class="name">' + choice.name + '</div>' +
       '<div class="desc">' + choice.desc + '</div>';
-    d.addEventListener('click', () => {
-      choice.apply();
-      pendingLevels--;
-      document.getElementById('levelupScreen').classList.add('hidden');
-      renderPowerSlots();
-      if (pendingLevels > 0) openLevelUp();
-      else G.state = 'playing';
-    });
+    d.addEventListener('click', () => pickCard(i));
     wrap.appendChild(d);
-  }
+  });
   document.getElementById('levelupScreen').classList.remove('hidden');
+  Teach.fire('levelup');   // first-sight: the first card screen explains itself
+}
+function pickCard(i) {
+  const choice = levelChoices[i];
+  if (!choice || G.state !== 'levelup') return;
+  choice.apply();
+  pendingLevels--;
+  document.getElementById('levelupScreen').classList.add('hidden');
+  renderPowerSlots();
+  if (pendingLevels > 0) { openLevelUp(); return; }
+  G.state = 'playing';
+  Teach.fire('grace', player.x, player.y);   // first-sight: the grace shield, explained once
+  // POST-PICK GRACE (playtest bug): the moment play resumes, the swarm does
+  // not get a free hit for the crime of reading a card. For ~1.5s the ghosts
+  // HOLD (no steering, no contact) and Pac is untouchable — ringed on screen
+  // so the player can see the window and plan their first move inside it.
+  player.graceT = 1.5;
+  player.invulnUntil = Math.max(player.invulnUntil, G.time + 1.5);
+  floater(player.x, player.y - 38, 'GRACE!', '#9df2ff');
 }
 
 // ---------------- Run management ----------------
@@ -566,11 +936,13 @@ function resetGame() {
   player.comboWindow = 2.3; player.eatBonus = 0;
   player.powers = []; player.activePower = 0;
   player.dashT = 0; player.dashCd = 0; player.eatT = 0; player.eatChain = 0;
+  player.shiftCd = 0; player.freezeT = 0; player.shiftCdMax = SHIFT_CD;
+  player.graceT = 0;
   player.invulnUntil = -1;
   dots = []; pellets = []; fruits = []; ghosts = []; trail = []; particles = []; floaters = [];
-  pelletTimer = 9; fruitTimer = 22; ghostTimer = 0; dotTimer = 0; surgeTimer = 55;
+  pelletTimer = 9; fruitTimer = 22; ghostTimer = 0; dotTimer = 0; surgeTimer = 55; patternTimer = 2;
   pendingLevels = 0;
-  for (let i = 0; i < 10; i++) spawnDotCluster();
+  for (let i = 0; i < 80 && dots.length < 380; i++) spawnDotCluster();
   for (let i = 0; i < 4; i++) spawnGhost(GHOST_TYPES[i]);
   renderPowerSlots();
   updateHUD(true);
@@ -643,6 +1015,26 @@ function ghostTarget(g, frameChaser) {
 function update(dt) {
   G.time += dt;
 
+  // ---- Time Shift freeze: the world holds its breath ----
+  // While frozen, only Pac's own drift is integrated — the swarm, the spawn
+  // clocks, the timers and the combo all wait. This is the escape window.
+  if (player.shiftCd > 0) player.shiftCd -= dt;
+  if (player.graceT > 0) player.graceT -= dt;
+  if (G.wantShift) {
+    G.wantShift = false;
+    if (player.shiftCd <= 0 && player.freezeT <= 0) doTimeShift();
+  }
+  if (player.freezeT > 0) {
+    player.freezeT -= dt;
+    player.x = wrapPos(player.x + player.vx * dt, WORLD_W);
+    player.y = wrapPos(player.y + player.vy * dt, WORLD_H);
+    const slidF = pushOutWalls(player.x, player.y, player.r);
+    player.x = slidF.x; player.y = slidF.y;
+    player.chomp += dt * 6;
+    if (G.toastT > 0) { G.toastT -= dt; if (G.toastT <= 0) document.getElementById('toast').style.opacity = '0'; }
+    return;
+  }
+
   // ---- combo decay ----
   if (player.comboTimer > 0) {
     player.comboTimer -= dt;
@@ -668,7 +1060,7 @@ function update(dt) {
     touchDashQueued = false;
     player.dashT = 0.16 + 0.03 * (dashPow.lvl - 1);
     player.dashCd = 2.6 * Math.pow(0.72, dashPow.lvl - 1);
-    if (ilen > 0.01) { player.dashDirX = ix; player.dashDirY = iy; }
+    if (ilen > 0.01) { player.dashDirX = ix / ilen; player.dashDirY = iy / ilen; }
     else { player.dashDirX = Math.cos(player.angle); player.dashDirY = Math.sin(player.angle); }
     Snd.dash();
   }
@@ -688,6 +1080,11 @@ function update(dt) {
   }
   player.x = wrapPos(player.x + player.vx * dt, WORLD_W);
   player.y = wrapPos(player.y + player.vy * dt, WORLD_H);
+  { // maze walls: push out along the axis of least penetration — Pac slides
+    // along walls instead of sticking to them
+    const slid = pushOutWalls(player.x, player.y, player.r);
+    player.x = slid.x; player.y = slid.y;
+  }
   const spd = Math.hypot(player.vx, player.vy);
   if (spd > 12) player.angle = Math.atan2(player.vy, player.vx);
   player.chomp += dt * (6 + spd * 0.045);
@@ -717,6 +1114,8 @@ function update(dt) {
   // ---- spawns ----
   dotTimer -= dt;
   if (dotTimer <= 0) { dotTimer = 0.7; if (dots.length < DOT_TARGET) for (let i = 0; i < 3; i++) spawnDotCluster(); }
+  patternTimer -= dt;
+  if (patternTimer <= 0) { patternTimer = PATTERN_INTERVAL; spawnDotPattern(); }
   pelletTimer -= dt;
   if (pelletTimer <= 0) { pelletTimer = PELLET_INTERVAL; if (pellets.length < 2) spawnPellet(); }
   fruitTimer -= dt;
@@ -758,13 +1157,44 @@ function update(dt) {
   const eatR = player.r + player.chompBonus;
   for (let i = dots.length - 1; i >= 0; i--) {
     const d = dots[i];
+    // moving formations: advance the dot along its pattern's flow
+    if (d.pat) {
+      const p = d.pat;
+      p.t += dt;
+      if (p.t >= p.dur) { dots.splice(i, 1); continue; }   // the formation disperses on schedule
+      let nx, ny;
+      if (p.kind === 'river') {
+        // the river's anchor flows along its heading; each dot rides a slot
+        // behind the anchor with a sine wobble across the current. The anchor
+        // is shared state on every dot of the formation — the first dot to
+        // update each frame advances it, the rest read it (t already moved).
+        const ca = Math.cos(p.ang), sa = Math.sin(p.ang);
+        const sAxis = p.t * 62 - (p.i - p.n / 2) * 14;
+        const wob = Math.sin(p.t * 2 + p.i * 0.7) * 22;
+        const sx = p.cx + ca * sAxis - sa * wob, sy = p.cy + sa * sAxis + ca * wob;
+        // if the current runs into a wall, this dot dissolves on the rocks
+        if (circleHitsWall(sx, sy, 6)) { dots.splice(i, 1); continue; }
+        nx = sx; ny = sy;
+      } else if (p.kind === 'ring') {
+        const a = p.ang + p.t * 0.55 + (p.i / p.n) * TAU;
+        const R = 86 + 26 * Math.sin(p.t * 0.8);
+        nx = p.cx + Math.cos(a) * R; ny = p.cy + Math.sin(a) * R;
+      } else { // spiral
+        const a = p.ang + p.t * 0.9 + p.i * 0.62;
+        const R = 16 + p.i * 6.5 + 8 * Math.sin(p.t + p.i);
+        nx = p.cx + Math.cos(a) * R; ny = p.cy + Math.sin(a) * R;
+      }
+      if (p.kind !== 'river' && circleHitsWall(nx, ny, 6)) { dots.splice(i, 1); continue; }
+      d.x = wrapPos(nx, WORLD_W); d.y = wrapPos(ny, WORLD_H);
+    }
     const dx = wrapDelta(player.x - d.x, WORLD_W);
     const dy = wrapDelta(player.y - d.y, WORLD_H);
     const dist = Math.hypot(dx, dy);
     if (dist < magnetR && dist > 1) {
       const pull = magnetPull * dt;
-      d.x = wrapPos(d.x + (dx / dist) * Math.min(pull, dist), WORLD_W);
-      d.y = wrapPos(d.y + (dy / dist) * Math.min(pull, dist), WORLD_H);
+      const mx = wrapPos(d.x + (dx / dist) * Math.min(pull, dist), WORLD_W);
+      const my = wrapPos(d.y + (dy / dist) * Math.min(pull, dist), WORLD_H);
+      if (!circleHitsWall(mx, my, d.r)) { d.x = mx; d.y = my; }   // the magnet never drags food into a wall
     }
     if (dist < eatR + d.r) {
       dots.splice(i, 1);
@@ -789,6 +1219,7 @@ function update(dt) {
       player.eatChain = 0;
       Snd.sirenStart();
       toast('EAT MODE!');
+      Teach.fire('eatmode', player.x, player.y);   // first-sight: the hunt flips
       burst(pl.x, pl.y, '#4db2ff', 18);
     }
   }
@@ -802,16 +1233,17 @@ function update(dt) {
       const dx = wrapDelta(player.x - f.x, WORLD_W), dy = wrapDelta(player.y - f.y, WORLD_H);
       const dist = Math.hypot(dx, dy);
       if (dist < magnetR && dist > 1) {
-        f.x = wrapPos(f.x + (dx / dist) * magnetPull * dt, WORLD_W);
-        f.y = wrapPos(f.y + (dy / dist) * magnetPull * dt, WORLD_H);
+        const fx = wrapPos(f.x + (dx / dist) * magnetPull * dt, WORLD_W);
+        const fy = wrapPos(f.y + (dy / dist) * magnetPull * dt, WORLD_H);
+        if (!circleHitsWall(fx, fy, 10)) { f.x = fx; f.y = fy; }
       }
     }
     if (tDist(f.x, f.y, player.x, player.y) < eatR + 12) {
+      // fruit heals — exactly the HP on its label, nothing else (v2 rule)
       fruits.splice(i, 1);
-      G.score += f.kind.score * comboMult;
-      gainXP(f.kind.xp);
-      player.hp = Math.min(player.maxHp, player.hp + 8);
-      floater(f.x, f.y - 18, f.kind.name + ' +' + f.kind.xp + ' XP', '#7dff8a');
+      const healed = Math.min(f.kind.heal, player.maxHp - player.hp);
+      player.hp += healed;
+      floater(f.x, f.y - 18, f.kind.name + ' +' + healed + ' HP', '#7dff8a');
       Snd.fruit();
       burst(f.x, f.y, f.kind.color, 12);
     }
@@ -836,6 +1268,11 @@ function update(dt) {
   for (const g of ghosts) {
     if (!g.alive) continue;
     if (g.touchCd > 0) g.touchCd -= dt;
+    // post-pick grace: ghosts are HELD, full stop — no steering, no contact,
+    // and no side effects either (a ghost standing in a fire trail does not
+    // burn down during the planning window; the field the player read when
+    // they picked their card is the field they return to)
+    if (player.graceT > 0) continue;
     // wildcard re-rolls its behaviour
     if (g.type === 'wildcard') {
       g.modeT -= dt;
@@ -892,8 +1329,17 @@ function update(dt) {
         }
       }
     }
-    g.x = wrapPos(g.x + g.vx * dt, WORLD_W);
-    g.y = wrapPos(g.y + g.vy * dt, WORLD_H);
+    { // maze walls: a ghost that would enter a wall first tries sliding along
+      // it (keep the velocity component parallel to the wall); if the slide
+      // also fails — a corner — it stops and lets next frame's steering pick
+      // the way around. Steering + slide reads as routing, not pathfinding.
+      const nx = wrapPos(g.x + g.vx * dt, WORLD_W);
+      const ny = wrapPos(g.y + g.vy * dt, WORLD_H);
+      if (!circleHitsWall(nx, ny, g.r * 0.8)) { g.x = nx; g.y = ny; }
+      else if (!circleHitsWall(nx, g.y, g.r * 0.8)) { g.x = nx; g.vy *= 0.4; }
+      else if (!circleHitsWall(g.x, ny, g.r * 0.8)) { g.y = ny; g.vx *= 0.4; }
+      else { g.vx *= 0.4; g.vy *= 0.4; }
+    }
 
     // ---- contact with player ----
     const distP = tDist(g.x, g.y, player.x, player.y);
@@ -933,6 +1379,10 @@ function update(dt) {
   }
   if (G.shake > 0) G.shake = Math.max(0, G.shake - dt * 26);
   if (G.toastT > 0) { G.toastT -= dt; if (G.toastT <= 0) document.getElementById('toast').style.opacity = '0'; }
+
+  // ---- first-sight scan (before the level-up handoff, so a lesson about
+  // something on screen never queues behind the card screen) ----
+  Teach.scan();
 
   // ---- level up? ----
   if (pendingLevels > 0 && G.state === 'playing') openLevelUp();
@@ -1029,6 +1479,27 @@ function render() {
   for (let y = offY; y <= VH; y += grid) { ctx.moveTo(0, y); ctx.lineTo(VW, y); }
   ctx.stroke();
 
+  // maze walls (v2) — neon slabs on the dark: bright edge, deep face. Drawn
+  // through the same wrap-aware projection as everything else, with the
+  // ±world offsets so a wall crossing an edge renders on both sides.
+  for (const w of WALLS) {
+    for (let ox = -1; ox <= 1; ox++) {
+      for (let oy = -1; oy <= 1; oy++) {
+        const sx = VW / 2 + wrapDelta(w.x + ox * WORLD_W - player.x, WORLD_W);
+        const sy = VH / 2 + wrapDelta(w.y + oy * WORLD_H - player.y, WORLD_H);
+        if (!onScreen(sx, sy, Math.max(w.w, w.h) / 2 + 40)) continue;
+        const rx = sx - w.w / 2, ry = sy - w.h / 2;
+        ctx.fillStyle = '#131a3d';
+        ctx.fillRect(rx, ry, w.w, w.h);
+        ctx.fillStyle = 'rgba(90,120,255,0.20)';
+        ctx.fillRect(rx + 3, ry + 3, w.w - 6, w.h - 6);
+        ctx.strokeStyle = '#5f7dff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(rx + 1, ry + 1, w.w - 2, w.h - 2);
+      }
+    }
+  }
+
   // fire trail (under everything else)
   for (const s of trail) {
     const sx = SX(s.x), sy = SY(s.y);
@@ -1115,6 +1586,23 @@ function render() {
     ctx.fillStyle = 'rgba(255,255,255,0.35)';
     ctx.beginPath(); ctx.arc(px - 4, py - 6, 4.4, 0, TAU); ctx.fill();
   }
+  // post-pick grace: a shield ring the player can read at a glance, with the
+  // seconds left printed on it — this window is for planning, not panicking
+  if (player.graceT > 0 && G.state === 'playing') {
+    const gr = player.r + player.chompBonus * 0.4 + 9 + Math.sin(animT * 8) * 2;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(157,242,255,0.9)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(px, py, gr, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = 'rgba(157,242,255,0.35)';
+    ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(px, py, gr, -Math.PI / 2, -Math.PI / 2 + TAU * clamp(player.graceT / 1.5, 0, 1)); ctx.stroke();
+    ctx.font = '800 11px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#9df2ff';
+    ctx.fillText('GRACE ' + player.graceT.toFixed(1), px, py - gr - 8);
+    ctx.restore();
+  }
 
   // floaters
   ctx.textAlign = 'center';
@@ -1126,14 +1614,115 @@ function render() {
     ctx.fillText(f.text, sx, sy);
   }
   ctx.globalAlpha = 1;
+
+  // first-sight highlight: a pulsing ring on the thing being taught
+  if (Teach.active && Teach.active.ax !== null) {
+    const sx = SX(Teach.active.ax), sy = SY(Teach.active.ay);
+    const rr = 30 + Math.sin(animT * 6) * 5;
+    ctx.strokeStyle = 'rgba(255,233,59,0.35)';
+    ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.arc(sx, sy, rr + 5, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = '#ffe93b';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(sx, sy, rr, 0, TAU); ctx.stroke();
+  }
   ctx.restore();
 
   // eat-mode tint + vignette
   if (player.eatT > 0) {
     ctx.fillStyle = 'rgba(40,80,255,0.07)';
     ctx.fillRect(0, 0, VW, VH);
+    drawGhostRadar();
+  }
+  if (player.freezeT > 0) {
+    // Time Shift: the held breath — cold wash + hard vignette while time waits
+    ctx.fillStyle = 'rgba(120,200,255,0.10)';
+    ctx.fillRect(0, 0, VW, VH);
   }
   if (vignette) ctx.drawImage(vignette, 0, 0, VW, VH);
+  drawStick();
+}
+// the touch stick, drawn in screen space over everything: base ring where the
+// thumb landed, knob where it is now — the player can SEE the stick they feel
+function drawStick() {
+  if (!stick) return;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 2;
+  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  ctx.beginPath(); ctx.arc(stick.baseX, stick.baseY, STICK_R, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,255,255,0.38)';
+  ctx.beginPath(); ctx.arc(stick.knobX, stick.knobY, 26, 0, TAU); ctx.fill();
+  ctx.restore();
+}
+
+// ---------------- Eat-mode ghost radar (v2) ----------------
+// While EAT MODE runs, edible ghosts off-screen get an arrow pinned to the
+// screen edge pointing straight at them (nearest 8), and the nearest ghost
+// also gets a pulsing ring in the corner readout with its distance — so the
+// hunt is efficient before the timer dies. Nearest targets only: the arrows
+// answer "which way do I run?", which is the whole question in eat mode.
+function radarTargets() {
+  const list = [];
+  for (const g of ghosts) {
+    if (!g.alive) continue;
+    const dx = wrapDelta(g.x - player.x, WORLD_W);
+    const dy = wrapDelta(g.y - player.y, WORLD_H);
+    list.push({ dx, dy, d: Math.hypot(dx, dy), elite: !!g.elite });
+  }
+  list.sort((a, b) => a.d - b.d);
+  return list;
+}
+function drawGhostRadar() {
+  const list = radarTargets();
+  if (!list.length) return;
+  const m = 26;   // screen-edge margin the arrows ride on
+  let shown = 0;
+  for (const t of list) {
+    const sx = VW / 2 + t.dx, sy = VH / 2 + t.dy;
+    if (sx > -20 && sx < VW + 20 && sy > -20 && sy < VH + 20) continue;   // already visible
+    if (shown >= 8) break;
+    shown++;
+    const ang = Math.atan2(t.dy, t.dx);
+    const cx = clamp(sx, m, VW - m), cy = clamp(sy, m, VH - m);
+    const pulse = 1 + 0.18 * Math.sin(animT * 9);
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(ang);
+    ctx.scale(pulse, pulse);
+    ctx.fillStyle = t.elite ? '#ffd93b' : '#4db2ff';
+    ctx.strokeStyle = 'rgba(6,10,30,0.85)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(13, 0); ctx.lineTo(-8, -9); ctx.lineTo(-3.5, 0); ctx.lineTo(-8, 9);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.restore();
+  }
+  // corner readout: nearest ghost + how far
+  const n0 = list[0];
+  const rx = VW - 118, ry = 92, rw = 104, rh = 46;
+  ctx.save();
+  ctx.fillStyle = 'rgba(6,8,28,0.66)';
+  ctx.strokeStyle = 'rgba(77,178,255,0.65)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(rx, ry, rw, rh, 9); else ctx.rect(rx, ry, rw, rh);
+  ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(77,178,255,0.35)';
+  ctx.beginPath(); ctx.arc(rx + 23, ry + 23, 15, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.arc(rx + 23, ry + 23, 8, 0, TAU); ctx.stroke();
+  const ba = Math.atan2(n0.dy, n0.dx);
+  ctx.fillStyle = '#4db2ff';
+  ctx.beginPath(); ctx.arc(rx + 23 + Math.cos(ba) * 11, ry + 23 + Math.sin(ba) * 11, 3.4, 0, TAU); ctx.fill();
+  ctx.beginPath(); ctx.arc(rx + 23, ry + 23, 2.2, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#cfeaff';
+  ctx.font = '800 15px "Segoe UI", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(Math.round(n0.d) + 'm', rx + 46, ry + 29);
+  ctx.fillStyle = '#8fa2ff';
+  ctx.font = '700 8.5px "Segoe UI", sans-serif';
+  ctx.fillText('NEAREST GHOST', rx + 46, ry + 14);
+  ctx.restore();
 }
 
 // ---------------- HUD ----------------
@@ -1144,6 +1733,8 @@ const el = {
   combo: document.getElementById('comboText'), comboFill: document.getElementById('comboFill'),
   best: document.getElementById('bestText'), eaten: document.getElementById('eatenText'),
   eatBanner: document.getElementById('eatBanner'), powers: document.getElementById('powers'),
+  shift: document.getElementById('shiftText'), shiftFill: document.getElementById('shiftFill'),
+  shiftBtn: document.getElementById('shiftBtn'),
   debug: document.getElementById('debugState')
 };
 function updateHUD(force) {
@@ -1160,6 +1751,15 @@ function updateHUD(force) {
   el.eatBanner.style.display = player.eatT > 0 ? 'block' : 'none';
   if (el.eatBanner.style.display === 'block') {
     el.eatBanner.textContent = 'EAT MODE! ' + player.eatT.toFixed(1);
+  }
+  // Time Shift readiness: label counts down, bar refills, button lights up
+  if (el.shift) {
+    const ready = player.shiftCd <= 0;
+    el.shift.textContent = ready ? 'READY — E' : player.shiftCd.toFixed(1) + 's';
+    el.shift.style.color = ready ? '#9df2ff' : '';
+    if (el.shiftFill) el.shiftFill.style.transform =
+      'scaleX(' + clamp(1 - Math.max(0, player.shiftCd) / player.shiftCdMax, 0, 1) + ')';
+    if (el.shiftBtn) { if (ready) el.shiftBtn.classList.add('ready'); else el.shiftBtn.classList.remove('ready'); }
   }
   // dash cooldown sliver on the dash slot
   const dashIdx = player.powers.findIndex((p) => p.id === 'dash');
@@ -1199,7 +1799,31 @@ function toggleMute() {
   Save.write(true);        // settings persist immediately
 }
 function togglePause() {
-  if (G.state === 'playing') { G.state = 'paused'; document.getElementById('pauseScreen').classList.remove('hidden'); }
+  if (G.state === 'playing') {
+    G.state = 'paused';
+    // session view (DESIGN.md, "The pause window"): ONLY what this run has
+    // unlocked and explored — the powers actually held, the stats actually
+    // pumped. The full 13-tree ring doesn't exist in code yet, so unexplored
+    // trees render nothing at all, per the fog rule.
+    const ps = document.getElementById('pauseStats');
+    if (ps) {
+      const lines = [];
+      lines.push('Level <b>' + player.level + '</b> &nbsp;•&nbsp; Score <b>' + Math.floor(G.score).toLocaleString() + '</b>' +
+        ' &nbsp;•&nbsp; Survived <b>' + fmtTime(G.time) + '</b> &nbsp;•&nbsp; Ghosts eaten <b>' + G.eaten + '</b>');
+      if (player.powers.length) {
+        lines.push('Powers held: ' + player.powers.map((p) =>
+          POWER_DEFS[p.id].icon + ' <b>' + POWER_DEFS[p.id].name + '</b> Lv' + p.lvl).join(' &nbsp;•&nbsp; '));
+      } else {
+        lines.push('Powers held: none yet — eat a ghost in EAT MODE or take a skill card.');
+      }
+      lines.push('Move speed <b>' + Math.round(272 * player.speedMul) + '</b> &nbsp;•&nbsp; Max HP <b>' + player.maxHp + '</b>' +
+        ' &nbsp;•&nbsp; Magnet <b>' + Math.round(player.magnetR) + '</b> &nbsp;•&nbsp; Chomp <b>+' + player.chompBonus + '</b>' +
+        ' &nbsp;•&nbsp; Eat Mode <b>' + (6 + player.eatBonus).toFixed(1) + 's</b>' +
+        ' &nbsp;•&nbsp; Time Shift <b>' + (player.shiftCd <= 0 ? 'READY' : player.shiftCd.toFixed(1) + 's') + '</b>');
+      ps.innerHTML = lines.join('<br>');
+    }
+    document.getElementById('pauseScreen').classList.remove('hidden');
+  }
   else if (G.state === 'paused') { G.state = 'playing'; document.getElementById('pauseScreen').classList.add('hidden'); }
 }
 function beginRun() {
@@ -1234,6 +1858,10 @@ function resetSave() {
   updateHUD(true);
 }
 document.getElementById('muteBtn').addEventListener('click', () => { Snd.init(); toggleMute(); });
+// always-visible pause (owner rule): on-screen on every platform, not
+// keyboard-only — thumb-sized, parked beside the mute button
+document.getElementById('pauseBtn').addEventListener('click', () => { Snd.init(); togglePause(); });
+document.getElementById('teachTip').addEventListener('click', () => Teach.dismiss());
 document.getElementById('startBtn').addEventListener('click', () => {
   if (performance.now() - (Intro.endedAt || 0) < 400) return;   // the skip click must not also start the run
   Snd.init();
@@ -1493,7 +2121,10 @@ function endIntro() {
     document.getElementById('startScreen').classList.remove('hidden');
   }
 }
-window.addEventListener('pointerdown', () => { if (G.state === 'intro') endIntro(); });
+window.addEventListener('pointerdown', () => {
+  if (Teach.active) { Teach.dismiss(); return; }   // a tap/click anywhere dismisses a first-sight lesson
+  if (G.state === 'intro') endIntro();
+});
 canvas.addEventListener('touchstart', () => { if (G.state === 'intro') endIntro(); }, { passive: true });
 
 // ---- intro drawing helpers ----
@@ -2389,6 +3020,7 @@ function drawChromeFigure(x, groundY, h, scan) {
 // ---------------- Main loop ----------------
 const TEST_MODE = new URLSearchParams(window.location.search).get('test') === '1';
 const INTRO_TEST = new URLSearchParams(window.location.search).get('test') === 'intro';
+if (TEST_MODE || INTRO_TEST) TEACH_LIVE = false;   // scripted runs are never frozen by a lesson
 let lastTs = 0, saveTimer = 0;
 function frame(ts) {
   requestAnimationFrame(frame);
@@ -2404,9 +3036,12 @@ function frame(ts) {
     Intro.render();
   } else {
     if (G.state === 'playing') {
-      update(dt);
-      saveTimer += dt;
-      if (saveTimer >= 15) { saveTimer = 0; Save.write(true); }   // periodic mid-run save
+      // a first-sight lesson freezes the world until it is dismissed
+      if (!Teach.active) {
+        update(dt);
+        saveTimer += dt;
+        if (saveTimer >= 15) { saveTimer = 0; Save.write(true); }   // periodic mid-run save
+      }
     }
     render();
   }
@@ -2420,6 +3055,8 @@ function frame(ts) {
       el.debug.textContent = 'TEST state=' + G.state + ' t=' + G.time.toFixed(1) +
         ' score=' + Math.floor(G.score) + ' ghosts=' + ghosts.filter((g) => g.alive).length +
         ' dots=' + dots.length + ' hp=' + Math.ceil(player.hp) + ' lv=' + player.level +
+        ' eatT=' + player.eatT.toFixed(1) + ' shiftCd=' + player.shiftCd.toFixed(1) +
+        ' frz=' + player.freezeT.toFixed(2) + ' walls=' + WALLS.length +
         ' save=' + saveFlag +
         (G.state === 'intro' ? ' introBeat=' + Intro.beatName() + ' introT=' + Intro.t.toFixed(1) : '');
     }
@@ -2429,7 +3066,12 @@ function frame(ts) {
 // boot: the intro is the first thing that loads; the menu waits behind it
 resetGame();
 refreshSaveLine();
-window.PAC_DEBUG = { G, Intro };
+window.PAC_DEBUG = { G, Intro, player, Save, Teach, beginRun, buildChoices, pickCard, computeStick, togglePause,
+  get choices() { return levelChoices; },
+  doTimeShift, requestShift,
+  radarTargets, isWallAt, circleHitsWall, WALLS,
+  get dots() { return dots; }, get fruits() { return fruits; },
+  get ghosts() { return ghosts; }, get pellets() { return pellets; } };
 if (TEST_MODE) {
   G.state = 'menu';
   document.getElementById('startScreen').classList.add('hidden');
