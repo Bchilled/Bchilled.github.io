@@ -11,7 +11,22 @@ Open `index.html` in any modern browser, or serve the folder:
 python3 -m http.server 8077   # then visit http://localhost:8077/
 ```
 
-Click **START**. (Add `?test=1` to the URL for an auto-playing smoke-test mode.)
+The **intro plays first** (see below), then click **START**. (Add `?test=1` to
+the URL for an auto-playing smoke-test mode, or `?test=intro` to watch the
+intro accelerated with an auto-start at the end.)
+
+## The intro
+
+The canonical 15-beat intro from `INTRO.md` plays before the menu — ~97
+seconds, deliberately unhurried: spotlight and story crawl, the Emperor's
+"DO IT.", Bomberguy blowing up an arcade-booth planet with the Death Star,
+Pac eating the crawl row by row while the narrator gives up mid-word and Pac
+grows per row, Pac eating the whole Death Star, the burp, the fart-powered
+black-hole exit, the Q-Wing vow, the Legendary Salty Dawg Saloon, the chrome
+assassin snack, the T2 walk — then the title card: **PAC — JUDGEMENT DAY**.
+**Skip anytime** with a click, any key, or a tap; the start menu follows.
+Intro sounds use the same WebAudio synth and stay silent until the browser
+allows audio (first interaction), respecting the saved mute setting.
 
 ## Controls
 

@@ -31,3 +31,15 @@ Every beat breathes. This is the first thing that loads.
 15. **TITLE: PAC — JUDGEMENT DAY.** Then the menu.
 
 Any build of this sequence that drops, reorders, or rushes a beat is wrong.
+
+## Production rule (owner, 2026-10-20)
+- STYLE reference = the FIRST animated take: hand-drawn pencil on notebook paper,
+  exactly that medium. SCRIPT = this file, beat for beat, directed as written.
+- NO improvisation: no invented beats, no substituted gags. If it isn't in this
+  file, it isn't in the intro.
+
+## Presentation: comic windows (owner, 2026-10-20)
+- The intro — and every cutscene — plays as a COMIC on the notebook paper: framed
+  panels with gutters, beats advancing panel to panel, phrases set as narration
+  boxes and speech bubbles. The page-turn IS the transition. Same canon beats,
+  same unhurried spacing — now they land like panels, not footage.

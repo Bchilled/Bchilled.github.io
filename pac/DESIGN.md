@@ -405,3 +405,10 @@ element is a different build toy.
   locked heroes shown as SILHOUETTES with lock symbols — you can see the shape of
   who you're hunting (and roughly who it is), never the details. The select screen
   is the collection's shop window: every silhouette is a promise.
+
+### Voice dial: full Duke (owner, 2026-10-20)
+- Pac's mouth goes FULL DUKE NUKEM — risqué bravado, innuendo everywhere, the
+  pellet jokes write themselves and we let them. One-liners fire on eats, Feasts,
+  captures, near-deaths, boss arrivals: "Hail to the chomp, baby." "I've got
+  pellets of steel." Ghosts get flirted with before they're eaten. The humour is
+  adult, confident, and constant — innuendo and attitude, wall to wall.
