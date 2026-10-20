@@ -1,0 +1,103 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAC Wiki — Mechanics</title><style>
+*{box-sizing:border-box} body{margin:0;background:#20242e;font-family:Georgia,'Times New Roman',serif;color:#2a2118}
+.paper{max-width:980px;margin:0 auto;background:#f6f2e6;background-image:repeating-linear-gradient(to bottom,transparent 0 26px,rgba(120,150,200,.25) 26px 27px);padding:18px 20px 40px;min-height:100vh;box-shadow:0 0 40px rgba(0,0,0,.5)}
+nav{position:sticky;top:0;background:#f6f2e6;border:2px solid #222;border-radius:3px 8px 4px 9px/8px 4px 9px 3px;padding:8px 10px;margin-bottom:16px;z-index:5}
+nav a{color:#7a2d00;font-weight:bold;text-decoration:none;margin-right:12px;font-size:14px;white-space:nowrap}
+nav a:hover{text-decoration:underline}
+h1{font-size:30px;letter-spacing:1px;margin:6px 0} h2{font-size:22px;border-bottom:2px solid #222;padding-bottom:4px;margin-top:28px} h3{font-size:17px;margin-top:20px}
+p,li{font-size:15.5px;line-height:1.55} ul{padding-left:22px} table{border-collapse:collapse;width:100%;margin:10px 0;background:rgba(255,253,244,.75)}
+th,td{border:1.5px solid #444;padding:6px 8px;font-size:14px;text-align:left;vertical-align:top} th{background:#ffe9a8}
+.badge{display:inline-block;font-size:11px;font-weight:bold;letter-spacing:.5px;padding:2px 7px;border:1.5px solid #222;border-radius:8px 2px 8px 2px;vertical-align:middle}
+.canon{background:#bfe8bf}.draft{background:#ffd94d}.tbd{background:#ffb3c0}
+.card{border:2px solid #222;border-radius:2px 7px 3px 8px/7px 3px 8px 2px;background:#fffdf4;padding:10px 14px;margin:12px 0}
+footer{margin-top:34px;border-top:2px dashed #666;padding-top:10px;font-size:12.5px;color:#5a4a30;line-height:1.5}
+input#filter{width:100%;font-size:17px;padding:10px;border:2px solid #222;border-radius:6px 2px 7px 3px;background:#fffdf4;font-family:inherit}
+.names{columns:2;column-gap:28px;font-size:14.5px;line-height:1.7} @media(max-width:600px){.names{columns:1} h1{font-size:24px}}
+.names div{break-inside:avoid} .small{font-size:13px;color:#5a4a30} a{color:#7a2d00}
+</style></head><body><div class="paper"><nav><a href="index.html">🏠 Home</a><a href="stats.html">📊 Stats &amp; Runes</a><a href="mechanics.html">🎡 Mechanics</a><a href="economies.html">🪙 Economies</a><a href="characters.html">🦸 Characters</a><a href="worlds.html">🍕 Worlds</a><a href="bosses.html">👹 Bosses</a><a href="ghosts.html">👻 Ghosts</a></nav>
+<h1>🎡 Mechanics</h1>
+<h2>The spins <span class="badge canon">CANON</span></h2>
+<ul>
+<li><b>Level 1:</b> the first ability chart <b>spins and lands somewhere — you pick from that 1</b>.</li>
+<li><b>Level 2:</b> the second spin lands <b>1 away</b> from that, on one side or the other — <b>±1, 50/50</b> which side.</li>
+<li><b>Level 3:</b> the spin lands <b>opposite</b> those — 3 choices opposite.</li>
+</ul>
+<p>Because the spins walk neighbours and then jump opposite, each stat is placed strategically on the pie, separated by opposing strengths and builds (MTG colour wheel as the placement model).</p>
+<h2>The ladder — the setup for every new character <span class="badge canon">CANON</span></h2>
+<table><tr><th>Level</th><th>What you get</th></tr>
+<tr><td>1–3</td><td>Skills only — each pick narrows the path; choosing is committing. First levels are <b>curated</b>.</td></tr>
+<tr><td>4</td><td><b>The Bank</b> — save a power-up and use it later, on demand. Bank capacity: <b>3 abilities</b> (cap 3).</td></tr>
+<tr><td>5</td><td><b>Weapon choice</b> — the Arsenal opens; you pick a weapon.</td></tr>
+<tr><td>6</td><td><b>A stone + the Ape</b> — an Infinity Stone of your choice, and the first mini-boss waits at the same gate (see <a href="bosses.html">Bosses</a>).</td></tr></table>
+<p>After the curated first levels, it's <b>random rolls</b>: abilities, ranks, stats, buffs, small increases, currency — things should always roll and spin the Pac. Level-up offers are always a <b>mix</b> — abilities, buffs, stats, and resources themselves, never ability-only.</p>
+<h2>The run arc &amp; the Aggressor Law <span class="badge canon">CANON</span></h2>
+<p>A run goes from <b>surviving</b> — running, baiting, fighting small battles, being defensive — to <b>feeling aggressive</b>. The flip is the arc. The <b>Aggressor Law</b> (from the owner's playtest): the player must feel like the predator in the maze, not the prey — any tuning state where a run degrades into fleeing is a tuning failure. Pressure rises, and the player's hunting tools (eat windows, scatters, offence) rise with it. The swarm starts few and much slower; speed and numbers climb together until the screen is a storm.</p>
+<h2>Difficulty <span class="badge canon">CANON</span></h2>
+<table><tr><th>Easy</th><td>3 lives</td></tr><tr><th>Medium</th><td>1 life</td></tr><tr><th>Hard</th><td><b>Hardcore</b> — you die once, your character is gone</td></tr></table>
+<h2>Levels: time limits &amp; Endless <span class="badge canon">CANON</span></h2>
+<p>Levels have <b>time limits</b>, walls, and areas to explore. Once a level's boss is defeated, that level gains an <b>Endless option</b> — endless is unlocked per level, by that level's boss kill. A win = killing the level boss; levels clear in order, no skipping. Bosses spawn when the game math judges your build strong enough — and refusing a boss backfires: he becomes a spawner and his escalation timer runs amplified.</p>
+<h2>Unlock flow <span class="badge canon">CANON</span></h2>
+<ol>
+<li><b>Explore their zone</b> — you don't get access to unlock a hero unless you explore their zone…</li>
+<li>…<b>defeat them and the bosses</b>…</li>
+<li>…and then get a <b>chance to spin</b> to unlock the hero from that realm. Access is earned; the unlock itself still rolls — it's still always random.</li>
+</ol>
+<p>Each boss kill also grants 1 unlock drawn from that level's enemy roster (duplicates → shards). A spin can land on a <b>variant of a hero you already own</b> — variants of owned heroes are possible outcomes, not wasted spins. The pool is lifetime: everything you've ever unlocked stays unlocked.</p>
+<p><b>Distance pricing:</b> buying a hero in a far realm costs more — <b>+5 per distance</b>. (Ring costs also vary by rarity and distance — see <a href="economies.html">Economies</a>.)</p>
+<h2>Team Up <span class="badge canon">CANON</span></h2>
+<p>After <b>10 levels</b> you unlock <b>Team Up</b> and can <b>tag in a partner</b>. Team size: <b>max 3</b>. The team grows as it scales — scaling is parameterized, growing toward the max of 3.</p>
+<p><span class="badge tbd">UNCONFIRMED</span> A fragment — <i>“maybe every 25”</i> — was logged next to team-up timing. Its unit is unclear and it is <b>not ruled</b>. It is presented here as unconfirmed, not as a rule.</p>
+<h2>Resources — one per character <span class="badge canon">CANON</span></h2>
+<table><tr><th>Resource</th><th>Definition (owner's)</th></tr>
+<tr><td><b>Mana</b></td><td>Spells and costs</td></tr>
+<tr><td><b>Energy</b></td><td>Physical exertion</td></tr>
+<tr><td><b>Rage</b></td><td>Things that build up explosive, or feed off being hit</td></tr></table>
+<p><b>All characters only get 1</b> — each character has exactly one of the three, never all three. (INT grows the resources; Spirit/Resource Gain recovers them.) Cars have a resource of their own too: it ticks down while driven and refills slowly when parked.</p>
+<h2>Move abilities <span class="badge canon">CANON lists</span></h2>
+<p>Every character falls under the move abilities — nobody brings an eighth system — and a character's movement can be a <b>variation</b> of one and still fall under it (web-swinging is canonically a variation of Teleport). There is no universal dash: the movement verb is per-character (Nightcrawler teleports, Thor flies, Cap leaps, Cyclops climbs, Xavier's chair runs you over, Storm vanishes on the wind). Both lists were dictated as “7 different” and both arrived with eight names — the lists below are exactly as dictated.</p>
+<table><tr><th>Character move abilities (8)</th><th>Car movement abilities (8)</th><th>Relation</th></tr>
+<tr><td>Dash</td><td>Turbo</td><td>Counterpart (owner-stated)</td></tr>
+<tr><td>Jump</td><td>Leap</td><td>Counterpart (owner-stated, Leap~Jump)</td></tr>
+<tr><td>Fly</td><td>Fly</td><td>Identical (owner-stated shared)</td></tr>
+<tr><td>Climb</td><td>Cling</td><td>Counterpart — see flag below</td></tr>
+<tr><td>Teleport</td><td>— none in the car list —</td><td>Gap noted, not filled</td></tr>
+<tr><td>Smoke Bomb</td><td>Burn Rubber</td><td><span class="badge draft">DRAFT (assistant)</span> inference in MOVEMENT-RELATIONS.md</td></tr>
+<tr><td>Duplicate</td><td>Illusion</td><td><span class="badge draft">DRAFT (assistant)</span> inference</td></tr>
+<tr><td>Invisible</td><td>Invisible</td><td>Identical (owner-stated shared)</td></tr>
+<tr><td>—</td><td>Drift</td><td><span class="badge draft">DRAFT (assistant)</span> relation to Dash is inference</td></tr></table>
+<p><span class="badge tbd">TBD — NOT RULED</span> <b>Climb ↔ Cling:</b> the owner mused about <i>maybe</i> exchanging Climb on the character list for a web-sling/grappling-style effect — Cling. It is a proposal, not a ruling. Both lists stand exactly as dictated; this wiki files nothing either way.</p>
+<h2>Gear slots <span class="badge canon">CANON</span></h2>
+<p>Each character has: <b>Headpiece · Chest · Gloves · Weapon Arm 1 · Weapon Arm 2 · Legs · Boots · Neck · 2 Rings · Banner</b> (= guild). <b>Dual-wield is standard</b> — two weapon arms is the default loadout, not a perk. Separate from the gear slots, the + loadout is: orb, food, weapon, car, pet, shield, movement effect — one + slot per stat (see <a href="stats.html">Stats</a>). A shield <b>blocks</b> — weapon block % against physical, or spell block against spells — and blocking runs on the shield's own resource, which drains as it works. Fit-first: a shield carried as a weapon (the Captain's) files in the weapon slot; the shield slot is for shields that guard.</p>
+<h2>Socket capacities <span class="badge canon">CANON</span></h2>
+<table><tr><th>Item</th><th>Max sockets</th></tr>
+<tr><td>Helm (headpiece)</td><td><b>≤ 3</b></td></tr>
+<tr><td>Gloves</td><td><b>2</b></td></tr>
+<tr><td>Boots</td><td><b>2</b></td></tr>
+<tr><td>Pants (legs)</td><td><b>2</b></td></tr>
+<tr><td>Shirt (chest)</td><td><b>4</b></td></tr>
+<tr><td>Magic weapons</td><td><b>2</b></td></tr>
+<tr><td>Melee weapons</td><td><b>4</b></td></tr>
+<tr><td>Single-hand weapons</td><td><b>2</b></td></tr>
+<tr><td>Rings</td><td><b>CANNOT BE SLOTTED</b></td></tr>
+<tr><td>Amulets (neck)</td><td><b>CAN be slotted</b> — count <span class="badge tbd">TBD</span> (not stated by the owner)</td></tr></table>
+<p><b>Runes and stones are different systems:</b> runes = stat grants + hidden combo activations; stones = their own job — slice-colour buffs, socketed into mythic skills, mythic weapons, and movement effects. The two socketables are not interchangeable.</p>
+<p><b>Consequence:</b> max 4 sockets per item, so 5–7 rune activations span multiple worn pieces (worn sets), never one item.</p>
+<h2>Crafting <span class="badge canon">CANON</span></h2>
+<ul>
+<li><b>Materials</b> — metal, stone, wood and cloth can be found, and are used to <b>craft weapons</b>. Weapons have random stat variables based on type, a small % chance for rare abilities, and 3 qualities (Common, Rare, Mythic) like skills.</li>
+<li><b>Rare resources</b> — extremely rare drops — can be used to <b>craft stones</b>.</li>
+<li><b>Crafted slots + runes → hidden godly gear:</b> you can craft items to have slots, and combining the right runes into the right item activates hidden godly effects (see <a href="stats.html">Stats &amp; Runes</a>).</li>
+<li>Weapon access: most weapons can be equipped by most characters; some unlock with X points in that category. Weapon abilities unlock with <b>expertise</b> — use builds mastery, mastery opens the weapon's abilities.</li>
+</ul>
+<h2>The Darkhold, respec &amp; talent trees <span class="badge canon">CANON</span></h2>
+<ul>
+<li><b>Darkhold scrolls:</b> the Darkhold has rare spell scrolls — one-time uses. Some Darkhold spells are <b>enchantments</b> to skills or weapons. Some enchantments even <b>hurt yourself</b> — by design: they feed the big builds that want to take constant damage (rage feeds off being hit).</li>
+<li><b>Respec:</b> you can <b>pay to remove talents you locked in</b> — the persistent wallet buys shop goods or respecs.</li>
+<li><b>Talent trees:</b> each character has a talent tree with <b>3 paths</b>. Each character also gets a unique model, unique UI theme, unique skills, and shared commons (commons are shared; rares and mythics are fewer and bigger; a shared ability renamed/reflavoured still carries its <b>signal name</b> — the true function's name).</li>
+<li><b>Build Your Own Character</b> is bought with tickets — you pay for every move and everything; looks from a random generator or sliders. <span class="badge draft">DRAFT (assistant)</span> BYOC-PRICING-DRAFT.md proposes price ranges only — no BYOC number is canon until the owner sets it.</li>
+</ul>
+<p class="small">Also canon, briefly: EAT MODE (power pellets flip the hunt; chain 200/400/800/1600; ghosts scatter and Pac grows a size step on an orb), Time Shift (slip through an edge), the Feast, capture &amp; pets (weaken, throw a ball; pets/revives share the spare-body logic), Kirby's secret shop on every level (Yoshi sells gear legitimately — the item store itself is <span class="badge tbd">TBD</span>: the owner has not designed it), first-sight teaching tooltips, and the Aggressor Law above. Shops and store stock are not designed by the owner yet — nothing here invents them.</p>
+
+<footer><b>Sources:</b> FULL-SCOPE.md §§3–9, 21–41 (incl. socket capacities, runes-vs-stones); MOVEMENT-RELATIONS.md; BYOC-PRICING-DRAFT.md (DRAFT)<br><b>Status:</b> Canon mechanics; movement relations and BYOC pricing marked DRAFT, Climb↔Cling and “every 25” marked unconfirmed/TBD in place.<br>PAC Wiki — generated from the owner's design files in <code>~/workspace/pac</code>. Canon is the owner's; anything marked <span class="badge draft">DRAFT (assistant)</span> is a proposal until the owner rules, and <span class="badge tbd">TBD</span> means the owner has not decided it yet — it is not invented here.</footer>
+</div></body></html>
