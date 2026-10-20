@@ -1,0 +1,364 @@
+{
+  "_source": {
+    "table": {
+      "file": "pac/wiki/ghosts.html",
+      "repo": "Bchilled/Bchilled.github.io",
+      "commit": "4bbfc378e0ab4e1e3da6a32a0b1a4dcdddaedfaf",
+      "pageSaysSourcedFrom": "DESIGN-ghosts.md; FULL-SCOPE.md §36"
+    },
+    "chartRow": {
+      "file": "pac/charts/chart-data.json",
+      "repo": "Bchilled/Bchilled.github.io",
+      "commit": "4bbfc378e0ab4e1e3da6a32a0b1a4dcdddaedfaf",
+      "generatedFrom": "ALIGNMENT-7.md + SPOOF-NAMES.md via charts/gen_chart_data.py",
+      "key": "items[cat=Enemies, name=<Ghost>]"
+    },
+    "note": "Columns copied verbatim from the wiki table. 'families' groups by the source's own Line column (ORIGINAL + '<X> line'). chartRow is null where chart-data.json has no matching Enemies item."
+  },
+  "columns": [
+    "Ghost",
+    "Colour",
+    "Slice (as filed)",
+    "Drug of choice",
+    "Line",
+    "Unique ability"
+  ],
+  "families": {
+    "Blinky": [
+      "Blinky",
+      "Sue",
+      "Spooky"
+    ],
+    "Pinky": [
+      "Pinky",
+      "Yum-Yum",
+      "Yukari"
+    ],
+    "Inky": [
+      "Inky",
+      "Funky",
+      "Orson",
+      "Betrayus"
+    ],
+    "Clyde": [
+      "Clyde",
+      "Kinky",
+      "Spunky"
+    ]
+  },
+  "ghosts": [
+    {
+      "Ghost": "Blinky",
+      "Colour": "Red",
+      "Slice (as filed)": "Body",
+      "Drug of choice": "Cocaine",
+      "Line": "ORIGINAL",
+      "Unique ability": "Redline — chase speed grows the longer the hunt runs; while HIGH he ignores slow fields; redlining burns his own HP, so a long high ends in a crash",
+      "chartRow": {
+        "id": 271,
+        "name": "Blinky",
+        "spoof": "Blink-182-y",
+        "cat": "Enemies",
+        "stat": "Strength",
+        "shade": "S1",
+        "sub": "physical damage, crit physical damage",
+        "also": [
+          "Speciality"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Pinky",
+      "Colour": "Pink",
+      "Slice (as filed)": "Velocity",
+      "Drug of choice": "Weed",
+      "Line": "ORIGINAL",
+      "Unique ability": "Ambush Point — teleports ahead of Pac's heading and waits, invisible while motionless; only her giggle gives her away",
+      "chartRow": {
+        "id": 2176,
+        "name": "Pinky",
+        "spoof": "Stinky Pinky",
+        "cat": "Enemies",
+        "stat": "Speciality",
+        "shade": "S3",
+        "sub": "move speed, movement buff",
+        "also": [
+          "Agility"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Inky",
+      "Colour": "Cyan",
+      "Slice (as filed)": "Elements",
+      "Drug of choice": "LSD",
+      "Line": "ORIGINAL",
+      "Unique ability": "Mirror Math — targets the point mirrored off Blinky's position through Pac's; on acid he sheds Technicolor after-images",
+      "chartRow": {
+        "id": 1079,
+        "name": "Inky",
+        "spoof": "Stinky",
+        "cat": "Enemies",
+        "stat": "Intellect",
+        "shade": "S1",
+        "sub": "spell damage, psychic",
+        "also": [
+          "Nature"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Clyde",
+      "Colour": "Orange",
+      "Slice (as filed)": "Maw",
+      "Drug of choice": "Beer",
+      "Line": "ORIGINAL",
+      "Unique ability": "Shy Orbit — charges to 8 tiles, then veers off; steering sine-drifts; drops a Consolation Fruit when he flees",
+      "chartRow": {
+        "id": 1807,
+        "name": "Clyde",
+        "spoof": "Clyde-Sdale",
+        "cat": "Enemies",
+        "stat": "Agility",
+        "shade": "S2",
+        "sub": "dodge, driving",
+        "also": [
+          "Strength"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Sue",
+      "Colour": "Purple",
+      "Slice (as filed)": "Death",
+      "Drug of choice": "Heroin",
+      "Line": "Blinky line",
+      "Unique ability": "The Nod — longest route but never slows; no slow, fear or knockback moves her; numbness halves hazard damage; nods off mid-route for a full second",
+      "chartRow": {
+        "id": 760,
+        "name": "Sue",
+        "spoof": "Sue Me",
+        "cat": "Enemies",
+        "stat": "Vitality",
+        "shade": "S3",
+        "sub": "black magic",
+        "also": [
+          "Nature"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Spooky",
+      "Colour": "Royal indigo",
+      "Slice (as filed)": "Forms",
+      "Drug of choice": "Mushrooms",
+      "Line": "Blinky line (the King)",
+      "Unique ability": "Manifest — the King of Ghosts; while HIGH he spawns phantom hunters, hallucination ghosts that are REAL while his trip lasts",
+      "chartRow": {
+        "id": 2374,
+        "name": "Spooky",
+        "spoof": "Spooky Scary Skeleton",
+        "cat": "Enemies",
+        "stat": "Nature",
+        "shade": "S3",
+        "sub": "shapeshifting",
+        "also": [
+          "Intellect"
+        ],
+        "gated": false,
+        "boss": true,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Yum-Yum",
+      "Colour": "Hot pink",
+      "Slice (as filed)": "Beasts",
+      "Drug of choice": "Rabid Meat",
+      "Line": "Pinky line",
+      "Unique ability": "Feral Lunge — doesn't path, she bounces, lunging at the nearest thing — pellet line, Pac, or another ghost (a landed lunge stuns it)",
+      "chartRow": {
+        "id": 314,
+        "name": "Yum-Yum",
+        "spoof": "Yum-Yum Eat Em Up",
+        "cat": "Enemies",
+        "stat": "Strength",
+        "shade": "S1",
+        "sub": "physical damage, crit physical damage",
+        "also": [
+          "Agility"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Yukari",
+      "Colour": "Lavender",
+      "Slice (as filed)": "Ghost Hunter",
+      "Drug of choice": "Ghost Smoke",
+      "Line": "Pinky line",
+      "Unique ability": "Instrument Hunter — hunts by radar, not eyes; her smoke aura scrambles Pac's radar with phantom contacts",
+      "chartRow": {
+        "id": 1316,
+        "name": "Yukari",
+        "spoof": "You-Carry",
+        "cat": "Enemies",
+        "stat": "Intellect",
+        "shade": "S3",
+        "sub": "resource increase, conversion, engineering",
+        "also": [
+          "Intellect"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Funky",
+      "Colour": "Green",
+      "Slice (as filed)": "Mounts",
+      "Drug of choice": "Cracked Sugar",
+      "Line": "Inky line",
+      "Unique ability": "Jump Jam — bounces over walls and dots, landing in shockwave rings; on sugar the bounces chain faster until he plants his feet and refuses to move",
+      "chartRow": {
+        "id": 1808,
+        "name": "Funky",
+        "spoof": "Funky Chunky",
+        "cat": "Enemies",
+        "stat": "Agility",
+        "shade": "S2",
+        "sub": "dodge, driving",
+        "also": [
+          "Speciality"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Orson",
+      "Colour": "Teal",
+      "Slice (as filed)": "Arsenal",
+      "Drug of choice": "Dud Crate",
+      "Line": "Inky line",
+      "Unique ability": "Toc-Man Decoy — builds a fake Pac from crate junk that ghosts (and auto-aim) chase; dropped dud crates pop loudly and scare-step nearby ghosts",
+      "chartRow": {
+        "id": 1311,
+        "name": "Orson",
+        "spoof": "Orson Swell",
+        "cat": "Enemies",
+        "stat": "Intellect",
+        "shade": "S3",
+        "sub": "resource increase, conversion, engineering",
+        "also": [
+          "Speciality"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Betrayus",
+      "Colour": "White",
+      "Slice (as filed)": "Kart",
+      "Drug of choice": "Exhaust",
+      "Line": "Inky line",
+      "Unique ability": "Grand Entrance — a burst of theatrical speed trailing exhaust fumes that slow Pac, then he stops dead, wheezing, cape over his face",
+      "chartRow": {
+        "id": 2164,
+        "name": "Betrayus",
+        "spoof": "Betray-Us",
+        "cat": "Enemies",
+        "stat": "Speciality",
+        "shade": "S3",
+        "sub": "move speed, movement buff",
+        "also": [
+          "Agility"
+        ],
+        "gated": false,
+        "boss": true,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Kinky",
+      "Colour": "Gold",
+      "Slice (as filed)": "Greed",
+      "Drug of choice": "Fool's Gold",
+      "Line": "Clyde line",
+      "Unique ability": "The Merger — fuses with another ghost into a hybrid running both kits; part of the hybrid's health is fool's-gold HP that burns off first",
+      "chartRow": {
+        "id": 2370,
+        "name": "Kinky",
+        "spoof": "Kinky Winky",
+        "cat": "Enemies",
+        "stat": "Nature",
+        "shade": "S3",
+        "sub": "shapeshifting",
+        "also": [
+          "Spirit"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    },
+    {
+      "Ghost": "Spunky",
+      "Colour": "Grey",
+      "Slice (as filed)": "Theft",
+      "Drug of choice": "Hot Loot",
+      "Line": "Clyde line",
+      "Unique ability": "Grey Siphon — contact drains Pac's combo; can knock a banked power loose and leg it across the map with it — he hunts Pac's bank, and flees while carrying loot",
+      "chartRow": {
+        "id": 898,
+        "name": "Spunky",
+        "spoof": "Spunky Monkey",
+        "cat": "Enemies",
+        "stat": "Spirit",
+        "shade": "S3",
+        "sub": "collect range, luck, movement cooldown",
+        "also": [
+          "Speciality"
+        ],
+        "gated": false,
+        "boss": false,
+        "newDraft": false,
+        "serves": ""
+      }
+    }
+  ],
+  "sourceFlags": "Six of the thirteen drugs (Ghost Smoke, Fool's Gold, Rabid Meat, Cracked Sugar, Hot Loot, Dud Crate) are still DRAFT bad edibles pending owner approval — cutting a drug re-files its ghost. Yukari's slot is flagged for owner confirmation. Spooky and Betrayus are filed as elite-grade spawns (DRAFT call)."
+}

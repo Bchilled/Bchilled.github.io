@@ -1,0 +1,177 @@
+{
+  "_source": {
+    "file": "pac/charts/chart-data.json",
+    "repo": "Bchilled/Bchilled.github.io",
+    "commit": "4bbfc378e0ab4e1e3da6a32a0b1a4dcdddaedfaf",
+    "generatedFrom": "ALIGNMENT-7.md + SPOOF-NAMES.md via charts/gen_chart_data.py",
+    "keys": [
+      "wheelOrder",
+      "stats"
+    ]
+  },
+  "wheelOrder": [
+    "Strength",
+    "Vitality",
+    "Spirit",
+    "Intellect",
+    "Agility",
+    "Speciality",
+    "Nature"
+  ],
+  "stats": [
+    {
+      "name": "Strength",
+      "color": "#d23b2e",
+      "slot": "Food",
+      "stone": "Reality Stone",
+      "rune": "Uruz",
+      "glyph": "ᚢ",
+      "shades": [
+        {
+          "id": "S1",
+          "substats": "physical damage, crit physical damage"
+        },
+        {
+          "id": "S2",
+          "substats": "defense, stun rate"
+        },
+        {
+          "id": "S3",
+          "substats": "red magic"
+        }
+      ]
+    },
+    {
+      "name": "Vitality",
+      "color": "#4a4a55",
+      "slot": "Shield",
+      "stone": "Darkhold",
+      "rune": "Berkana",
+      "glyph": "ᛒ",
+      "shades": [
+        {
+          "id": "S1",
+          "substats": "life"
+        },
+        {
+          "id": "S2",
+          "substats": "healing tick rate"
+        },
+        {
+          "id": "S3",
+          "substats": "black magic"
+        }
+      ]
+    },
+    {
+      "name": "Spirit",
+      "color": "#2e7fd2",
+      "slot": "Movement Effect",
+      "stone": "Soul Stone",
+      "rune": "Algiz",
+      "glyph": "ᛉ",
+      "shades": [
+        {
+          "id": "S1",
+          "substats": "resource recovery, blue magic"
+        },
+        {
+          "id": "S2",
+          "substats": "shield durability, revives"
+        },
+        {
+          "id": "S3",
+          "substats": "collect range, luck, movement cooldown"
+        }
+      ]
+    },
+    {
+      "name": "Intellect",
+      "color": "#8e44ad",
+      "slot": "Car",
+      "stone": "Mind Stone",
+      "rune": "Ansuz",
+      "glyph": "ᚨ",
+      "shades": [
+        {
+          "id": "S1",
+          "substats": "spell damage, psychic"
+        },
+        {
+          "id": "S2",
+          "substats": "spell shield, buff increase"
+        },
+        {
+          "id": "S3",
+          "substats": "resource increase, conversion, engineering"
+        }
+      ]
+    },
+    {
+      "name": "Agility",
+      "color": "#27ae60",
+      "slot": "Weapon",
+      "stone": "Space Stone",
+      "rune": "Raidho",
+      "glyph": "ᚱ",
+      "shades": [
+        {
+          "id": "S1",
+          "substats": "crit hit chance, attack speed"
+        },
+        {
+          "id": "S2",
+          "substats": "dodge, driving"
+        },
+        {
+          "id": "S3",
+          "substats": "green magic"
+        }
+      ]
+    },
+    {
+      "name": "Speciality",
+      "color": "#e67e22",
+      "slot": "Pet",
+      "stone": "Power Stone",
+      "rune": "Kenaz",
+      "glyph": "ᚲ",
+      "shades": [
+        {
+          "id": "S1",
+          "substats": "ability power"
+        },
+        {
+          "id": "S2",
+          "substats": "rage magic"
+        },
+        {
+          "id": "S3",
+          "substats": "move speed, movement buff"
+        }
+      ]
+    },
+    {
+      "name": "Nature",
+      "color": "#7a9a01",
+      "slot": "Orb",
+      "stone": "Time Stone",
+      "rune": "Jera",
+      "glyph": "ᛃ",
+      "shades": [
+        {
+          "id": "S1",
+          "substats": "weather, time"
+        },
+        {
+          "id": "S2",
+          "substats": "poison, corruption"
+        },
+        {
+          "id": "S3",
+          "substats": "shapeshifting"
+        }
+      ]
+    }
+  ]
+}

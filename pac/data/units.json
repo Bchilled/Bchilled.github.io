@@ -1,0 +1,28 @@
+{
+  "_source": {
+    "searched": [
+      "pac/charts/chart-data.json (categories: Characters, Enemies, Weapons, Shields, Cars, Pets)",
+      "pac/wiki/*.html",
+      "pac/hq.html",
+      "pac/DESIGN.md",
+      "FULL-SCOPE.md"
+    ],
+    "commit": "4bbfc378e0ab4e1e3da6a32a0b1a4dcdddaedfaf"
+  },
+  "status": "TBD — no unit families, unit stats or unit roster are filed in any source checked. Only the canon lines below exist.",
+  "families": [],
+  "canonText": [
+    {
+      "source": "FULL-SCOPE.md (THE MAP IS A MOBA, owner 2026-10-20)",
+      "text": "You command LITTLE UNITS that push and settle lanes: without your support they generally start LOSING — and you start LOSING TOWERS."
+    },
+    {
+      "source": "FULL-SCOPE.md (NO HOME BOSS, owner 2026-10-20)",
+      "text": "You just have YOU — plus your towers and your little units."
+    },
+    {
+      "source": "pac/hq.html (About the game)",
+      "text": "Your little units march the lanes beside you; the enemy swarm marches the other way."
+    }
+  ]
+}
