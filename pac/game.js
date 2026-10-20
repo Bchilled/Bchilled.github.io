@@ -1,12 +1,17 @@
 'use strict';
 /* =========================================================================
-   PAC — Arena Muncher — v3.0.0
+   PAC — Arena Muncher — v3.1.0 "FEEL FIX"
    (v1 core + v2 maze/Time Shift/radar + v3: the 7-stat wheel & spin offers,
    thresholds, resources, run timer & difficulties, the Level-6 APE boss,
    fog/radar upgrade, named areas, team-up tag-in. Numbers: BALANCE.md.
    Structure guide: CODE-GUIDE.md.)
+   v3.1.0: v3.0.0 FAILED the owner's playtest (graphics, map, pace, popups,
+   UI, controls — "fail all over"). This build is the feel rebuild: crisp
+   direct controls, no blocking lessons, stretched pace, canon loop
+   (dot WAVES that stack, storable fruit, blue orbs, the Bank at L4),
+   BFS ghost hunters with addiction states, notebook-paper set.
    ========================================================================= */
-const PAC_VERSION = '3.0.0';
+const PAC_VERSION = '3.1.0';
 
 // ---------------- World / tuning constants ----------------
 const WORLD_W = 3400;            // arena width  (world wraps on both axes)
@@ -14,7 +19,8 @@ const WORLD_H = 2600;            // arena height
 const TAU = Math.PI * 2;
 
 const DOT_TARGET   = 430;        // dots kept alive on the field — v2: the field is a feast
-const DOT_CAP      = 640;
+const DOT_CAP      = 1400;       // v3.1: WAVES stack — the cap is the overrun line, not a trickle limit
+const WAVE_INTERVAL = 14;        // seconds between dot waves (FULL-SCOPE §25: waves land on their timer)
 const GHOST_CAP    = 220;   // swarm ceiling — ghost pressure is the lose condition
 const TRAIL_CAP    = 240;
 const PARTICLE_CAP = 350;
@@ -42,6 +48,36 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+// ---------------- Illustrated sprites (v3.1 — the SET) ----------------
+// Generated in the locked style (pencil / pencil-crayon notebook doodle),
+// cut + chroma-keyed by sprites/build-sprites.py into sprites/sprites.js.
+// Pre-rendered to Image objects at load; animation is code (frame swaps,
+// bobbing, spins). If the data file is missing (harness), every draw falls
+// back to the legacy drawn shapes — the game never depends on the art.
+const SPRITES = {};
+let spritesReady = false;
+(function loadSprites() {
+  if (typeof SPRITE_DATA === 'undefined' || typeof Image === 'undefined') return;
+  let pending = 0;
+  for (const k of Object.keys(SPRITE_DATA)) {
+    pending++;
+    const img = new Image();
+    img.onload = () => { SPRITES[k] = img; if (--pending <= 0) spritesReady = true; };
+    img.onerror = () => { if (--pending <= 0) spritesReady = true; };
+    img.src = SPRITE_DATA[k];
+  }
+})();
+function drawSprite(name, x, y, w, h, rot) {
+  const img = SPRITES[name];
+  if (!img) return false;
+  ctx.save();
+  ctx.translate(x, y);
+  if (rot) ctx.rotate(rot);
+  ctx.drawImage(img, -w / 2, -h / 2, w, h);
+  ctx.restore();
+  return true;
+}
+
 // ---------------- Small helpers ----------------
 function rand(a, b) { return a + Math.random() * (b - a); }
 function randi(a, b) { return Math.floor(rand(a, b + 1)); }
@@ -65,17 +101,20 @@ function fmtTime(s) {
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 }
 
-// ---------------- Maze walls (v2) ----------------
+// ---------------- Maze walls (v2, rebuilt v3.1) ----------------
 // Rect wall segments {x, y, w, h} in world coords (center-x, center-y, size).
 // The layout is built from mirrored templates so the maze is exactly symmetric
 // under x -> WORLD_W - x and y -> WORLD_H - y. That symmetry is load-bearing:
 // the world wraps, so a wall that visually crosses an edge re-enters on the
 // other side — mirrored placement guarantees the piece waiting there is
 // identical, and the seam reads as a corridor, not a glitch.
-// Corridor gaps between neighbouring segments are >= ~190px, wall thickness
-// 22px, and every cluster keeps a >= ~150px moat from the next feature, so
-// there is always more than one way around: this maze has escape routes,
-// not dead-end traps.
+// v3.1 layout (owner verdict on v3's map: "horrible"): a BROKEN CENTRE RING
+// with four open corners, quadrant brackets with two mouths each, bars set
+// wide (corridors 230px+ between faces), short edge baffles so the wrap
+// lanes breathe, and secret corner pockets guarding the stars + the hidden
+// shop. Map ethics (§24): no dead-end death funnels, no cheap traps — every
+// feature keeps at least two ways around. Connectivity is machine-checked
+// by the harness flood-fill metric.
 const WALL_T = 22;               // wall thickness (px)
 const WALL_LIST = [];
 function addWall(cx, cy, w, h) {
@@ -89,23 +128,35 @@ function addWall(cx, cy, w, h) {
 //     Time Shift landing pads (the pads sit inside the L, wall-free)
 addWall(185, 30, 250, WALL_T); addWall(30, 185, WALL_T, 250);
 addWall(1135, 30, 250, WALL_T); addWall(30, 955, WALL_T, 250);
-// (b) Time Shift landing channels: broken rails that leave the pads open
+// (b) Time Shift landing channels: short rails that leave the pads open
+//     and the wrap lanes WIDE (v3's second rail pair narrowed them — gone)
 addWall(480, 30, 150, WALL_T); addWall(30, 480, WALL_T, 150);
-addWall(965, 30, 190, WALL_T); addWall(30, 785, WALL_T, 190);
-// (c) inner corner brackets — partial boxes with two mouths each
-addWall(620, 470, 300, WALL_T); addWall(470, 590, WALL_T, 220); addWall(620, 710, 150, WALL_T);
-// (d) quadrant bars — long runs with ~200px gaps between them
-addWall(1030, 480, WALL_T, 300); addWall(1030, 870, WALL_T, 220);
-addWall(1340, 470, 260, WALL_T); addWall(1340, 700, 260, WALL_T);
-// (e) centre cross — broken on all four arms, ~190px from every quadrant feature
-addWall(1700, 1090, 420, WALL_T); addWall(1700, 1510, 420, WALL_T);
-addWall(1410, 1300, WALL_T, 230); addWall(1990, 1300, WALL_T, 230);
-// (f) mid-edge baffles (on the mirror axes, so they pair with themselves)
-addWall(1700, 90, 420, WALL_T); addWall(1700, 2510, 420, WALL_T);
-addWall(90, 1300, WALL_T, 420); addWall(3310, 1300, WALL_T, 420);
-// (g) centre diamonds — small blocks to break sightlines around the cross
-addWall(1585, 1185, 92, 92); addWall(1815, 1185, 92, 92);
+// (c) THE CENTRE RING (v3.1) — a broken square around the middle plaza:
+//     four bars, four open corners. Every approach has two ways in or out.
+addWall(1700, 960, 460, WALL_T); addWall(1360, 1300, WALL_T, 460);
+// (d) quadrant brackets — partial boxes with two mouths each
+addWall(600, 430, 300, WALL_T); addWall(450, 600, WALL_T, 320);
+// (e) quadrant bars — long runs set wide off the brackets (gaps 230px+)
+addWall(1020, 620, WALL_T, 260); addWall(1280, 560, WALL_T, 300);
+// (f) mid-edge baffles — shorter than v3, so the wrap lanes breathe
+addWall(1700, 90, 300, WALL_T); addWall(90, 1300, WALL_T, 300);
+// (g) ring-corner diamonds — small blocks breaking sightlines at the ring
+addWall(1150, 960, 84, 84);
+// (h) secret-pocket nooks (v3.1) — two short bars by each corner guard the
+//     star pockets + the hidden shop (NE). A nook, never a trap: the mouth
+//     is the wide diagonal between the bar ends.
+addWall(350, 205, 190, WALL_T); addWall(205, 350, WALL_T, 190);
 const WALLS = WALL_LIST;
+// guarded-pocket treasure spots (v3.1): spinning stars live in the map's
+// secret corner pockets — small challenges guard real rewards (map ethics §24)
+const STAR_SPOTS = [ { x: 130, y: 130 }, { x: 3270, y: 130 }, { x: 130, y: 2470 }, { x: 3270, y: 2470 } ];
+// the hidden shop (canon: Kirby the fence / Yoshi — SHOPS.md, all DRAFT):
+// a crooked little door in the NE pocket. Linger by it and it opens.
+const SHOP_SPOT = { x: 3270, y: 300 };
+// placed hazards with reference (map ethics: chosen difficulty, telegraphed
+// by sight — Mario fire bars on the plazas, cactus stackers on the lanes)
+const FIRE_BARS = [ { x: 1700, y: 1300 }, { x: 850, y: 650 }, { x: 2550, y: 650 }, { x: 850, y: 1950 }, { x: 2550, y: 1950 } ];
+const CACTI = [ { x: 500, y: 1000 }, { x: 2900, y: 1000 }, { x: 500, y: 1600 }, { x: 2900, y: 1600 }, { x: 1700, y: 500 }, { x: 1700, y: 2100 } ];
 // grid lookup: 9 lookups answer any position without scanning the full list
 const WALL_CELL = 200;
 const WALL_GRID = new Map();
@@ -174,10 +225,17 @@ function pushOutWalls(x, y, r) {
 function isWallAt(x, y) { return circleHitsWall(x, y, 1); }
 
 // ---------------- Audio (all synthesized) ----------------
+// No audio files: every sound is a WebAudio oscillator shaped in code, so
+// the game ships as one page with no asset loads and sounds identical
+// everywhere. One master gain (0.5) feeds the destination; every effect
+// routes through it. `muted` is checked at play time (tone/waka) and also
+// silences the already-running siren via setMuted(). The context is
+// created lazily in init() on first user input (browser autoplay rules),
+// and init() is idempotent — a suspended context is just resumed.
 const Snd = {
   ctx: null, master: null, muted: false,
-  sirenOsc: null, sirenGain: null, sirenLfo: null,
-  lastWaka: 0, wakaHigh: false,
+  sirenOsc: null, sirenGain: null, sirenLfo: null, // continuous siren nodes (see sirenStart)
+  lastWaka: 0, wakaHigh: false, // waka throttle clock + alternating pitch flag
 
   init() {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
@@ -190,6 +248,10 @@ const Snd = {
       this.master.connect(this.ctx.destination);
     } catch (e) { this.ctx = null; }
   },
+  // The one primitive every effect is built from: a single oscillator
+  // with an exponential decay envelope. `slideTo` glides the frequency
+  // over `dur` (falls for hurt, rises for dash/eatGhost); `delay` offsets
+  // the start so callers can sequence notes (levelUp, gameOver, copySting).
   tone(freq, dur, type, vol, slideTo, delay) {
     if (!this.ctx || this.muted) return;
     const t0 = this.ctx.currentTime + (delay || 0);
@@ -203,6 +265,11 @@ const Snd = {
     o.connect(g); g.connect(this.master);
     o.start(t0); o.stop(t0 + dur + 0.02);
   },
+  // The dot-eating chomp: two alternating pitches (380/540) so rapid
+  // eating still reads as "waka-waka", throttled to one per 55ms so a
+  // dense dot wave cannot turn into a buzz, and pitched up slightly as
+  // the combo climbs (capped at combo 160) — the run sounds hotter as
+  // it gets hotter, without any extra state.
   waka(combo) {
     if (!this.ctx || this.muted) return;
     const now = performance.now();
@@ -234,6 +301,11 @@ const Snd = {
     const seq = [392, 370, 349, 311];
     for (let i = 0; i < seq.length; i++) this.tone(seq[i], 0.24, 'triangle', 0.16, null, i * 0.17);
   },
+  // The siren is the ONLY continuous sound: a sawtooth whose frequency
+  // is wobbled ±130Hz by a 2.2Hz LFO. It keeps its own gain (0.035, well
+  // under effect volume) so it sits behind play, and it is started/stopped
+  // as a unit — sirenOsc non-null is the "already running" guard. Muting
+  // zeroes this gain instead of stopping the nodes (see setMuted).
   sirenStart() {
     if (!this.ctx || this.sirenOsc) return;
     const c = this.ctx;
@@ -269,16 +341,22 @@ let touchMove = null;      // {dx, dy} unit-ish vector from touch drag
 let touchDashQueued = false;
 window.addEventListener('keydown', (e) => {
   if (G.state === 'intro') { endIntro(); return; }   // any key skips the intro
-  if (Teach.active) { Teach.dismiss(); e.preventDefault(); return; }   // any key dismisses a first-sight lesson
+  // (v3.1: toasts auto-dismiss on their own timer — a keypress is NEVER
+  // swallowed by a lesson; the old dismiss-on-any-key line ate inputs.)
   keys[e.key.toLowerCase()] = true;
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) e.preventDefault();
-  if (e.key === ' ') G.wantDash = true;
+  if (e.key === ' ') moveButtonAction();   // SPACE = the movement button: DASH when held+ready, else TIME SHIFT
   if (e.key.toLowerCase() === 'e' || e.key === 'Shift') G.wantShift = true;
   if (e.key === '1' || e.key === '2' || e.key === '3') setActivePower(Number(e.key) - 1);
-  if (e.key.toLowerCase() === 'f') G.wantBurst = true;
+  if (e.key.toLowerCase() === 'q') doButtonAction(Save.data.btnMap[0]);
+  if (e.key.toLowerCase() === 'f') doButtonAction(Save.data.btnMap[1]);
+  if (e.key.toLowerCase() === 'c') doButtonAction(Save.data.btnMap[2]);
+  if (e.key.toLowerCase() === 'v' || e.key.toLowerCase() === 'b') bankAction();
+  if (e.key.toLowerCase() === 'r') cyclePower();
+  if (e.key.toLowerCase() === 'h') eatStoredFruit();
   if (e.key.toLowerCase() === 't') tagIn();
   if (e.key.toLowerCase() === 'm') toggleMute();
-  if (e.key.toLowerCase() === 'p') togglePause();
+  if (e.key.toLowerCase() === 'p' || e.key === 'Escape') togglePause();
 });
 window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
@@ -288,7 +366,7 @@ window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 // sprints. If the thumb drifts too far, the base quietly re-anchors under it
 // so control never runs out of screen. The math lives in computeStick so it
 // is testable without a touchscreen.
-const STICK_R = 64, STICK_DEAD = 8, STICK_FULL = 60;
+const STICK_R = 64, STICK_DEAD = 10, STICK_FULL = 56;   // v3.1: dead zone 10 (no drift-fight), full speed by 56px of push
 let stick = null;   // {id, baseX, baseY, knobX, knobY}
 function computeStick(baseX, baseY, x, y) {
   const dx = x - baseX, dy = y - baseY;
@@ -330,6 +408,22 @@ function endTouch(e) {
 }
 canvas.addEventListener('touchend', endTouch);
 canvas.addEventListener('touchcancel', endTouch);
+// mouse drag = the same stick (desktop one-hand play mirrors the thumb)
+let mouseStick = null;
+canvas.addEventListener('mousedown', (e) => {
+  mouseStick = { baseX: e.clientX, baseY: e.clientY };
+  stick = { id: 'mouse', baseX: e.clientX, baseY: e.clientY, knobX: e.clientX, knobY: e.clientY };
+});
+window.addEventListener('mousemove', (e) => {
+  if (!mouseStick) return;
+  const cs = computeStick(mouseStick.baseX, mouseStick.baseY, e.clientX, e.clientY);
+  if (stick && stick.id === 'mouse') { stick.knobX = cs.kx; stick.knobY = cs.ky; }
+  touchMove = cs.mag > 0 ? { dx: cs.dx, dy: cs.dy } : null;
+});
+window.addEventListener('mouseup', () => {
+  mouseStick = null;
+  if (stick && stick.id === 'mouse') { stick = null; touchMove = null; }
+});
 // no accidental page gestures: no long-press callout menu, no iOS pinch page-zoom
 window.addEventListener('contextmenu', (e) => { e.preventDefault(); });
 document.addEventListener('gesturestart', (e) => { e.preventDefault(); });
@@ -378,6 +472,8 @@ function defaultSave() {
     teamSize: 2,               // current unlocked team size (max 3, BALANCE §12)
     hardcoreDeath: null,       // {char, at, level, score} — Hard is canon character loss
     coins: {},                 // per-character coin wallets (BALANCE §6.2: coins are character-based)
+    rings: 0,                  // Sonic rings: account-wide achievement currency (canon)
+    btnMap: ['shift', 'burst', 'fruit'],   // thumb-bar skill buttons 1-3 (owner control canon; assignable in pause)
     lightRadius: 0             // last gear-rolled Light Radius steps (-2..+4, BALANCE appendix)
   };
 }
@@ -410,6 +506,8 @@ function saneSave(raw) {
   d.teamSize = clamp(+raw.teamSize || 2, 2, 3);
   if (raw.hardcoreDeath && typeof raw.hardcoreDeath === 'object') d.hardcoreDeath = raw.hardcoreDeath;
   if (raw.coins && typeof raw.coins === 'object') d.coins = raw.coins;
+  d.rings = +raw.rings || 0;
+  if (Array.isArray(raw.btnMap) && raw.btnMap.length === 3) d.btnMap = raw.btnMap.map((b) => String(b));
   d.lightRadius = clamp(Math.round(+raw.lightRadius || 0), -2, 4);
   return d;
 }
@@ -460,6 +558,8 @@ const Save = {
       teamSize: d.teamSize,
       hardcoreDeath: d.hardcoreDeath,
       coins: Object.assign({}, d.coins),
+      rings: d.rings || 0,
+      btnMap: (d.btnMap || ['shift', 'burst', 'fruit']).slice(),
       lightRadius: d.lightRadius
     };
   },
@@ -486,14 +586,15 @@ const Save = {
 };
 Save.load();
 
-// ---------------- First-sight teaching ----------------
-// Owner mechanic: the FIRST time a new thing appears — an eatable, an enemy,
-// a hazard, a bad edible, a mechanic, a card — play briefly pauses, the thing
-// is highlighted, and a plain-language tooltip explains it. Each lesson fires
-// ONCE EVER: its id is written into the save's `seen` registry the moment it
-// is shown, so it never repeats in later runs. This is a framework, not a
-// one-off: teaching a new thing later = one TEACH entry + one Teach.fire()
-// call at the place it appears (or a visibility rule in Teach.scan()).
+// ---------------- First-sight teaching (v3.1: TOASTS, never modals) ----------------
+// Owner mechanic, reined in hard after the v3 playtest ("~12 popups before
+// I could even move", "tooltips were overbearing"): the FIRST time a new
+// thing appears, a SMALL corner toast names it in one short line — the
+// game never pauses, toasts never stack, at most 2 appear in a run's first
+// minute, and each fires ONCE EVER (the save's `seen` registry). The full
+// plain-language lessons live in the pause menu's RULES section. Teaching
+// a new thing = one TEACH entry + one Teach.fire() call (or a rule in
+// Teach.scan()).
 
 // TEACH_LIVE is switched off under the automated test hooks at the bottom of
 // this file — lessons must never freeze a scripted run.
@@ -526,38 +627,52 @@ const TEACH = {
   areachange: { title: 'NEW AREA', text: 'The maze has named areas. Crossing into a new one shows its name — exploring fills in your radar, and each area wears its own light.' },
   lightradius: { title: 'LIGHT RADIUS', text: 'Light Radius brightens the area around you: gear can roll it from -2 to +4 steps, and every step pushes the fog 40px further out. A bad roll (negative) pulls the dark in closer.' },
   weaponpick: { title: 'THE ARSENAL OPENS', text: 'Level 5: pick a weapon. Weapon rolls are SIGNED — a roll can come up negative, a bad roll, as well as good. The numbers on the card are the numbers you get.' },
-  banknote:  { title: 'LEVEL 4 — THE BANK', text: 'Canon ladder note: at level 4 the full game unlocks the Bank (save a power-up for later). In this prototype the bank itself is not built yet — the ladder continues: weapon at 5, stone and the Ape at 6.' }
+  banknote:  { title: 'LEVEL 4 — THE BANK', text: 'The Bank is open: while EAT MODE runs, press B (or your bank button) to SAVE it as a charge — up to 3. Press it again with no EAT MODE running to spend a charge and fire EAT MODE on demand.' }
 };
 
 const Teach = {
-  active: null,   // {id, def, ax, ay} — ax/ay = world anchor for the highlight ring (null = panel only)
-  queue: [],
+  // v3.1: lessons are NON-BLOCKING corner toasts. They never pause the
+  // game, never stack, never queue, and auto-dismiss after 4s. Budget
+  // (owner UI rule): at most 2 tiny hints in a run's first minute; one at
+  // a time after that, with a cooldown. The full lesson text lives in the
+  // pause menu (RULES) — teaching moved OFF the live screen.
+  active: null,   // the visible toast {id, def, ax:null, ay:null} or null
+  queue: [],      // legacy field — always empty now (no stacking, ever)
+  runToasts: 0,   // toasts shown this run (first-minute budget)
+  nextOkAt: 0,    // performance-clock second before which no new toast shows
+  hideAt: 0,
   isSeen(id) { return Save.data.seen.indexOf(id) >= 0; },
   fire(id, ax, ay) {
     if (!TEACH_LIVE) return false;
     const def = TEACH[id];
     if (!def || this.isSeen(id)) return false;
-    if (this.active && this.active.id === id) return false;
-    if (this.queue.some((q) => q.id === id)) return false;
-    const item = { id, def, ax: (ax === undefined ? null : ax), ay: (ay === undefined ? null : ay) };
-    if (this.active) this.queue.push(item); else this.show(item);
+    if (this.active) return false;                       // one voice at a time — never stack
+    const now = performance.now() / 1000;
+    if (now < this.nextOkAt) return false;               // cooldown between toasts
+    if (G.time < 60 && this.runToasts >= 2) {            // first-minute budget spent: stay silent,
+      if (!this.isSeen(id)) { Save.data.seen.push(id); Save.write(true); }   // the pause RULES page carries it
+      return false;
+    }
+    this.show({ id, def, ax: null, ay: null });
     return true;
   },
   show(item) {
     this.active = item;
-    // the lesson counts as seen the moment it is SHOWN — persisted at once,
-    // so it never repeats even if the tab closes on the tooltip
+    this.runToasts++;
     if (!this.isSeen(item.id)) { Save.data.seen.push(item.id); Save.write(true); }
+    const short = item.def.text.split('. ')[0] + '.';
     document.getElementById('teachTitle').textContent = item.def.title;
-    document.getElementById('teachText').textContent = item.def.text;
+    document.getElementById('teachText').textContent = short;
     document.getElementById('teachTip').classList.remove('hidden');
+    this.hideAt = performance.now() / 1000 + 4;
   },
   dismiss() {
     if (!this.active) return;
     this.active = null;
     document.getElementById('teachTip').classList.add('hidden');
-    if (this.queue.length) this.show(this.queue.shift());
+    this.nextOkAt = performance.now() / 1000 + 6;
   },
+  tick() { if (this.active && performance.now() / 1000 >= this.hideAt) this.dismiss(); },
   // visibility-driven lessons: the first time the thing is ON SCREEN.
   // Runs at the end of update() while playing; fires at most one per call.
   scan() {
@@ -632,22 +747,37 @@ const player = {
   buffT: 0,                  // timed buff (speed) seconds left
   coinsEarned: 0,            // this run's coin finds (wallet itself lives in the save)
   lightRadius: 0,            // gear-rolled Light Radius steps for this run (-2..+4)
-  slowT: 0                   // Ape chest-pound slow seconds left
+  slowT: 0,                  // Ape chest-pound slow seconds left
+  // ---- v3.1 canon-loop state ----
+  fruitBag: [],              // stored fruit, eaten on demand (canon: fruit is STORABLE), cap 3
+  bankCharges: 0,            // THE BANK (L4): banked EAT MODE charges, cap 3, spent on demand
+  sizeStep: 0,               // blue-orb growth: +1 size step per orb (Orb Law), cap +4
+  chompRate: 1               // mouth speed multiplier (Pure Pac's Hella Maw raises it)
 };
 
 let dots = [];        // {x,y,r,kind}  kind: dot
 let pellets = [];     // {x,y,ttl}
 let fruits = [];      // {x,y,ttl,kind}
+let orbs = [];        // BLUE ORBS {x,y,ttl} — Orb Law: +1 size step AND the ghosts scatter
+let rings = [];       // Sonic rings {x,y,ttl} — achievement currency, found in arcs
+let coins = [];       // coin pickups {x,y,ttl} — character currency
+let stars = [];       // spinning signature stars {x,y,ttl} — score treasure in guarded pockets
+let drugs = [];       // ghost supply drops {x,y,kind} — the addiction economy (DESIGN-ghosts §4/§5)
 let ghosts = [];      // see spawnGhost
 let trail = [];       // {x,y,ttl,max}
 let particles = [];   // {x,y,vx,vy,ttl,max,color,size}
 let floaters = [];    // {x,y,ttl,text,color}
-let pelletTimer = 8, fruitTimer = 20, ghostTimer = 0, dotTimer = 0, surgeTimer = 55, patternTimer = 2;
+let pelletTimer = 8, fruitTimer = 20, ghostTimer = 0, dotTimer = 0, surgeTimer = 100, patternTimer = 2;
+let waveTimer = 6, waveNo = 0, orbTimer = 16, ringTimer = 24, drugTimer = 20;
 
-// XP curve per BALANCE §7.3 (DRAFT): level 2 takes 22 pellets-worth, then
-// x1.45 per level, rounded — 22 · 32 · 46 · 67 · 97 · 141 · 204 · …
-// Leveling is slower than gathering on purpose (canon tempo law).
-function xpForLevel(lv) { return Math.round(22 * Math.pow(1.45, lv - 1)); }
+// XP curve (BALANCE §7.3, retuned v3.1): level 2 takes 108 pellets-worth,
+// then x1.42 per level — 108 · 153 · 218 · 309 · 439 · 623 · …
+// v3.0.0's 22 x1.45 let a run level in seconds; the tempo law says gathering
+// OUTRUNS levelling. Harness feel metrics (scripted gathering, 3 runs):
+// base 38 measured 28.1s to L2, base 62 measured a 20.8–32.4s spread —
+// still too fast; 108 lands the script median at ~45s, and the flatter
+// 1.42 growth keeps L6 (439) inside its 480s level timer.
+function xpForLevel(lv) { return Math.round(108 * Math.pow(1.42, lv - 1)); }
 function hasPower(id) { return player.powers.find((p) => p.id === id) || null; }
 function activePowerId() {
   const p = player.powers[player.activePower];
@@ -738,6 +868,291 @@ function spawnFruit(x, y, kindIdx) {
   fruits.push({ x, y, ttl: 22, kind });
 }
 
+// ---------------- Pac's voice (LINES.md — the owner's lines, verbatim) ----------------
+// Every line below is copied from LINES.md. The game never writes Pac a
+// new line; it only picks which existing line fires on which trigger.
+const LINES = {
+  runstart: ["Hail to the chomp, baby.", "I'm here to eat pellets and kick ass — and I've got HELLA pellets.", "Let's paint this maze yellow.", "Stretch the jaw. It's gonna be a long night.", "Somebody order a legend? Too bad, you got me.", "That waka? Just my stomach clearing its throat.", "Open wide, world. Daddy's home.", "No map. No mercy. All mouth.", "The swarm thinks it's the main event. Cute.", "Time to eat like I invented it."],
+  streak: ["Keep 'em coming. I'm not even chewing yet.", "That's not a combo, that's a lifestyle.", "My jaw's doing cardio and it loves it.", "Dots fear me. As they should.", "Every pellet's a love letter to myself.", "Nom is my first language. Violence is my second.", "I'm not full. I'm never full. That's the brand.", "Watch the master work — mouth open, standards closed.", "This streak's got my name written all over it.", "Calories don't count when you're this handsome."],
+  ghosteat: ["I've got pellets of steel.", "Blue looks good on you. Tastes better.", "You haunt houses. I clear 'em.", "Should've stayed dead, sweetheart.", "Ectoplasm: surprisingly low in fibre.", "You're not a ghost, you're a snack with a backstory.", "Boo? Please. CHOMP.", "I don't fear the dead. I marinade 'em.", "That one's soul had an aftertaste. Spicy.", "Run all you want. The blue ones always come to daddy."],
+  feast: ["THE FEAST IS SERVED, AND I'M THE TABLE.", "Everything on this map is mine. Including the map.", "This is what a food coma dreams about.", "Breathe in. That's the smell of a buffet surrendering.", "I didn't choose the feast life. It chose poorly.", "Somewhere, a god is taking notes.", "All you can eat? Challenge accepted, universe.", "If this is wrong, I don't wanna be ripe."],
+  levelup: ["Level up. Jaw up. Standards down.", "Stronger, faster, and somehow even more full of myself.", "That tingling? That's power. Or crumbs. Both.", "New tricks. Same filthy mouth.", "Evolution looks good on me. Everything does.", "Just got more dangerous AND better looking. Unfair, I know.", "Skill issue? Never met her.", "Somewhere, a boss just felt a chill.", "Growth spurt. The violent kind.", "More power, more pellets, more me. Everybody wins. Mostly me."],
+  damage: ["OW — watch the merchandise, you sheet-faced bastards!", "That cost you. It just doesn't know it yet.", "A scratch. I've eaten worse than you for breakfast.", "You hit like a screensaver.", "Fine. Now I'm annoyed AND hungry.", "That tickled. My turn — and I don't tickle.", "Blood? Baby, that's just sauce.", "Hit me again and I'll charge rent.", "Pain's just flavour I haven't swallowed yet."],
+  neardeath: ["One hit from the grave? I've danced closer.", "Not today. I have reservations. At your funeral.", "My life flashed before my eyes. Mostly me, looking great.", "Heart's pounding like a drum solo. Encore's coming.", "You almost had a legend. ALMOST.", "Death knocked. I pretended the mouth was out.", "Still breathing, still beautiful, still hungry.", "Close calls are just foreplay for a comeback.", "If I die, bury me in pellets. Spoiler: I'm not dying."],
+  captures: ["Into the ball, sweetheart. It's cozy. That's a lie.", "Congrats. You work for the mouth now.", "Caught you. Fed you. Now fight for me.", "Every legend needs staff.", "You're not a pet. You're an investment with teeth.", "Welcome to the winning side of the food chain.", "I collect beautiful monsters. You're hired.", "The ball's not a prison. It's a signing bonus."],
+  boss: ["Well, well. The main course showed up early.", "Big, ugly, and blocking my buffet. Perfect.", "You brought a health bar to a mouth fight?", "Cute entrance. Mine's better — it's called dinner.", "Somebody tell the kitchen we've got a special.", "I've eaten bigger. I've eaten scarier. I've eaten your boss.", "That's not a threat, that's an appetizer with delusions.", "Hope you said your prayers. I already said grace.", "The bigger they are, the longer the chew.", "Come on, then. The jaw's warmed up."],
+  bosskill: ["Down goes the giant. Up goes my legend.", "Tastes like victory. And a little like chicken.", "Somewhere, a throne just became a snack bar.", "That was your best? I've had tougher chewing gum.", "The crown's mine now. It'll look better in my stomach.", "The swarm just felt that in their sheets.", "Big fight, bigger bite, biggest me.", "Tell the next one to bring seasoning.", "And the crowd goes mild — because I ate them too."],
+  bomberguy: ["Well, if it isn't Darth Pop-Goes-the-Weasel.", "Nice cape. Compensating for the Q-Wing, Q-Tip?", "You plant 'em, I step around 'em, you cry. Our little dance.", "The Empire sent YOU? Budget cuts hit hard.", "Careful with those bombs, roundhead — one of us eats explosions.", "Still mad about the Emperor? He was delicious, by the way.", "Your grid's a dinner table and I'm already seated.", "Vow all you want. Vows don't digest.", "Run along and plant your little crosses. I'll bring the appetite."],
+  bomberescape: ["Another curse? Sweetheart, I collect those like you collect L's.", "He ran. Again. Put it in the ledger, make it official.", "Curse me harder. The last one just seasoned me.", "Smoke bomb and a rhyme. He's a poet and a coward.", "Write it down: curse number whatever. My answer's unprintable.", "He always gets away. I always get hungry. Guess who wins eventually.", "That curse was in iambic pentameter. Still didn't land.", "Fly away, Q-Boy. The Dawg's got my tab and I've got time.", "One day he won't run. That day, bring napkins."],
+  shop: ["(Kirby) \"Kirby, you pink fence — these prices are criminal. I respect it.\"", "(Kirby) \"Stolen powers, huh? Finally, a shop with my values.\"", "(Kirby) \"No questions asked? Pinky, you're my favourite crime.\"", "(Yoshi) \"Yoshi, saddle me up something that screams 'bad decisions'.\"", "(Yoshi) \"Trade-in? This old thing carried me through hell. Lowball me gently.\"", "(Either) \"I'm not cheap. I'm strategically broke.\"", "(Either) \"Sell me something illegal in at least one universe.\"", "(Either) \"Keep the change. Legends tip in charisma.\"", "(Either) \"Window shopping's for people who don't eat windows.\""],
+  unlock: ["New face in the mirror. Same hunger behind it.", "The roster grows. So does my ego. Correlation? Causation.", "Welcome to the trophy case, beautiful.", "Another legend joins the mouth's empire.", "Fresh meat — and this time it's on MY side.", "Collect 'em all? Baby, I'm halfway to a problem.", "New hero unlocked. Old appetite included.", "Somewhere, a silhouette just got promoted."],
+  death: ["Down, not out. There's a difference, and it's spite.", "The swarm eats tonight. Tomorrow it gets eaten.", "I didn't lose. I donated drama.", "Death's just the intermission. The Dawg keeps my seat warm.", "Bury me at the Salty Dawg. Open casket, open bar.", "One bad run doesn't dent a legend. It dents the FLOOR.", "I regret nothing. Especially the burp.", "Tell Bomberguy it wasn't him. It'll eat him alive.", "Game over? Nah. Reload the legend."],
+  idle: ["Somewhere out there is a pellet with my name on it.", "The Dawg pours a whisky that could strip paint. Miss that place.", "A guy could get used to being hunted. Flattering, really.", "If the Q-Wing had feelings, it'd still look stupid.", "I count ghosts to fall asleep. Then I eat the count.", "Legends don't rest. They marinate.", "That crater? Souvenir. Don't ask whose planet.", "One day I'll retire. The swarm's throwing the party. As food.", "Still hungry. Story of my entire mythology."]
+};
+window.__SHOP_LINES = LINES.shop;
+const speech = { text: '', until: -1, lastAt: -99, lastCat: '' };
+function sayLine(cat, force) {
+  const arr = LINES[cat];
+  if (!arr || !arr.length || G.state === 'intro') return;
+  if (!force && G.time - speech.lastAt < 5) return;              // never spam: 5s between lines
+  if (!force && cat === speech.lastCat && Math.random() < 0.5) return;
+  speech.lastAt = G.time; speech.lastCat = cat;
+  speech.text = arr[randi(0, arr.length - 1)];
+  speech.until = G.time + 2.6;
+}
+
+// ---------------- v3.1 canon loop: WAVES, ORBS, BANK, stored fruit ----------------
+// The one objective/status line (owner UI rule: one voice at a time on
+// screen). Flash messages (wave landings, unlocks) override the standing
+// status for a few seconds, then the status takes the line back.
+function setObjective(text, holdSec) {
+  G.objectiveFlash = text;
+  G.objectiveFlashT = holdSec || 4;
+}
+function currentObjective() {
+  if (G.objectiveFlashT > 0 && G.objectiveFlash) return G.objectiveFlash;
+  if (V3.boss) return 'THE APE — bait his barrels into the cracked pylons!';
+  if (player.eatT > 0) return 'EAT MODE — hunt the blue ghosts!';
+  if (player.hp <= 30) return player.fruitBag.length ? 'LOW HP — eat a stored fruit (button / H)!' : 'LOW HP — find fruit, or a blue orb to scatter them!';
+  if (dots.length > 1150) return 'THE MAP IS OVERRUNING — eat through the stack!';
+  return 'Eat dots · Level ' + player.level + ' · Wave ' + Math.max(1, waveNo) + ' — survive the swarm';
+}
+
+// DOT WAVES (FULL-SCOPE §25): fresh formations land on a timer and STACK on
+// whatever is left of the last. They never dissolve — uneaten waves fill the
+// map toward DOT_CAP, and the fill is the pressure. Eating is housekeeping.
+function spawnWave() {
+  waveNo++;
+  let cx = 0, cy = 0, ok = false;
+  for (let t = 0; t < 12 && !ok; t++) {
+    cx = rand(120, WORLD_W - 120); cy = rand(120, WORLD_H - 120);
+    ok = !circleHitsWall(cx, cy, 40) && tDist(cx, cy, player.x, player.y) > 380;
+  }
+  if (!ok) return;
+  const style = waveNo % 3;
+  const put = (x, y) => {
+    x = wrapPos(x, WORLD_W); y = wrapPos(y, WORLD_H);
+    if (dots.length < DOT_CAP && !circleHitsWall(x, y, 7)) dots.push({ x, y, r: 5, pulse: rand(0, TAU) });
+  };
+  if (style === 0) {          // twin rows — a river bank, 2 x 14
+    const ang = rand(0, TAU), ca = Math.cos(ang), sa = Math.sin(ang);
+    for (let i = 0; i < 14; i++) for (const s of [-16, 16]) put(cx + ca * i * 27 - sa * s, cy + sa * i * 27 + ca * s);
+  } else if (style === 1) {   // a ring, 22
+    for (let i = 0; i < 22; i++) { const a = (i / 22) * TAU; put(cx + Math.cos(a) * 95, cy + Math.sin(a) * 95); }
+  } else {                    // a grid block, 5 x 5
+    for (let ix = 0; ix < 5; ix++) for (let iy = 0; iy < 5; iy++) put(cx + (ix - 2) * 30, cy + (iy - 2) * 30);
+  }
+  setObjective('🌊 WAVE ' + waveNo + ' — fresh dots on the map', 3.5);
+}
+
+// BLUE ORBS (Orb Law, FULL-SCOPE §24): eating one grows Pac at least one
+// size step AND scatters the swarm. Distinct from power pellets (EAT MODE).
+function spawnOrb() {
+  for (let tries = 0; tries < 12; tries++) {
+    const x = rand(80, WORLD_W - 80), y = rand(80, WORLD_H - 80);
+    if (tDist(x, y, player.x, player.y) > 320 && !circleHitsWall(x, y, 18)) { orbs.push({ x, y, ttl: 40 }); return; }
+  }
+}
+function eatOrb(o) {
+  player.sizeStep = Math.min(4, player.sizeStep + 1);
+  player.r = 16 + player.sizeStep * 2.5;
+  let scattered = 0;
+  for (const g of ghosts) {
+    if (!g.alive) continue;
+    const d = tDist(g.x, g.y, player.x, player.y);
+    if (d < 780) {
+      const dx = wrapDelta(g.x - player.x, WORLD_W), dy = wrapDelta(g.y - player.y, WORLD_H);
+      const l = Math.hypot(dx, dy) || 1;
+      g.vx = (dx / l) * 560; g.vy = (dy / l) * 560;
+      g.stunT = Math.max(g.stunT || 0, 0.9);
+      scattered++;
+    }
+  }
+  // Pure Pac's Arcade Engine (ROSTER.md): +1 size step AND a speed surge,
+  // the two buffs married — the orb is its trigger
+  if (player.charId === 'pac') { player.buffT = Math.max(player.buffT, 5); floater(o.x, o.y - 34, 'ARCADE ENGINE!', '#ffd93b'); }
+  floater(o.x, o.y - 16, 'SIZE UP! +' + scattered + ' scattered', '#4db2ff');
+  burst(o.x, o.y, '#4db2ff', 22);
+  Snd.tone(520, 0.16, 'sine', 0.16, 1040);
+  sayLine('levelup');   // "Growth spurt. The violent kind." — LINES.md has no orb category; growth lines carry it
+}
+
+// Sonic rings: achievement currency (canon) — arcs of 5 along the corridors
+function spawnRingArc() {
+  let cx = 0, cy = 0, ok = false;
+  for (let t = 0; t < 10 && !ok; t++) {
+    cx = rand(100, WORLD_W - 100); cy = rand(100, WORLD_H - 100);
+    ok = !circleHitsWall(cx, cy, 24) && tDist(cx, cy, player.x, player.y) > 300;
+  }
+  if (!ok) return;
+  const ang = rand(0, TAU);
+  for (let i = 0; i < 5; i++) {
+    const x = wrapPos(cx + Math.cos(ang) * i * 30, WORLD_W), y = wrapPos(cy + Math.sin(ang) * i * 30, WORLD_H);
+    if (!circleHitsWall(x, y, 10)) rings.push({ x, y, ttl: 45 });
+  }
+}
+function spawnCoin(x, y) { coins.push({ x, y, ttl: 25 }); }
+
+// Ghost supply (DESIGN-ghosts §2/§4): one drug per original-four personality.
+// A fiending ghost breaks off the hunt to score its own drug; an eaten ghost
+// drops a hit where it died (DRAFT §8 mechanism, owner's loop).
+const DRUGS = {
+  cocaine:  { name: 'COCAINE',  ghost: 'chaser',   color: '#f2f2f2' },
+  weed:     { name: 'WEED',     ghost: 'ambusher', color: '#7dc242' },
+  lsd:      { name: 'LSD',      ghost: 'flanker',  color: '#c07df0' },
+  beer:     { name: 'BEER',     ghost: 'wildcard', color: '#e8a33d' }
+};
+const GHOST_DRUG = { chaser: 'cocaine', ambusher: 'weed', flanker: 'lsd', wildcard: 'beer' };
+function spawnDrug(kind, x, y) {
+  if (x === undefined) {
+    for (let tries = 0; tries < 12; tries++) {
+      const fx = rand(80, WORLD_W - 80), fy = rand(80, WORLD_H - 80);
+      if (tDist(fx, fy, player.x, player.y) > 300 && !circleHitsWall(fx, fy, 14)) { x = fx; y = fy; break; }
+    }
+    if (x === undefined) return;
+  }
+  drugs.push({ x, y, kind });
+}
+
+// Fruit is STORABLE (canon): pickup banks it (cap 3), eaten on demand.
+// A full bag means the next fruit heals on the spot instead.
+function eatStoredFruit() {
+  if (G.state !== 'playing' || !player.fruitBag.length) return;
+  const kind = player.fruitBag.shift();
+  const healed = Math.min(kind.heal, player.maxHp - player.hp);
+  player.hp += healed;
+  floater(player.x, player.y - 30, kind.name + ' +' + healed + ' HP', '#7dff8a');
+  Snd.fruit();
+  updateFruitHUD();
+}
+function updateFruitHUD() {
+  const e = document.getElementById('fruitText');
+  if (e) e.textContent = player.fruitBag.length ? '🍒×' + player.fruitBag.length : '';
+  const b = document.getElementById('bankText');
+  if (b) b.textContent = player.bankCharges ? '🏦×' + player.bankCharges : '';
+}
+
+// THE BANK (canon L4): save a power-up, use it on demand, capacity 3.
+// Prototype form: bank a live EAT MODE as a charge; spend a charge to fire
+// EAT MODE on demand. (Full any-power-up banking is the campaign build.)
+function bankAction() {
+  if (G.state !== 'playing') return;
+  if (V3.picksMade < 4) { floater(player.x, player.y - 30, 'THE BANK OPENS AT LEVEL 4', '#9fb2d8'); return; }
+  if (player.eatT > 0) {
+    if (player.bankCharges >= 3) { floater(player.x, player.y - 30, 'BANK FULL (3)', '#ffd93b'); return; }
+    player.bankCharges++;
+    player.eatT = 0; player.eatChain = 0; Snd.sirenStop();
+    floater(player.x, player.y - 30, 'BANKED! (' + player.bankCharges + '/3)', '#ffd93b');
+    Snd.tone(660, 0.1, 'sine', 0.14, 990);
+  } else if (player.bankCharges > 0) {
+    player.bankCharges--;
+    player.eatT = 6 + player.eatBonus; player.eatChain = 0; Snd.sirenStart();
+    floater(player.x, player.y - 30, 'BANK SPENT — EAT MODE!', '#4db2ff');
+    sayLine('ghosteat');
+  } else {
+    floater(player.x, player.y - 30, 'BANK EMPTY — eat a pellet, then bank it', '#9fb2d8');
+  }
+  updateFruitHUD();
+}
+
+// World dressing seed: guarded-pocket stars + the drug supply pre-salt
+// (DESIGN-ghosts §8: the map starts salted) + one ring arc.
+function seedWorldDressing() {
+  for (const s of STAR_SPOTS) stars.push({ x: s.x, y: s.y, ttl: 9999 });
+  for (const k of Object.keys(DRUGS)) spawnDrug(k);
+  spawnRingArc();
+}
+
+// ---------------- v3.1 hazards + the hidden shop ----------------
+let hazardCd = 0, shopDwell = 0;
+function segDist(px, py, ax, ay, bx, by) {
+  const vx = bx - ax, vy = by - ay;
+  const t = clamp(((px - ax) * vx + (py - ay) * vy) / ((vx * vx + vy * vy) || 1), 0, 1);
+  return Math.hypot(px - (ax + vx * t), py - (ay + vy * t));
+}
+function hazardHit(dmg, label) {
+  if (G.time < player.invulnUntil || hazardCd > 0 || player.graceT > 0) return;
+  hazardCd = 1.0;
+  if (player.charId === 'pac') dmg = Math.ceil(dmg / 2);   // Cast-Iron Stomach blunts hazards too (ROSTER.md)
+  player.hp -= dmg;
+  player.invulnUntil = G.time + 0.9;
+  G.shake = 7;
+  floater(player.x, player.y - 30, label + ' -' + dmg, '#ff7a3b');
+  Snd.hurt();
+  sayLine('damage');
+  if (player.hp <= 0) loseLife();
+}
+function updateHazards(dt) {
+  if (hazardCd > 0) hazardCd -= dt;
+  const px = player.x, py = player.y;
+  for (const fb of FIRE_BARS) {
+    // player position in the bar's local (wrapped) frame
+    const lx = fb.x + wrapDelta(px - fb.x, WORLD_W), ly = fb.y + wrapDelta(py - fb.y, WORLD_H);
+    if (Math.abs(lx - fb.x) > 130 || Math.abs(ly - fb.y) > 130) continue;
+    const a = G.time * 0.9 + fb.x * 0.01;
+    for (const s of [0, Math.PI]) {
+      const ex = fb.x + Math.cos(a + s) * 92, ey = fb.y + Math.sin(a + s) * 92;
+      if (segDist(lx, ly, fb.x, fb.y, ex, ey) < player.r + 10) { hazardHit(10, 'FIRE BAR!'); break; }
+    }
+    if (hazardCd > 0) break;
+  }
+  for (const c of CACTI) {
+    if (tDist(c.x, c.y, px, py) < player.r + 13) { hazardHit(8, 'CACTUS!'); break; }
+  }
+  // the hidden shop: linger by the crooked door and it opens
+  if (tDist(SHOP_SPOT.x, SHOP_SPOT.y, px, py) < 52) {
+    shopDwell += dt;
+    if (shopDwell > 0.6 && G.state === 'playing') openShop();
+  } else shopDwell = 0;
+}
+// Shop stock = SHOPS.md DRAFT (the owner has not designed the store; this is
+// a presence, priced in character coins, labelled DRAFT in the pause notes)
+const SHOP_ITEMS = [
+  { id: 'heal',   name: 'Heal 40 HP',        cost: 5,  can: () => player.hp < player.maxHp, apply: () => { player.hp = Math.min(player.maxHp, player.hp + 40); } },
+  { id: 'fruit',  name: 'Store a fruit',     cost: 4,  can: () => player.fruitBag.length < 3, apply: () => { player.fruitBag.push(FRUIT_KINDS[1]); updateFruitHUD(); } },
+  { id: 'charge', name: 'Banked EAT MODE',   cost: 8,  can: () => V3.picksMade >= 4 && player.bankCharges < 3, apply: () => { player.bankCharges++; updateFruitHUD(); } },
+  { id: 'light',  name: '+1 Light Radius (run)', cost: 12, can: () => player.lightRadius < 4, apply: () => { player.lightRadius++; } }
+];
+function openShop() {
+  G.state = 'shop';
+  shopDwell = 0;
+  const scr = document.getElementById('shopScreen');
+  if (!scr) return;
+  const line = document.getElementById('shopLine');
+  if (line && window.__SHOP_LINES) line.textContent = window.__SHOP_LINES[randi(0, window.__SHOP_LINES.length - 1)];
+  renderShopItems();
+  scr.classList.remove('hidden');
+}
+function renderShopItems() {
+  const wrap = document.getElementById('shopItems');
+  if (!wrap) return;
+  const wallet = Save.data.coins[player.charId] || 0;
+  const wEl = document.getElementById('shopWallet');
+  if (wEl) wEl.textContent = 'Your coins (' + player.charName + '): ' + wallet;
+  wrap.innerHTML = '';
+  for (const it of SHOP_ITEMS) {
+    const b = document.createElement('button');
+    b.className = 'shop-item';
+    const ok = it.can() && wallet >= it.cost;
+    b.textContent = it.name + ' — ' + it.cost + ' coins' + (it.can() ? '' : ' (n/a)');
+    b.disabled = !ok;
+    b.addEventListener('click', () => {
+      if ((Save.data.coins[player.charId] || 0) < it.cost || !it.can()) return;
+      Save.data.coins[player.charId] -= it.cost;
+      it.apply();
+      Save.write(true);
+      Snd.tone(1240, 0.08, 'square', 0.1, 1860);
+      renderShopItems();
+    });
+    wrap.appendChild(b);
+  }
+}
+function closeShop() {
+  const scr = document.getElementById('shopScreen');
+  if (scr) scr.classList.add('hidden');
+  if (G.state === 'shop') { G.state = 'playing'; player.invulnUntil = Math.max(player.invulnUntil, G.time + 1); }
+}
+
 const GHOST_TYPES = ['chaser', 'ambusher', 'flanker', 'wildcard'];
 const GHOST_STYLE = {
   chaser:   { color: '#ff3b30', speed: 1.0 },
@@ -745,18 +1160,22 @@ const GHOST_STYLE = {
   flanker:  { color: '#00e5ff', speed: 0.98 },
   wildcard: { color: '#ffb847', speed: 0.95 }
 };
-function ghostBaseSpeed() { return Math.min(292, 158 + G.time * 0.42); }
+function ghostBaseSpeed() { return Math.min(280, 148 + G.time * 0.30); }
 function ghostTargetCount() {
-  // The flood curve: gentle for the first minute, then compounding.
-  // ~14 @30s, ~27 @1min, ~62 @2min, ~111 @3min, ~177 @4min, capped 220 @~5min.
-  // If the player's clear rate (eat mode / dash / fire) falls behind this curve,
-  // the screen masses with ghosts and contact damage ends the run. That IS the game.
+  // The swarm IS the clock (canon loop beat 3 + FULL-SCOPE §25 swarm curve):
+  // the run starts with a FEW ghosts and they are MUCH SLOWER — numbers and
+  // speed climb together until the screen is a storm. Early minutes breathe.
+  // v3.1 curve (harness-measured): ~6 @30s, ~10 @60s, ~26 @120s incl. the
+  // first surge, ~59 @240s, ~123 @360s, cap 220. First harness pass with
+  // the hotter curve (0.09 ramp / 2.6 quad) measured 35 alive @120s — too
+  // heavy for smart ghosts; trimmed to the numbers above.
+  // (v3.0.0 shipped ~14 @30s / ~27 @60s / ~62 @120s — a run decided in 20s.)
   // difficulty scales the swarm clock (BALANCE §2): Easy spawns x1.15 slower
   // (read here as a slower effective clock), Hard x0.9 (faster clock)
   const scale = Save.data.difficulty === 'easy' ? 1 / 1.15 : (Save.data.difficulty === 'hard' ? 1 / 0.9 : 1);
   const t = G.time * scale;
   const t1Mul = TrigState.t1 > 0 ? 1.5 : 1;   // T1 More Enemies window (BALANCE trigger appendix)
-  return Math.min(GHOST_CAP, Math.floor((5 + t * 0.28 + Math.pow(t / 60, 2.2) * 5) * t1Mul));
+  return Math.min(GHOST_CAP, Math.floor((3 + t * 0.075 + Math.pow(t / 60, 2.2) * 1.8) * t1Mul));
 }
 
 function placeGhostAtEdge(g, ang, dist) {
@@ -788,7 +1207,10 @@ function spawnGhost(forceType, ringAng) {
   // elite rate per BALANCE §4: 4% of spawns (Hard: +2 pts). Adds (Ape chimps) are never elites.
   g.elite = !g.isAdd && G.time > 30 && Math.random() < eliteChance();
   g.r = g.elite ? 25 : 16;
-  g.modeT = rand(2, 4); g.wander = false; g.wanderX = 0; g.wanderY = 0;
+  // v3.1 hunter state: pack slot + addiction clock (DESIGN-ghosts §4)
+  g.slotAng = rand(0, TAU); g.wobSeed = rand(0, TAU);
+  g.state = 'sober'; g.drugT = rand(16, 30); g.fienT = 0; g.highT = 0; g.fixTarget = null;
+  g.stunT = 0; g.camped = false; g.campT = 0;
   if (ringAng !== undefined) placeGhostAtEdge(g, ringAng, rand(700, 790));
   else placeGhostAtEdge(g);
 }
@@ -799,6 +1221,9 @@ function killGhost(g, grantPower, basePoints) {
   if (player.resourceType === 'rage') gainResource(8);   // Rage builds when dealing damage (BALANCE v3 appendix)
   else player.combatT = 0;
   burst(g.x, g.y, GHOST_STYLE[g.type].color, 14);
+  // the dead drop their supply (DESIGN-ghosts §5/§8) — and sometimes a coin
+  if (Math.random() < 0.65) spawnDrug(GHOST_DRUG[g.type], g.x, g.y);
+  if (Math.random() < 0.2) spawnCoin(g.x, g.y);
   if (grantPower) {
     const pid = GHOST_POWER[g.type] || randomPowerId();
     grantCopyPower(pid);
@@ -853,7 +1278,15 @@ function requestShift() {
 }
 
 // ---------------- Particles / floaters ----------------
+// Three kinds of short-lived feedback, all fire-and-forget (callers never
+// track what they spawn; the update/render loops age and cull them):
+//   burst()   — canvas particles: one-shot spray on eats, deaths, pickups.
+//   floater() — canvas text that rises and fades ("+150", "POWER UP", ...).
+//   toast()   — the single DOM banner (#toast) for bigger announcements;
+//               it reuses one element, so a new toast replaces the old one.
 function burst(x, y, color, n) {
+  // Spawns up to n particles but never past PARTICLE_CAP — under swarm
+  // pressure the cap wins and later bursts in the same frame just shrink.
   for (let i = 0; i < n && particles.length < PARTICLE_CAP; i++) {
     const a = rand(0, TAU), sp = rand(40, 240);
     particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
@@ -861,10 +1294,15 @@ function burst(x, y, color, n) {
   }
 }
 function floater(x, y, text, color) {
+  // ttl 1.15s; the update loop drifts it upward (34px/s) and splices it at 0.
+  // Hard cap 24: a 25th floater drops the OLDEST, even mid-life — score spam
+  // during a feast should evict stale numbers, not the newest one.
   floaters.push({ x, y, ttl: 1.15, text, color: color || '#fff' });
   if (floaters.length > 24) floaters.shift();
 }
 function toast(text) {
+  // Show now; the update loop counts G.toastT down from 1.4s and fades the
+  // element when it hits 0. Calling toast() again just restarts the clock.
   const el = document.getElementById('toast');
   el.textContent = text;
   el.style.opacity = '1';
@@ -967,7 +1405,8 @@ function pickCard(i) {
   pendingLevels--;
   document.getElementById('levelupScreen').classList.add('hidden');
   renderPowerSlots();
-  if (V3.picksMade === 4) Teach.fire('banknote', player.x, player.y);   // ladder note: the Bank (canon L4)
+  if (V3.picksMade === 4) setObjective('🏦 THE BANK IS OPEN — bank a live EAT MODE (B), spend it on demand', 5);   // canon L4
+  sayLine('levelup');
   if (V3.picksMade === 6 && !V3.stonePicked && !G.endlessRun) { openStonePick(); return; }
   if (pendingLevels > 0) { startSpin(); return; }
   resumeAfterPick();
@@ -988,8 +1427,13 @@ function resetGame() {
   player.shiftCd = 0; player.freezeT = 0; player.shiftCdMax = SHIFT_CD;
   player.graceT = 0;
   player.invulnUntil = -1;
-  dots = []; pellets = []; fruits = []; ghosts = []; trail = []; particles = []; floaters = [];
-  pelletTimer = 9; fruitTimer = 22; ghostTimer = 0; dotTimer = 0; surgeTimer = 55; patternTimer = 2;
+  dots = []; pellets = []; fruits = []; orbs = []; rings = []; coins = []; stars = []; drugs = []; ghosts = []; trail = []; particles = []; floaters = [];
+  pelletTimer = 9; fruitTimer = 22; ghostTimer = 0; dotTimer = 0; surgeTimer = 100; patternTimer = 2;
+  waveTimer = 6; waveNo = 0; orbTimer = 16; ringTimer = 24; drugTimer = 20;
+  Teach.runToasts = 0; Teach.nextOkAt = 0; Teach.active = null; G.objectiveFlashT = 0;
+  speech.text = ''; speech.until = -1; speech.lastAt = -99;
+  document.getElementById('teachTip').classList.add('hidden');
+  player.fruitBag = []; player.bankCharges = 0; player.sizeStep = 0; player.r = 16; player.chompRate = 1;
   pendingLevels = 0;
   // ---- v3 reset: build package, resources, wheel, boss, fog, triggers, team ----
   player.charId = PAC_PACKAGE.charId; player.charName = PAC_PACKAGE.charName; player.charColor = PAC_PACKAGE.color;
@@ -1017,7 +1461,10 @@ function resetGame() {
     : { deployed: false, charId: 'mspac', pkgColor: PARTNER_PACKAGE.color, x: player.x, y: player.y };
   if (V3.partner.deployed && G.state === 'playing') Teach.fire('teamup', player.x, player.y);
   for (let i = 0; i < 80 && dots.length < 380; i++) spawnDotCluster();
-  for (let i = 0; i < 4; i++) spawnGhost(GHOST_TYPES[i]);
+  // the swarm starts FEW (canon): 3 hunters, not 4 — the 4th personality
+  // joins from the spawn curve as the clock climbs
+  for (let i = 0; i < 3; i++) spawnGhost(GHOST_TYPES[i]);
+  seedWorldDressing();
   renderPowerSlots();
   updateHUD(true);
 }
@@ -1033,6 +1480,7 @@ function loseLife() {
 }
 function gameOver() {
   G.state = 'gameover';
+  sayLine('death', true);
   Snd.gameOver();
   Snd.sirenStop();
   if (!G.runCounted) {
@@ -1059,32 +1507,87 @@ function gameOver() {
   document.getElementById('gameoverScreen').classList.remove('hidden');
 }
 
-// ---------------- Ghost brains ----------------
-function ghostTarget(g, frameChaser) {
-  const p = player;
-  if (player.eatT > 0) {
-    // edible: flee the player (wrapped direction away) + jitter
-    return { x: g.x + wrapDelta(g.x - p.x, WORLD_W), y: g.y + wrapDelta(g.y - p.y, WORLD_H) };
+// ---------------- Ghost brains (v3.1: BFS flow-field hunters) ----------------
+// Owner verdict on v3: "GHOSTS ARE SHIT — BAD AI." The old brain steered
+// straight at a target point and slid along walls — Roombas with a grudge.
+// v3.1: a BFS FLOW FIELD over a 100px nav grid (built once from the walls)
+// gives every ghost true maze routing: it always knows the shortest way
+// around, never hugs a wall, never sticks. Personalities pick different
+// TARGET POINTS (below); the field routes them there. The field rebuilds
+// only when the target cell changes or every 0.25s, and all hunters share
+// it — cheap at swarm sizes.
+// Per-personality targets (arcade canon, DESIGN-ghosts §1):
+//   chaser   (Blinky) — your tile (pack members take ring slots around it)
+//   ambusher (Pinky)  — 4 tiles ahead of your heading: the cut-off
+//   flanker  (Inky)   — pivot ahead of you, mirrored off the chaser
+//   wildcard (Clyde) — charges to an orbit ring, then veers around you
+const NAV_CELL = 100, NAV_COLS = WORLD_W / NAV_CELL, NAV_ROWS = WORLD_H / NAV_CELL;
+let navBlocked = null;
+function buildNav() {
+  navBlocked = new Uint8Array(NAV_COLS * NAV_ROWS);
+  for (let cy = 0; cy < NAV_ROWS; cy++) for (let cx = 0; cx < NAV_COLS; cx++) {
+    navBlocked[cy * NAV_COLS + cx] = circleHitsWall(cx * NAV_CELL + 50, cy * NAV_CELL + 50, 30) ? 1 : 0;
   }
+}
+const flowCache = { key: '', t: -9, dist: new Int16Array(NAV_COLS * NAV_ROWS) };
+function flowField(tx, ty) {
+  const tcx = clamp(Math.floor(tx / NAV_CELL), 0, NAV_COLS - 1);
+  const tcy = clamp(Math.floor(ty / NAV_CELL), 0, NAV_ROWS - 1);
+  const key = tcx + ',' + tcy;
+  if (flowCache.key === key && G.time - flowCache.t < 0.25) return flowCache.dist;
+  const dist = flowCache.dist;
+  dist.fill(-1);
+  const q = [tcy * NAV_COLS + tcx];
+  dist[q[0]] = 0;
+  for (let h = 0; h < q.length; h++) {
+    const c = q[h], cx = c % NAV_COLS, cy = (c / NAV_COLS) | 0, d0 = dist[c] + 1;
+    const nb = [((cx + 1) % NAV_COLS) + cy * NAV_COLS, ((cx + NAV_COLS - 1) % NAV_COLS) + cy * NAV_COLS,
+                cx + ((cy + 1) % NAV_ROWS) * NAV_COLS, cx + ((cy + NAV_ROWS - 1) % NAV_ROWS) * NAV_COLS];
+    for (const n of nb) if (dist[n] < 0 && !navBlocked[n]) { dist[n] = d0; q.push(n); }
+  }
+  flowCache.key = key; flowCache.t = G.time;
+  return dist;
+}
+// direction toward the neighbouring cell that gets CLOSER to the target
+// (or FARTHER, when fleeing) — falls back to a beeline on the target cell
+function flowDir(g, tx, ty, flee) {
+  const dist = flowField(tx, ty);
+  const cx = clamp(Math.floor(g.x / NAV_CELL), 0, NAV_COLS - 1);
+  const cy = clamp(Math.floor(g.y / NAV_CELL), 0, NAV_ROWS - 1);
+  let best = dist[cy * NAV_COLS + cx], bx = -1, by = -1;
+  const cells = [[(cx + 1) % NAV_COLS, cy], [(cx + NAV_COLS - 1) % NAV_COLS, cy], [cx, (cy + 1) % NAV_ROWS], [cx, (cy + NAV_ROWS - 1) % NAV_ROWS]];
+  for (const [nx, ny] of cells) {
+    const d = dist[ny * NAV_COLS + nx];
+    if (d < 0) continue;
+    if (flee ? (best < 0 || d > best) : (best < 0 || d < best)) { best = d; bx = nx * NAV_CELL + 50; by = ny * NAV_CELL + 50; }
+  }
+  if (bx < 0) return { x: wrapDelta(tx - g.x, WORLD_W), y: wrapDelta(ty - g.y, WORLD_H) };
+  return { x: wrapDelta(bx - g.x, WORLD_W), y: wrapDelta(by - g.y, WORLD_H) };
+}
+buildNav();
+function ghostTargetPoint(g, frameChaser) {
+  const p = player;
   switch (g.type) {
     case 'chaser':
-      return { x: p.x, y: p.y };
-    case 'ambusher': {
-      // target a point ahead of the player's motion
-      const lead = 0.55;
-      return { x: p.x + p.vx * lead, y: p.y + p.vy * lead };
-    }
+      // the pack surrounds: each chaser owns a ring slot around your tile
+      return { x: wrapPos(p.x + Math.cos(g.slotAng) * 44, WORLD_W), y: wrapPos(p.y + Math.sin(g.slotAng) * 44, WORLD_H) };
+    case 'ambusher':
+      // 4 tiles ahead of your heading — she doesn't chase you, she meets you
+      return { x: wrapPos(p.x + Math.cos(p.angle) * 128, WORLD_W), y: wrapPos(p.y + Math.sin(p.angle) * 128, WORLD_H) };
     case 'flanker': {
-      // classic Inky: pivot ahead of player, mirrored off the chaser
+      // Mirror Math (canon): pivot 2 tiles ahead of you, doubled off the chaser
       const px = p.x + Math.cos(p.angle) * 64, py = p.y + Math.sin(p.angle) * 64;
-      if (!frameChaser || frameChaser === g) return { x: px, y: py };
-      return { x: px + (px - frameChaser.x), y: py + (py - frameChaser.y) };
+      if (!frameChaser || frameChaser === g) return { x: wrapPos(px, WORLD_W), y: wrapPos(py, WORLD_H) };
+      return { x: wrapPos(px + wrapDelta(px - frameChaser.x, WORLD_W), WORLD_W),
+               y: wrapPos(py + wrapDelta(py - frameChaser.y, WORLD_H), WORLD_H) };
     }
     case 'wildcard': {
-      if (g.wander) return { x: g.wanderX, y: g.wanderY };
-      // shy like Clyde: back off when close
-      if (tDist(g.x, g.y, p.x, p.y) < 150) return { x: 60, y: WORLD_H - 60 };
-      return { x: p.x, y: p.y };
+      // Shy Orbit: charge until the ring, then veer around it
+      const d = tDist(g.x, g.y, p.x, p.y);
+      const orbitR = g.state === 'high' ? 120 : 230;   // drunk-brave: the ring shrinks, he commits
+      if (d > orbitR + 30) return { x: p.x, y: p.y };
+      const a = Math.atan2(wrapDelta(g.y - p.y, WORLD_H), wrapDelta(g.x - p.x, WORLD_W)) + 0.85;
+      return { x: wrapPos(p.x + Math.cos(a) * orbitR, WORLD_W), y: wrapPos(p.y + Math.sin(a) * orbitR, WORLD_H) };
     }
   }
   return { x: p.x, y: p.y };
@@ -1135,6 +1638,9 @@ function update(dt) {
   if (touchMove) { ix = touchMove.dx; iy = touchMove.dy; }
   const ilen = Math.hypot(ix, iy);
   if (ilen > 0.01) { ix /= Math.max(1, ilen); iy /= Math.max(1, ilen); }
+  // idle voice: 25s without input and Pac starts talking to himself
+  if (ilen > 0.01 || touchMove) G.lastInputT = G.time;
+  else if (G.time - (G.lastInputT || 0) > 25) { sayLine('idle'); G.lastInputT = G.time; }
 
   // ---- dash ----
   const dashPow = hasPower('dash');
@@ -1153,37 +1659,47 @@ function update(dt) {
   }
   G.wantDash = false;
 
-  // ---- player movement ----
+  // ---- player movement (v3.1 CRISP) ----
+  // Direct velocity: input IS velocity — no acceleration ramp. The v3
+  // velocity-approach (2400/s toward target) made every reversal
+  // decelerate through zero (~0.23s of mush — the owner's #1 complaint).
+  // Now a turn is instant and a stop is instant. Walls resolve PER AXIS
+  // (move X, resolve, move Y, resolve) so a wall only blocks the axis
+  // running into it: Pac slides along walls and turns tight at corners.
+  // The old drift model survives ONLY on the T7 ice floor, where sliding
+  // is the hazard itself. The input vector already carries magnitude
+  // (keyboard = unit, stick = analog), so speed scales with the push.
   const baseSpeed = 272 * player.speedMul * comboSpeed * (player.buffT > 0 ? 1.2 : 1) * (player.slowT > 0 ? 0.6 : 1);
   if (player.dashT > 0) {
     player.dashT -= dt;
     player.vx = player.dashDirX * baseSpeed * 3.2;
     player.vy = player.dashDirY * baseSpeed * 3.2;
+  } else if (TrigState.ice > 0) {
+    // T7 freeze floor: thrust applies, friction nearly vanishes — you slide
+    player.vx += ix * baseSpeed * 1.6 * dt;
+    player.vy += iy * baseSpeed * 1.6 * dt;
+    const sp2 = Math.hypot(player.vx, player.vy), cap = baseSpeed * 1.25;
+    if (sp2 > cap) { player.vx = player.vx / sp2 * cap; player.vy = player.vy / sp2 * cap; }
+    player.vx *= Math.pow(0.55, dt); player.vy *= Math.pow(0.55, dt);
   } else {
-    const accel = 2400;
-    if (TrigState.ice > 0) {
-      // T7 freeze floor: thrust applies, friction nearly vanishes — you slide
-      player.vx += ix * baseSpeed * 1.6 * dt;
-      player.vy += iy * baseSpeed * 1.6 * dt;
-      const sp2 = Math.hypot(player.vx, player.vy), cap = baseSpeed * 1.25;
-      if (sp2 > cap) { player.vx = player.vx / sp2 * cap; player.vy = player.vy / sp2 * cap; }
-      player.vx *= Math.pow(0.55, dt); player.vy *= Math.pow(0.55, dt);
-    } else {
-      player.vx += clamp(ix * baseSpeed - player.vx, -accel * dt, accel * dt);
-      player.vy += clamp(iy * baseSpeed - player.vy, -accel * dt, accel * dt);
-      if (ilen < 0.01) { player.vx *= Math.pow(0.0001, dt); player.vy *= Math.pow(0.0001, dt); }
-    }
+    player.vx = ix * baseSpeed;
+    player.vy = iy * baseSpeed;
   }
   player.x = wrapPos(player.x + player.vx * dt, WORLD_W);
+  if (circleHitsWall(player.x, player.y, player.r)) {
+    const backX = pushOutWalls(player.x, player.y, player.r);
+    player.x = backX.x;
+    if (circleHitsWall(player.x, player.y, player.r)) player.y = backX.y;
+  }
   player.y = wrapPos(player.y + player.vy * dt, WORLD_H);
-  { // maze walls: push out along the axis of least penetration — Pac slides
-    // along walls instead of sticking to them
-    const slid = pushOutWalls(player.x, player.y, player.r);
-    player.x = slid.x; player.y = slid.y;
+  if (circleHitsWall(player.x, player.y, player.r)) {
+    const backY = pushOutWalls(player.x, player.y, player.r);
+    player.y = backY.y;
+    if (circleHitsWall(player.x, player.y, player.r)) player.x = backY.x;
   }
   const spd = Math.hypot(player.vx, player.vy);
   if (spd > 12) player.angle = Math.atan2(player.vy, player.vx);
-  player.chomp += dt * (6 + spd * 0.045);
+  player.chomp += dt * (6 + spd * 0.045) * (player.charId === 'pac' ? 1.35 : 1);   // HELLA MAW: chomp speed up
 
   // ---- fire trail ----
   const firePow = hasPower('fire');
@@ -1212,6 +1728,15 @@ function update(dt) {
   if (dotTimer <= 0) { dotTimer = 0.7; if (dots.length < DOT_TARGET) for (let i = 0; i < 3; i++) spawnDotCluster(); }
   patternTimer -= dt;
   if (patternTimer <= 0) { patternTimer = PATTERN_INTERVAL; spawnDotPattern(); }
+  // v3.1: the WAVE clock — formations land and STACK whether eaten or not
+  waveTimer -= dt;
+  if (waveTimer <= 0) { waveTimer = WAVE_INTERVAL; spawnWave(); }
+  orbTimer -= dt;
+  if (orbTimer <= 0) { orbTimer = 34; if (orbs.length < 2) spawnOrb(); }
+  ringTimer -= dt;
+  if (ringTimer <= 0) { ringTimer = 50; if (rings.length < 15) spawnRingArc(); }
+  drugTimer -= dt;
+  if (drugTimer <= 0) { drugTimer = 20; if (drugs.length < 5) spawnDrug(Object.keys(DRUGS)[randi(0, 3)]); }
   pelletTimer -= dt;
   if (pelletTimer <= 0) { pelletTimer = PELLET_INTERVAL; if (pellets.length < 2) spawnPellet(); }
   fruitTimer -= dt;
@@ -1234,11 +1759,13 @@ function update(dt) {
       if (g.respawnAt <= 0) placeGhostAtEdge(g);
     }
   }
-  // surge events: a ring of ghosts visibly masses around the player and closes in
+  // surge events: a ring of ghosts visibly masses around the player and closes
+  // in — v3.1: first surge at ~100s and smaller; surges are punctuation,
+  // not the baseline pressure (the curve is)
   surgeTimer -= dt;
   if (surgeTimer <= 0) {
-    surgeTimer = Math.max(30, 52 - G.time * 0.012);
-    const n = Math.min(24, 10 + Math.floor(G.time / 28));
+    surgeTimer = Math.max(45, 75 - G.time * 0.012);
+    const n = Math.min(18, 6 + Math.floor(G.time / 45));
     const baseAng = rand(0, TAU);
     for (let i = 0; i < n; i++) spawnGhost(undefined, baseAng + (i / n) * TAU);
     toast('👻 GHOST SURGE!');
@@ -1248,16 +1775,23 @@ function update(dt) {
   // ---- dots: magnet + eating ----
   const mawPow = hasPower('magnet');
   const mawActive = mawPow && activePowerId() === 'magnet';
-  const magnetR = mawActive ? player.magnetR * (2.6 + 0.45 * (mawPow.lvl - 1)) : player.magnetR;
+  // HELLA MAW (Pure Pac, ROSTER.md): +14 magnet while Pac is the active char
+  const magnetR = mawActive ? player.magnetR * (2.6 + 0.45 * (mawPow.lvl - 1)) : player.magnetR + (player.charId === 'pac' ? 14 : 0);
   const magnetPull = mawActive ? 760 : 300;
-  const eatR = player.r + player.chompBonus;
+  const eatR = player.r + player.chompBonus + (player.charId === 'pac' ? 6 : 0);   // HELLA MAW: +6 eat radius
   for (let i = dots.length - 1; i >= 0; i--) {
     const d = dots[i];
     // moving formations: advance the dot along its pattern's flow
     if (d.pat) {
       const p = d.pat;
       p.t += dt;
-      if (p.t >= p.dur) { dots.splice(i, 1); continue; }   // the formation disperses on schedule
+      if (p.t >= p.dur) {
+        // v3.1: formations SETTLE into standing dots instead of dissolving —
+        // waves stack (FULL-SCOPE §25 accumulation). A dot that settles
+        // inside a wall is the only one removed.
+        if (circleHitsWall(d.x, d.y, 6)) { dots.splice(i, 1); continue; }
+        d.pat = null;
+      } else {
       let nx, ny;
       if (p.kind === 'river') {
         // the river's anchor flows along its heading; each dot rides a slot
@@ -1282,6 +1816,7 @@ function update(dt) {
       }
       if (p.kind !== 'river' && circleHitsWall(nx, ny, 6)) { dots.splice(i, 1); continue; }
       d.x = wrapPos(nx, WORLD_W); d.y = wrapPos(ny, WORLD_H);
+      }
     }
     const dx = wrapDelta(player.x - d.x, WORLD_W);
     const dy = wrapDelta(player.y - d.y, WORLD_H);
@@ -1297,6 +1832,8 @@ function update(dt) {
       player.combo++;
       player.comboTimer = player.comboWindow;
       G.dots++;
+      if (player.combo === 60 || player.combo === 160 || player.combo === 320) sayLine('streak');
+      if (G.dots === 400) sayLine('feast');
       G.score += 10 * comboMult;
       gainXP(1);
       Snd.waka(player.combo);
@@ -1315,6 +1852,7 @@ function update(dt) {
       player.eatChain = 0;
       Snd.sirenStart();
       toast('EAT MODE!');
+      sayLine('ghosteat');
       Teach.fire('eatmode', player.x, player.y);   // first-sight: the hunt flips
       burst(pl.x, pl.y, '#4db2ff', 18);
     }
@@ -1335,13 +1873,85 @@ function update(dt) {
       }
     }
     if (tDist(f.x, f.y, player.x, player.y) < eatR + 12) {
-      // fruit heals — exactly the HP on its label, nothing else (v2 rule)
+      // v3.1: fruit is STORABLE (canon) — walking over it banks it (cap 3)
+      // to eat on demand; only a full bag heals on the spot
       fruits.splice(i, 1);
-      const healed = Math.min(f.kind.heal, player.maxHp - player.hp);
-      player.hp += healed;
-      floater(f.x, f.y - 18, f.kind.name + ' +' + healed + ' HP', '#7dff8a');
-      Snd.fruit();
-      burst(f.x, f.y, f.kind.color, 12);
+      if (player.fruitBag.length < 3) {
+        player.fruitBag.push(f.kind);
+        floater(f.x, f.y - 18, f.kind.name + ' STORED (' + player.fruitBag.length + '/3)', '#7dff8a');
+        Snd.fruit();
+        updateFruitHUD();
+      } else {
+        const healed = Math.min(f.kind.heal, player.maxHp - player.hp);
+        player.hp += healed;
+        floater(f.x, f.y - 18, f.kind.name + ' +' + healed + ' HP', '#7dff8a');
+        Snd.fruit();
+        burst(f.x, f.y, f.kind.color, 12);
+      }
+    }
+  }
+
+  // ---- orbs / rings / coins / stars (v3.1 density: something to want in
+  // every direction) ----
+  for (let i = orbs.length - 1; i >= 0; i--) {
+    const o = orbs[i];
+    o.ttl -= dt;
+    if (o.ttl <= 0) { orbs.splice(i, 1); continue; }
+    if (tDist(o.x, o.y, player.x, player.y) < eatR + 14) { orbs.splice(i, 1); eatOrb(o); }
+  }
+  for (let i = rings.length - 1; i >= 0; i--) {
+    const r0 = rings[i];
+    r0.ttl -= dt;
+    if (r0.ttl <= 0) { rings.splice(i, 1); continue; }
+    if (tDist(r0.x, r0.y, player.x, player.y) < eatR + 11) {
+      rings.splice(i, 1);
+      Save.data.rings = (Save.data.rings || 0) + 1;   // account-wide achievement currency (canon)
+      G.score += 50;
+      floater(r0.x, r0.y - 16, 'RING! 💍 ' + Save.data.rings, '#ffd93b');
+      Snd.tone(1560, 0.09, 'sine', 0.13, 2090);
+    }
+  }
+  for (let i = coins.length - 1; i >= 0; i--) {
+    const c0 = coins[i];
+    c0.ttl -= dt;
+    if (c0.ttl <= 0) { coins.splice(i, 1); continue; }
+    if (tDist(c0.x, c0.y, player.x, player.y) < eatR + 11) {
+      coins.splice(i, 1);
+      Save.data.coins[player.charId] = (Save.data.coins[player.charId] || 0) + 1;
+      player.coinsEarned++;
+      G.score += 25;
+      floater(c0.x, c0.y - 16, '+1 COIN', '#ffd93b');
+      Snd.tone(1240, 0.07, 'square', 0.08, 1860);
+    }
+  }
+  for (let i = stars.length - 1; i >= 0; i--) {
+    const s0 = stars[i];
+    if (tDist(s0.x, s0.y, player.x, player.y) < eatR + 14) {
+      stars.splice(i, 1);
+      G.score += 250;
+      floater(s0.x, s0.y - 18, '★ +250', '#ffd93b');
+      burst(s0.x, s0.y, '#ffd93b', 16);
+      Snd.tone(880, 0.12, 'sine', 0.14, 1760);
+      setTimeout(() => stars.push({ x: s0.x, y: s0.y, ttl: 9999 }), 45000);   // the pocket refills — worth the trip again later
+    }
+  }
+  // ---- drug drops: DENIAL (DESIGN-ghosts §5) — eat a ghost's supply
+  // before it can score. For anyone else it's a bad edible. For PURE PAC
+  // (Cast-Iron Stomach) junk grants BUFFS — he takes the high himself.
+  for (let i = drugs.length - 1; i >= 0; i--) {
+    const d0 = drugs[i];
+    if (tDist(d0.x, d0.y, player.x, player.y) >= eatR + 11) continue;
+    drugs.splice(i, 1);
+    if (player.charId === 'pac') {
+      if (d0.kind === 'cocaine') { player.buffT = Math.max(player.buffT, 5); floater(d0.x, d0.y - 18, 'CAST-IRON: REDLINE!', '#ff5e3a'); }
+      else if (d0.kind === 'weed') { gainResource(35); floater(d0.x, d0.y - 18, 'CAST-IRON: MELLOW +35', '#7dc242'); }
+      else if (d0.kind === 'lsd') { player.eatT = Math.max(player.eatT, 3); player.eatChain = 0; Snd.sirenStart(); floater(d0.x, d0.y - 18, 'CAST-IRON: TRIP MODE!', '#c07df0'); }
+      else { player.hp = Math.min(player.maxHp, player.hp + 12); floater(d0.x, d0.y - 18, 'CAST-IRON: +12 HP', '#e8a33d'); }
+      Snd.tone(740, 0.1, 'sine', 0.13, 1180);
+    } else {
+      player.slowT = Math.max(player.slowT, 2.5);
+      floater(d0.x, d0.y - 18, 'BAD EDIBLE — SLOWED!', '#8a9a5b');
+      Snd.tone(220, 0.18, 'sawtooth', 0.1, 110);
     }
   }
 
@@ -1369,14 +1979,30 @@ function update(dt) {
     // burn down during the planning window; the field the player read when
     // they picked their card is the field they return to)
     if (player.graceT > 0) continue;
-    // wildcard re-rolls its behaviour
-    if (g.type === 'wildcard') {
-      g.modeT -= dt;
-      if (g.modeT <= 0) {
-        g.modeT = rand(2.4, 4.4);
-        g.wander = !g.wander;
-        g.wanderX = rand(0, WORLD_W); g.wanderY = rand(0, WORLD_H);
+    // ---- addiction clock (DESIGN-ghosts §4): SOBER → FIENDING → HIGH ----
+    if (g.state === 'sober') {
+      g.drugT -= dt;
+      if (g.drugT <= 0) { g.state = 'fiending'; g.fienT = 0; g.fixTarget = null; }
+    } else if (g.state === 'fiending') {
+      g.fienT += dt;
+      // a fiending ghost smells its own drug — the sense radius grows with
+      // desperation — and BREAKS OFF THE HUNT to score when it can
+      const kind = GHOST_DRUG[g.type];
+      let best = null, bd = 260 + g.fienT * 22;
+      for (const d of drugs) {
+        if (d.kind !== kind) continue;
+        const dd = tDist(d.x, d.y, g.x, g.y);
+        if (dd < bd) { bd = dd; best = d; }
       }
+      g.fixTarget = best;
+      if (best && bd < 30) {
+        drugs.splice(drugs.indexOf(best), 1);
+        g.state = 'high'; g.highT = 8;
+        floater(g.x, g.y - 26, DRUGS[kind].name + '!', GHOST_STYLE[g.type].color);
+      }
+    } else if (g.state === 'high') {
+      g.highT -= dt;
+      if (g.highT <= 0) { g.state = 'sober'; g.drugT = rand(16, 30); g.fixTarget = null; g.camped = false; }
     }
     // fire-trail burn
     if (g.burnT > 0 || trail.length) {
@@ -1398,18 +2024,61 @@ function update(dt) {
         }
       } else if (g.burnT > 0) g.burnT = Math.max(0, g.burnT - dt * 2);
     }
-    // steering
-    const tgt = ghostTarget(g, frameChaser);
-    let dx = wrapDelta(tgt.x - g.x, WORLD_W);
-    let dy = wrapDelta(tgt.y - g.y, WORLD_H);
-    const dl = Math.hypot(dx, dy) || 1;
-    dx /= dl; dy /= dl;
-    let gSpeed = ghostBaseSpeed() * GHOST_STYLE[g.type].speed * (g.elite ? 1.07 : 1);
-    if (player.eatT > 0) gSpeed *= 0.55;
-    if (g.burnT > 0) gSpeed *= 0.6;
-    const steer = 5.5;
-    g.vx += (dx * gSpeed - g.vx) * Math.min(1, steer * dt);
-    g.vy += (dy * gSpeed - g.vy) * Math.min(1, steer * dt);
+    // ---- steering (v3.1): flow-field routing to a personality target ----
+    if (g.stunT > 0) {
+      // scattered by a blue orb: stunned, drifting on the blast velocity
+      g.stunT -= dt;
+      g.vx *= Math.pow(0.02, dt); g.vy *= Math.pow(0.02, dt);
+    } else if (g.camped) {
+      // HIGH Pinky on Ambush Point: motionless, invisible, patient — the
+      // camp breaks when Pac blunders close or the wait runs out
+      g.campT -= dt;
+      g.vx *= Math.pow(0.0001, dt); g.vy *= Math.pow(0.0001, dt);
+      if (g.campT <= 0 || tDist(g.x, g.y, player.x, player.y) < 90) g.camped = false;
+    } else {
+      const fleeing = player.eatT > 0;
+      let dir, spdMul = GHOST_STYLE[g.type].speed;
+      if (fleeing) {
+        dir = flowDir(g, player.x, player.y, true);
+        if (g.type === 'chaser') spdMul *= 1.55;   // Blinky flees at nearly chase speed (§6)
+      } else if (g.state === 'fiending' && g.fixTarget) {
+        dir = flowDir(g, g.fixTarget.x, g.fixTarget.y, false);   // the fix, not the hunt
+        spdMul *= 0.95;
+      } else {
+        if (g.state === 'high' && g.type === 'ambusher' && tDist(g.x, g.y, player.x, player.y) > 200) {
+          // Ambush Point (§2): teleport ahead of Pac's heading and wait
+          const ax = wrapPos(player.x + Math.cos(player.angle) * 230, WORLD_W);
+          const ay = wrapPos(player.y + Math.sin(player.angle) * 230, WORLD_H);
+          if (!circleHitsWall(ax, ay, g.r + 4)) {
+            g.x = ax; g.y = ay; g.vx = 0; g.vy = 0; g.camped = true; g.campT = 3.5;
+            floater(g.x, g.y - 24, 'tee-hee…', '#ff9de2');
+          }
+        }
+        const tp = ghostTargetPoint(g, frameChaser);
+        dir = flowDir(g, tp.x, tp.y, false);
+        if (g.state === 'high') {
+          if (g.type === 'chaser') spdMul *= 1.15 + Math.min(0.45, (8 - g.highT) * 0.06);   // Redline: speed climbs the longer the high
+          else if (g.type === 'flanker') spdMul *= 1.05;
+        }
+        if (g.state === 'fiending') spdMul *= 0.82;   // withdrawal: degraded hunt
+      }
+      let dx = dir.x, dy = dir.y;
+      const dl = Math.hypot(dx, dy) || 1;
+      dx /= dl; dy /= dl;
+      // per-ghost path wobble: fiending sloppiness + Clyde's beer sway —
+      // the pack never moves as one organism
+      const wob = g.type === 'wildcard' ? 0.35 : (g.state === 'fiending' ? 0.3 : 0.06);
+      const wa = Math.sin(G.time * 2.1 + g.wobSeed) * wob;
+      const cwa = Math.cos(wa), swa = Math.sin(wa);
+      const rdx = dx * cwa - dy * swa, rdy = dx * swa + dy * cwa;
+      let gSpeed = ghostBaseSpeed() * spdMul * (g.elite ? 1.07 : 1);
+      if (fleeing) gSpeed *= (g.type === 'chaser' ? 0.85 : 0.55);
+      if (g.burnT > 0 && !(g.state === 'high' && g.type === 'chaser')) gSpeed *= 0.6;   // HIGH Blinky ignores slows (Redline)
+      if (g.state === 'fiending') gSpeed *= 0.8 + 0.2 * Math.sin(G.time * 9 + g.wobSeed);   // the stutter
+      const steer = 7.5;
+      g.vx += (rdx * gSpeed - g.vx) * Math.min(1, steer * dt);
+      g.vy += (rdy * gSpeed - g.vy) * Math.min(1, steer * dt);
+    }
     // separation so packs don't stack into one blob — neighbours only, via the grid
     const gcx = Math.floor(g.x / CELL) % COLS, gcy = Math.floor(g.y / CELL) % ROWS;
     for (let ox = -1; ox <= 1; ox++) {
@@ -1448,6 +2117,7 @@ function update(dt) {
         gainXP(3);
         floater(g.x, g.y - 22, '+' + pts, '#4db2ff');
         Snd.eatGhost(player.eatChain);
+        if (Math.random() < 0.35) sayLine('ghosteat');
       } else if (G.time >= player.invulnUntil && g.touchCd <= 0) {
         g.touchCd = 1.0;
         if (Math.random() * 100 < player.dodgePct) {
@@ -1464,6 +2134,7 @@ function update(dt) {
         G.shake = 9;
         burst(player.x, player.y, '#ff3b6b', 10);
         Snd.hurt();
+        sayLine(player.hp <= 30 ? 'neardeath' : 'damage', player.hp <= 30);
         if (player.hp <= 0) { loseLife(); if (G.state !== 'playing') return; }
         }
         g._dodged = false;
@@ -1486,6 +2157,10 @@ function update(dt) {
   if (G.shake > 0) G.shake = Math.max(0, G.shake - dt * 26);
   if (G.toastT > 0) { G.toastT -= dt; if (G.toastT <= 0) document.getElementById('toast').style.opacity = '0'; }
 
+  // ---- hazards (fire bars / cacti) + hidden-shop dwell ----
+  updateHazards(dt);
+  if (G.state !== 'playing') return;   // hazard death or the shop opening ends the frame's work
+
   // ---- first-sight scan (before the level-up handoff, so a lesson about
   // something on screen never queues behind the card screen) ----
   Teach.scan();
@@ -1495,25 +2170,74 @@ function update(dt) {
 }
 
 // ---------------- Rendering ----------------
-let vignette = null;
-function buildVignette() {
-  vignette = document.createElement('canvas');
-  vignette.width = Math.max(2, Math.floor(VW / 2)); vignette.height = Math.max(2, Math.floor(VH / 2));
-  const vc = vignette.getContext('2d');
-  const g = vc.createRadialGradient(VW / 4, VH / 4, Math.min(VW, VH) / 4, VW / 4, VH / 4, Math.max(VW, VH) / 1.4);
-  g.addColorStop(0, 'rgba(0,0,0,0)');
-  g.addColorStop(1, 'rgba(0,0,10,0.55)');
-  vc.fillStyle = g; vc.fillRect(0, 0, vignette.width, vignette.height);
-}
-buildVignette();
-window.addEventListener('resize', buildVignette);
-
+// (v3.1: the vignette and the main-view fog are GONE — see render(). Light
+// Radius still feeds the radar's explored radius and the pause readout.)
 let animT = 0;
-function SX(x) { return VW / 2 + wrapDelta(x - player.x, WORLD_W); }
-function SY(y) { return VH / 2 + wrapDelta(y - player.y, WORLD_H); }
+// the play field renders ABOVE the thumb bar (owner control canon): the
+// camera centre sits in the view area over the bar, not the screen centre
+const BAR_H = 104;
+function playViewH() { return G.state === 'intro' ? VH : Math.max(200, VH - BAR_H); }
+function CX() { return VW / 2; }
+function CY() { return playViewH() / 2; }
+function SX(x) { return CX() + wrapDelta(x - player.x, WORLD_W); }
+function SY(y) { return CY() + wrapDelta(y - player.y, WORLD_H); }
 function onScreen(sx, sy, m) { return sx > -m && sx < VW + m && sy > -m && sy < VH + m; }
 
 function drawGhostShape(g, sx, sy) {
+  // v3.1: the illustrated ghosts, with the addiction state ON THE BODY
+  // (DESIGN-ghosts §7): HIGH saturates + aura, FIENDING washes grey-green
+  // and twitches, SOBER is the crayon colour. Camped Pinky is invisible.
+  if (g.camped) return;
+  const r = g.r;
+  const edible = player.eatT > 0;
+  const flash = edible && player.eatT < 1.6 && Math.floor(animT * 7) % 2 === 0;
+  // LSD echoes: a HIGH flanker sheds technicolor after-images (§2)
+  if (g.type === 'flanker' && g.state === 'high' && !edible) {
+    for (const [back, al] of [[0.22, 0.16], [0.11, 0.30]]) {
+      ctx.save();
+      ctx.globalAlpha = al;
+      drawSprite('ghost-cyan-high', sx - g.vx * back, sy - g.vy * back, r * 2.15, r * 2.3);
+      ctx.restore();
+    }
+  }
+  if (g.state === 'high' && !edible) {
+    ctx.fillStyle = 'rgba(255,240,160,0.22)';
+    ctx.beginPath(); ctx.arc(sx, sy, r * 1.6 + Math.sin(animT * 9 + g.wobSeed) * 2, 0, TAU); ctx.fill();
+  }
+  const bob = Math.sin(animT * 6 + g.wobSeed) * 2;
+  const twitch = g.state === 'fiending' ? Math.sin(animT * 26 + g.wobSeed) * 1.7 : 0;
+  let name = null;
+  if (edible) name = flash ? null : 'ghost-blue';
+  else {
+    const base = { chaser: 'ghost-red', ambusher: 'ghost-pink', flanker: 'ghost-cyan', wildcard: 'ghost-orange' }[g.type];
+    name = base + (g.state === 'fiending' ? '-fiend' : g.state === 'high' ? '-high' : '');
+  }
+  let drawn = false;
+  if (name) {
+    ctx.save();
+    if (g.state === 'high' && g.type === 'chaser') ctx.translate(sx + Math.sin(animT * 31) * 1.3, sy + bob);   // Redline vibrates (§7)
+    else ctx.translate(sx + twitch, sy + bob);
+    if (g.type === 'wildcard') ctx.rotate(Math.sin(animT * 2.2 + g.wobSeed) * 0.09);   // beer sway (§7)
+    drawn = drawSprite(name, 0, 0, r * 2.15, r * 2.3);
+    ctx.restore();
+  }
+  if (drawn) {
+    if (g.elite) {   // golden crown over the sprite
+      ctx.save();
+      ctx.translate(sx, sy + bob - r * 1.02);
+      ctx.fillStyle = '#ffd93b';
+      ctx.strokeStyle = '#7a5b00'; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.55, 0); ctx.lineTo(-r * 0.55, -r * 0.34); ctx.lineTo(-r * 0.27, -r * 0.1);
+      ctx.lineTo(0, -r * 0.4); ctx.lineTo(r * 0.27, -r * 0.1); ctx.lineTo(r * 0.55, -r * 0.34);
+      ctx.lineTo(r * 0.55, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+    return;
+  }
+  drawGhostLegacy(g, sx, sy);   // sprites missing (harness): drawn shapes
+}
+function drawGhostLegacy(g, sx, sy) {
   const r = g.r;
   const edible = player.eatT > 0;
   const flash = edible && player.eatT < 1.6 && Math.floor(animT * 7) % 2 === 0;
@@ -1530,7 +2254,7 @@ function drawGhostShape(g, sx, sy) {
     ctx.lineTo(x0 - waveW, r * 0.85);
   }
   ctx.closePath();
-  ctx.fillStyle = flash ? '#f4f6ff' : (edible ? '#2438ff' : GHOST_STYLE[g.type].color);
+  ctx.fillStyle = flash ? '#f4f6ff' : (edible ? '#2438ff' : (g.state === 'fiending' ? '#7a8a6a' : GHOST_STYLE[g.type].color));
   ctx.fill();
   if (g.burnT > 0) { ctx.fillStyle = 'rgba(255,120,20,' + Math.min(0.75, g.burnT * 1.4) + ')'; ctx.fill(); }
   if (g.elite) { // golden crown
@@ -1563,44 +2287,64 @@ function drawGhostShape(g, sx, sy) {
 }
 
 function render() {
-  // background
-  const bg = ctx.createLinearGradient(0, 0, 0, VH);
-  bg.addColorStop(0, '#070718'); bg.addColorStop(1, '#04040c');
+  // ---- THE SET (v3.1): notebook paper — matte cream, ruled lines, one red
+  // margin. v3's navy void + vignette + fog was the "depression" the owner
+  // named; the locked style sheet is pencil on school paper, so the world
+  // IS the paper now. (Fog survives only as the radar's explored rule.)
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, VW, VH);
+  ctx.fillStyle = '#f6f1de';
+  ctx.fillRect(0, 0, VW, VH);
 
   const shX = G.shake ? rand(-G.shake, G.shake) : 0;
   const shY = G.shake ? rand(-G.shake, G.shake) : 0;
   ctx.save();
   ctx.translate(shX, shY);
 
-  // world grid (100px — divides world evenly, so wrapping is seamless)
-  const grid = 100;
-  const offX = ((-(player.x - VW / 2) % grid) + grid) % grid;
-  const offY = ((-(player.y - VH / 2) % grid) + grid) % grid;
-  ctx.strokeStyle = 'rgba(52,72,190,0.20)';
+  // ruled lines (50px — divides the world height evenly, wrap-seamless)
+  ctx.strokeStyle = 'rgba(90,130,190,0.20)';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  for (let x = offX; x <= VW; x += grid) { ctx.moveTo(x, 0); ctx.lineTo(x, VH); }
-  for (let y = offY; y <= VH; y += grid) { ctx.moveTo(0, y); ctx.lineTo(VW, y); }
+  const loffY = (((-(player.y - CY())) % 50) + 50) % 50;
+  for (let y = loffY; y <= VH; y += 50) { ctx.moveTo(0, y); ctx.lineTo(VW, y); }
   ctx.stroke();
+  // faint vertical pencil grid (100px)
+  ctx.strokeStyle = 'rgba(90,130,190,0.08)';
+  ctx.beginPath();
+  const goffX = (((-(player.x - CX())) % 100) + 100) % 100;
+  for (let x = goffX; x <= VW; x += 100) { ctx.moveTo(x, 0); ctx.lineTo(x, VH); }
+  ctx.stroke();
+  // the red margin line — a world feature at x = 120, drawn where it wraps to
+  {
+    const msx = CX() + wrapDelta(120 - player.x, WORLD_W);
+    if (msx > -4 && msx < VW + 4) {
+      ctx.strokeStyle = 'rgba(230,90,90,0.35)';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(msx, 0); ctx.lineTo(msx, VH); ctx.stroke();
+    }
+  }
 
-  // maze walls (v2) — neon slabs on the dark: bright edge, deep face. Drawn
-  // through the same wrap-aware projection as everything else, with the
-  // ±world offsets so a wall crossing an edge renders on both sides.
+  // maze walls (v3.1): pencil-crayon blocks — pale crayon-blue fill, dark
+  // pencil outline, diagonal hatch. Drawn through the wrap-aware
+  // projection with ±world offsets so edge walls render on both sides.
   for (const w of WALLS) {
     for (let ox = -1; ox <= 1; ox++) {
       for (let oy = -1; oy <= 1; oy++) {
-        const sx = VW / 2 + wrapDelta(w.x + ox * WORLD_W - player.x, WORLD_W);
-        const sy = VH / 2 + wrapDelta(w.y + oy * WORLD_H - player.y, WORLD_H);
+        const sx = CX() + wrapDelta(w.x + ox * WORLD_W - player.x, WORLD_W);
+        const sy = CY() + wrapDelta(w.y + oy * WORLD_H - player.y, WORLD_H);
         if (!onScreen(sx, sy, Math.max(w.w, w.h) / 2 + 40)) continue;
         const rx = sx - w.w / 2, ry = sy - w.h / 2;
-        ctx.fillStyle = '#131a3d';
+        ctx.fillStyle = '#d7e3f5';
         ctx.fillRect(rx, ry, w.w, w.h);
-        ctx.fillStyle = 'rgba(90,120,255,0.20)';
-        ctx.fillRect(rx + 3, ry + 3, w.w - 6, w.h - 6);
-        ctx.strokeStyle = '#5f7dff';
-        ctx.lineWidth = 2;
+        ctx.save();
+        ctx.beginPath(); ctx.rect(rx, ry, w.w, w.h); ctx.clip();
+        ctx.strokeStyle = 'rgba(46,74,122,0.30)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let hx = rx - w.h; hx < rx + w.w; hx += 9) { ctx.moveTo(hx, ry + w.h + 2); ctx.lineTo(hx + w.h + 4, ry - 2); }
+        ctx.stroke();
+        ctx.restore();
+        ctx.strokeStyle = '#2e4a7a';
+        ctx.lineWidth = 2.5;
         ctx.strokeRect(rx + 1, ry + 1, w.w - 2, w.h - 2);
       }
     }
@@ -1619,38 +2363,165 @@ function render() {
     ctx.beginPath(); ctx.arc(sx, sy, 13 + Math.sin(animT * 9 + s.x) * 2.5, 0, TAU); ctx.fill();
   }
 
-  // dots
-  ctx.fillStyle = '#ffe9a8';
+  // dots — the glowing river (owner: pellets spin, shine, beckon — a river
+  // you want to follow; NO plain white dots). Warm gold, pulsing halo, and
+  // a shine spot that orbits each pellet like a sketch catching light.
   for (const d of dots) {
     const sx = SX(d.x), sy = SY(d.y);
     if (!onScreen(sx, sy, 20)) continue;
-    ctx.beginPath(); ctx.arc(sx, sy, d.r * (0.85 + 0.15 * Math.sin(animT * 3 + d.pulse)), 0, TAU); ctx.fill();
+    const tw = 0.5 + 0.5 * Math.sin(animT * 3.2 + d.pulse);
+    const rr = d.r * (0.9 + 0.25 * tw);
+    ctx.fillStyle = 'rgba(255,196,40,' + (0.15 + 0.13 * tw) + ')';
+    ctx.beginPath(); ctx.arc(sx, sy, rr * 2.1, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#f7b733';
+    ctx.beginPath(); ctx.arc(sx, sy, rr, 0, TAU); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,240,0.95)';
+    ctx.beginPath(); ctx.arc(sx + Math.cos(animT * 2 + d.pulse) * rr * 0.4 - rr * 0.15, sy - rr * 0.35, rr * 0.34, 0, TAU); ctx.fill();
   }
 
-  // power pellets
+  // power pellets — bigger, glowing, visibly HUNGRY (the sprite has a face
+  // and it wants to be eaten); a pulsing amber ring beckons
   for (const pl of pellets) {
     const sx = SX(pl.x), sy = SY(pl.y);
     if (!onScreen(sx, sy, 50)) continue;
-    const pulse = 0.8 + 0.3 * Math.sin(animT * 6);
-    ctx.fillStyle = 'rgba(77,178,255,0.25)';
-    ctx.beginPath(); ctx.arc(sx, sy, 24 * pulse, 0, TAU); ctx.fill();
-    ctx.fillStyle = '#cfeaff';
-    ctx.beginPath(); ctx.arc(sx, sy, 11 * pulse, 0, TAU); ctx.fill();
+    const pulse = 0.85 + 0.15 * Math.sin(animT * 6);
+    ctx.strokeStyle = 'rgba(255,170,40,' + (0.45 + 0.3 * Math.sin(animT * 6)) + ')';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(sx, sy, 27 * pulse, 0, TAU); ctx.stroke();
+    if (!drawSprite('pellet-power', sx, sy, 42 * pulse, 40 * pulse)) {
+      ctx.fillStyle = 'rgba(77,178,255,0.25)';
+      ctx.beginPath(); ctx.arc(sx, sy, 24 * pulse, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#cfeaff';
+      ctx.beginPath(); ctx.arc(sx, sy, 11 * pulse, 0, TAU); ctx.fill();
+    }
   }
 
-  // fruits
+  // fruits — the cherry sprite, hue-shifted per kind; the heal is on the
+  // label when you pick it up (floater), the fruit itself just beckons
   for (const f of fruits) {
     const sx = SX(f.x), sy = SY(f.y);
     if (!onScreen(sx, sy, 40)) continue;
     if (f.ttl < 4 && Math.floor(animT * 6) % 2 === 0) continue; // expiring blink
-    ctx.fillStyle = f.kind.color;
-    ctx.beginPath(); ctx.arc(sx, sy, 11, 0, TAU); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.beginPath(); ctx.arc(sx - 3.5, sy - 3.5, 3.4, 0, TAU); ctx.fill();
-    ctx.strokeStyle = '#7a4a21'; ctx.lineWidth = 2.4;
-    ctx.beginPath(); ctx.moveTo(sx, sy - 10); ctx.quadraticCurveTo(sx + 2, sy - 16, sx + 6, sy - 17); ctx.stroke();
-    ctx.fillStyle = '#37e08b';
-    ctx.beginPath(); ctx.ellipse(sx + 7, sy - 15, 5, 2.6, 0.6, 0, TAU); ctx.fill();
+    const bobF = Math.sin(animT * 3 + f.x) * 2;
+    ctx.save();
+    if (f.kind.name === 'Orange') ctx.filter = 'hue-rotate(38deg)';
+    else if (f.kind.name === 'Melon') ctx.filter = 'hue-rotate(105deg)';
+    else if (f.kind.name === 'Strawberry') ctx.filter = 'hue-rotate(-12deg) saturate(1.3)';
+    const drewF = drawSprite('fruit-cherry', sx, sy + bobF, 34, 33);
+    ctx.restore();
+    if (!drewF) {
+      ctx.fillStyle = f.kind.color;
+      ctx.beginPath(); ctx.arc(sx, sy, 11, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.beginPath(); ctx.arc(sx - 3.5, sy - 3.5, 3.4, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#7a4a21'; ctx.lineWidth = 2.4;
+      ctx.beginPath(); ctx.moveTo(sx, sy - 10); ctx.quadraticCurveTo(sx + 2, sy - 16, sx + 6, sy - 17); ctx.stroke();
+      ctx.fillStyle = '#37e08b';
+      ctx.beginPath(); ctx.ellipse(sx + 7, sy - 15, 5, 2.6, 0.6, 0, TAU); ctx.fill();
+    }
+  }
+
+  // ---- v3.1 world dressing: orbs, rings, coins, stars, drugs, hazards,
+  // the hidden shop door ----
+  for (const o of orbs) {
+    const sx = SX(o.x), sy = SY(o.y);
+    if (!onScreen(sx, sy, 50)) continue;
+    const pulse = 0.9 + 0.12 * Math.sin(animT * 4 + o.x);
+    ctx.fillStyle = 'rgba(77,178,255,0.20)';
+    ctx.beginPath(); ctx.arc(sx, sy, 26 * pulse, 0, TAU); ctx.fill();
+    if (!drawSprite('orb-blue', sx, sy, 38 * pulse, 35 * pulse, animT * 1.2)) {
+      ctx.fillStyle = '#4db2ff';
+      ctx.beginPath(); ctx.arc(sx, sy, 13 * pulse, 0, TAU); ctx.fill();
+    }
+  }
+  for (const r0 of rings) {
+    const sx = SX(r0.x), sy = SY(r0.y);
+    if (!onScreen(sx, sy, 30)) continue;
+    const spin = Math.abs(Math.cos(animT * 4 + r0.x * 0.05));
+    ctx.save();
+    ctx.translate(sx, sy); ctx.scale(0.25 + 0.75 * spin, 1);
+    const drewR = drawSprite('pick-ring', 0, 0, 24, 24);
+    ctx.restore();
+    if (!drewR) { ctx.fillStyle = '#ffd93b'; ctx.beginPath(); ctx.arc(sx, sy, 8, 0, TAU); ctx.fill(); }
+  }
+  for (const c0 of coins) {
+    const sx = SX(c0.x), sy = SY(c0.y);
+    if (!onScreen(sx, sy, 30)) continue;
+    const spin = Math.abs(Math.cos(animT * 4.6 + c0.y * 0.05));
+    ctx.save();
+    ctx.translate(sx, sy); ctx.scale(0.25 + 0.75 * spin, 1);
+    const drewC = drawSprite('pick-coin', 0, 0, 21, 21);
+    ctx.restore();
+    if (!drewC) { ctx.fillStyle = '#ffd93b'; ctx.beginPath(); ctx.arc(sx, sy, 7, 0, TAU); ctx.fill(); }
+  }
+  for (const s0 of stars) {
+    const sx = SX(s0.x), sy = SY(s0.y);
+    if (!onScreen(sx, sy, 50)) continue;
+    const pulse = 0.92 + 0.1 * Math.sin(animT * 3 + s0.x);
+    if (!drawSprite('pick-star', sx, sy, 42 * pulse, 40 * pulse, Math.sin(animT * 1.4 + s0.y) * 0.16)) {
+      ctx.fillStyle = '#ffd93b';
+      ctx.beginPath(); ctx.arc(sx, sy, 12, 0, TAU); ctx.fill();
+    }
+  }
+  // drug drops — BAD edibles follow the opposite rule (owner): grey-green,
+  // still, no shine, no pulse. They sit there like a bad idea.
+  for (const d0 of drugs) {
+    const sx = SX(d0.x), sy = SY(d0.y);
+    if (!onScreen(sx, sy, 26)) continue;
+    ctx.fillStyle = '#77815f';
+    ctx.strokeStyle = '#3f4634'; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(sx, sy, 9, 0, TAU); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(240,240,220,0.9)';
+    ctx.font = '900 11px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(DRUGS[d0.kind].name[0], sx, sy + 0.5);
+  }
+  // fire bars: a hub and five fireballs per arm, rotating — readable danger
+  for (const fb of FIRE_BARS) {
+    const sx = SX(fb.x), sy = SY(fb.y);
+    if (!onScreen(sx, sy, 150)) continue;
+    const a = G.time * 0.9 + fb.x * 0.01;
+    for (const s of [0, Math.PI]) {
+      for (let k = 1; k <= 5; k++) {
+        const fx = sx + Math.cos(a + s) * k * 18.5, fy = sy + Math.sin(a + s) * k * 18.5;
+        ctx.fillStyle = k % 2 ? '#ff7a3b' : '#ffb03b';
+        ctx.strokeStyle = '#7a2d00'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(fx, fy, 8.5 - k * 0.5, 0, TAU); ctx.fill(); ctx.stroke();
+      }
+    }
+    ctx.fillStyle = '#5a5a66';
+    ctx.beginPath(); ctx.arc(sx, sy, 7, 0, TAU); ctx.fill();
+  }
+  // cactus stackers: green stacks with spines — still, spiky, obvious
+  for (const c of CACTI) {
+    const sx = SX(c.x), sy = SY(c.y);
+    if (!onScreen(sx, sy, 44)) continue;
+    ctx.fillStyle = '#3f9e4d';
+    ctx.strokeStyle = '#1e5c2a'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(sx - 8, sy - 20, 16, 40, 8); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.roundRect(sx - 17, sy - 8, 9, 16, 4.5); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.roundRect(sx + 8, sy - 14, 9, 16, 4.5); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#e8f5d0'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    for (const [px2, py2] of [[-3, -12], [4, -4], [-4, 5], [3, 13], [-13, -2], [13, -8]]) {
+      ctx.moveTo(sx + px2, sy + py2); ctx.lineTo(sx + px2 + 3, sy + py2 - 3);
+    }
+    ctx.stroke();
+  }
+  // the hidden shop door (NE pocket): crooked, with a hanging sign
+  {
+    const sx = SX(SHOP_SPOT.x), sy = SY(SHOP_SPOT.y);
+    if (onScreen(sx, sy, 90)) {
+      ctx.fillStyle = '#8a5a2b';
+      ctx.strokeStyle = '#4a2f12'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.roundRect(sx - 17, sy - 24, 34, 48, 4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#ffd93b';
+      ctx.beginPath(); ctx.arc(sx + 9, sy + 2, 3, 0, TAU); ctx.fill();
+      ctx.fillStyle = 'rgba(252,250,240,0.95)';
+      ctx.strokeStyle = '#23232e'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.roundRect(sx - 15, sy - 40, 30, 14, 3); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#23232e'; ctx.font = '900 12px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('SHOP?', sx, sy - 32.5);
+    }
   }
 
   // ghosts
@@ -1675,29 +2546,44 @@ function render() {
   ctx.globalAlpha = 1;
 
   // ---- player ----
-  const px = VW / 2, py = VH / 2;
+  const px = CX(), py = CY();
   const invuln = G.time < player.invulnUntil;
   const blinkOff = invuln && Math.floor(animT * 12) % 2 === 0;
   if (!blinkOff) {
+    const pr = player.r + player.chompBonus * 0.4;
     // dash afterimages
     if (player.dashT > 0) {
       for (let i = 1; i <= 2; i++) {
-        ctx.fillStyle = 'rgba(255,233,59,' + (0.22 - i * 0.08) + ')';
+        ctx.fillStyle = 'rgba(255,210,31,' + (0.22 - i * 0.08) + ')';
         ctx.beginPath();
         ctx.arc(px - player.dashDirX * i * 22, py - player.dashDirY * i * 22, player.r, 0, TAU);
         ctx.fill();
       }
     }
-    const mouthAmp = player.eatT > 0 ? 1.0 : 0.82;
-    const mouth = (0.14 + (0.5 + 0.5 * Math.sin(player.chomp * 6.2)) * mouthAmp * 0.72);
-    ctx.fillStyle = player.eatT > 0 ? '#ffe93b' : (player.charColor || '#ffd21f');
-    ctx.beginPath();
-    ctx.moveTo(px, py);
-    ctx.arc(px, py, player.r + player.chompBonus * 0.4, player.angle + mouth, player.angle + TAU - mouth);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.35)';
-    ctx.beginPath(); ctx.arc(px - 4, py - 6, 4.4, 0, TAU); ctx.fill();
+    // the illustrated Pac (Pure Pac only — a tagged-in partner keeps her
+    // drawn form): mouth frames swap on the chomp cycle; EAT MODE is manic
+    let drawnPac = false;
+    if (player.charId === 'pac') {
+      const phase = 0.5 + 0.5 * Math.sin(player.chomp * 6.2);
+      const frame = player.eatT > 0 ? 'pac-manic' : phase > 0.66 ? 'pac-wide' : phase < 0.25 ? 'pac-closed' : 'pac-half';
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(player.angle);
+      drawnPac = drawSprite(frame, 0, 0, pr * 2.55, pr * 2.55);
+      ctx.restore();
+    }
+    if (!drawnPac) {
+      const mouthAmp = player.eatT > 0 ? 1.0 : 0.82;
+      const mouth = (0.14 + (0.5 + 0.5 * Math.sin(player.chomp * 6.2)) * mouthAmp * 0.72);
+      ctx.fillStyle = player.eatT > 0 ? '#ffe93b' : (player.charColor || '#ffd21f');
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.arc(px, py, pr, player.angle + mouth, player.angle + TAU - mouth);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath(); ctx.arc(px - 4, py - 6, 4.4, 0, TAU); ctx.fill();
+    }
   }
   // post-pick grace: a shield ring the player can read at a glance, with the
   // seconds left printed on it — this window is for planning, not panicking
@@ -1710,10 +2596,32 @@ function render() {
     ctx.strokeStyle = 'rgba(157,242,255,0.35)';
     ctx.lineWidth = 6;
     ctx.beginPath(); ctx.arc(px, py, gr, -Math.PI / 2, -Math.PI / 2 + TAU * clamp(player.graceT / 1.5, 0, 1)); ctx.stroke();
-    ctx.font = '800 11px "Segoe UI", sans-serif';
+    ctx.font = '800 13px "Segoe UI", sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#9df2ff';
+    ctx.fillStyle = '#0e7ea8';
     ctx.fillText('GRACE ' + player.graceT.toFixed(1), px, py - gr - 8);
+    ctx.restore();
+  }
+
+  // Pac's voice (LINES.md): a comic speech bubble over his head — paper
+  // white, ink text, 15px bold: readable at arm's length, gone in 2.6s
+  if (speech.text && G.time < speech.until && G.state !== 'intro') {
+    ctx.save();
+    ctx.font = '800 15px "Segoe UI", sans-serif';
+    const tw = Math.min(ctx.measureText(speech.text).width, VW - 90);
+    const bw = tw + 22, bh = 30;
+    const bx = clamp(px - bw / 2, 8, VW - bw - 8), by = Math.max(54, py - player.r - 52);
+    ctx.fillStyle = 'rgba(252,250,240,0.96)';
+    ctx.strokeStyle = '#23232e'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, 9);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();   // the tail
+    ctx.moveTo(px - 6, by + bh - 1); ctx.lineTo(px + 6, by + bh - 1); ctx.lineTo(px, by + bh + 9);
+    ctx.closePath(); ctx.fillStyle = 'rgba(252,250,240,0.96)'; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#1c1c26';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(speech.text, bx + bw / 2, by + bh / 2 + 1, tw);
     ctx.restore();
   }
 
@@ -1728,32 +2636,21 @@ function render() {
   }
   ctx.globalAlpha = 1;
 
-  // first-sight highlight: a pulsing ring on the thing being taught
-  if (Teach.active && Teach.active.ax !== null) {
-    const sx = SX(Teach.active.ax), sy = SY(Teach.active.ay);
-    const rr = 30 + Math.sin(animT * 6) * 5;
-    ctx.strokeStyle = 'rgba(255,233,59,0.35)';
-    ctx.lineWidth = 9;
-    ctx.beginPath(); ctx.arc(sx, sy, rr + 5, 0, TAU); ctx.stroke();
-    ctx.strokeStyle = '#ffe93b';
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(sx, sy, rr, 0, TAU); ctx.stroke();
-  }
   ctx.restore();
 
-  // eat-mode tint + vignette
+  // eat-mode tint (a wash, not a vignette — v3.1 removed the vignette and
+  // the main-view fog entirely: they were the "depression". Fog survives
+  // only inside the radar, where it is information, not mood.)
   if (player.eatT > 0) {
     ctx.fillStyle = 'rgba(40,80,255,0.07)';
     ctx.fillRect(0, 0, VW, VH);
     drawGhostRadar();
   }
   if (player.freezeT > 0) {
-    // Time Shift: the held breath — cold wash + hard vignette while time waits
+    // Time Shift: the held breath — a cold wash while time waits
     ctx.fillStyle = 'rgba(120,200,255,0.10)';
     ctx.fillRect(0, 0, VW, VH);
   }
-  if (vignette) ctx.drawImage(vignette, 0, 0, VW, VH);
-  drawFog();
   drawRadarMinimap();
   drawWheelOverlay();
   drawStick();
@@ -1763,11 +2660,11 @@ function render() {
 function drawStick() {
   if (!stick) return;
   ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.strokeStyle = 'rgba(35,35,46,0.45)';
   ctx.lineWidth = 2;
-  ctx.fillStyle = 'rgba(255,255,255,0.07)';
+  ctx.fillStyle = 'rgba(35,35,46,0.06)';
   ctx.beginPath(); ctx.arc(stick.baseX, stick.baseY, STICK_R, 0, TAU); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = 'rgba(255,255,255,0.38)';
+  ctx.fillStyle = 'rgba(35,35,46,0.35)';
   ctx.beginPath(); ctx.arc(stick.knobX, stick.knobY, 26, 0, TAU); ctx.fill();
   ctx.restore();
 }
@@ -1795,12 +2692,12 @@ function drawGhostRadar() {
   const m = 26;   // screen-edge margin the arrows ride on
   let shown = 0;
   for (const t of list) {
-    const sx = VW / 2 + t.dx, sy = VH / 2 + t.dy;
+    const sx = CX() + t.dx, sy = CY() + t.dy;
     if (sx > -20 && sx < VW + 20 && sy > -20 && sy < VH + 20) continue;   // already visible
     if (shown >= 8) break;
     shown++;
     const ang = Math.atan2(t.dy, t.dx);
-    const cx = clamp(sx, m, VW - m), cy = clamp(sy, m, VH - m);
+    const cx = clamp(sx, m, VW - m), cy = clamp(sy, m, playViewH() - m);
     const pulse = 1 + 0.18 * Math.sin(animT * 9);
     ctx.save();
     ctx.translate(cx, cy);
@@ -1851,6 +2748,8 @@ const el = {
   eatBanner: document.getElementById('eatBanner'), powers: document.getElementById('powers'),
   shift: document.getElementById('shiftText'), shiftFill: document.getElementById('shiftFill'),
   shiftBtn: document.getElementById('shiftBtn'),
+  objective: document.getElementById('objective'),
+  btnMoveLab: document.querySelector ? document.querySelector('#btnMove .blab') : null,
   debug: document.getElementById('debugState')
 };
 function updateHUD(force) {
@@ -1901,6 +2800,10 @@ function updateHUD(force) {
       cdEl.style.width = (player.dashCd <= 0 ? 100 : (1 - player.dashCd / full) * 100) + '%';
     }
   }
+  // the ONE objective/status line (owner: screen legibility — one voice)
+  if (el.objective) el.objective.textContent = currentObjective();
+  // the MOVE button names what it will do right now (owner control canon)
+  if (el.btnMoveLab) el.btnMoveLab.textContent = (hasPower('dash') && player.dashCd <= 0) ? 'DASH' : 'SHIFT';
 }
 function renderPowerSlots() {
   el.powers.innerHTML = '';
@@ -1931,36 +2834,201 @@ function toggleMute() {
 function togglePause() {
   if (G.state === 'playing') {
     G.state = 'paused';
-    // session view (DESIGN.md, "The pause window"): ONLY what this run has
-    // unlocked and explored — the powers actually held, the stats actually
-    // pumped. The full 13-tree ring doesn't exist in code yet, so unexplored
-    // trees render nothing at all, per the fog rule.
-    const ps = document.getElementById('pauseStats');
-    if (ps) {
-      const lines = [];
-      lines.push('Level <b>' + player.level + '</b> &nbsp;•&nbsp; Score <b>' + Math.floor(G.score).toLocaleString() + '</b>' +
-        ' &nbsp;•&nbsp; Survived <b>' + fmtTime(G.time) + '</b> &nbsp;•&nbsp; Ghosts eaten <b>' + G.eaten + '</b>');
-      if (player.powers.length) {
-        lines.push('Powers held: ' + player.powers.map((p) =>
-          POWER_DEFS[p.id].icon + ' <b>' + POWER_DEFS[p.id].name + '</b> Lv' + p.lvl).join(' &nbsp;•&nbsp; '));
-      } else {
-        lines.push('Powers held: none yet — eat a ghost in EAT MODE or take a skill card.');
-      }
-      lines.push('Stats: ' + WHEEL.map((w) => '<span style="color:' + w.color + '">' + w.name + ' ' + player.stats[w.key] + '</span>').join(' · ') +
-        ' &nbsp;•&nbsp; ' + RESOURCE_DEFS[player.resourceType].name + ' <b>' + Math.floor(player.resource) + '/' + player.resourceMax + '</b>' +
-        (player.weapon ? ' &nbsp;•&nbsp; Weapon <b>' + player.weapon.name + ' ' + (player.weapon.pct >= 0 ? '+' : '') + player.weapon.pct + '%</b>' : '') +
-        (player.stone ? ' &nbsp;•&nbsp; Stone <b>' + player.stone + '</b>' : '') +
-        ' &nbsp;•&nbsp; Light Radius <b>' + (player.lightRadius >= 0 ? '+' : '') + player.lightRadius + '</b>' +
-        ' &nbsp;•&nbsp; Coins <b>' + (Save.data.coins[player.charId] || 0) + '</b>');
-      lines.push('Move speed <b>' + Math.round(272 * player.speedMul) + '</b> &nbsp;•&nbsp; Max HP <b>' + player.maxHp + '</b>' +
-        ' &nbsp;•&nbsp; Magnet <b>' + Math.round(player.magnetR) + '</b> &nbsp;•&nbsp; Chomp <b>+' + player.chompBonus + '</b>' +
-        ' &nbsp;•&nbsp; Eat Mode <b>' + (6 + player.eatBonus).toFixed(1) + 's</b>' +
-        ' &nbsp;•&nbsp; Time Shift <b>' + (player.shiftCd <= 0 ? 'READY' : player.shiftCd.toFixed(1) + 's') + '</b>');
-      ps.innerHTML = lines.join('<br>');
-    }
+    renderPauseSection('options');
     document.getElementById('pauseScreen').classList.remove('hidden');
   }
   else if (G.state === 'paused') { G.state = 'playing'; document.getElementById('pauseScreen').classList.add('hidden'); }
+}
+// ---------------- Pause menu (owner UI canon) ----------------
+// The middle START button opens this; the game FREEZES while it's open.
+// Eight sections: OPTIONS · SETTINGS · GAME SETTINGS · ACHIEVEMENTS ·
+// EQUIPMENT · TALENTS · MAP · RULES. Most teaching lives HERE now (RULES),
+// not in toasts over the live game.
+const PAUSE_TABS = ['options', 'settings', 'game', 'achieve', 'equip', 'talents', 'map', 'rules'];
+function pauseSessionLines() {
+  const lines = [];
+  lines.push('Level <b>' + player.level + '</b> &nbsp;•&nbsp; Score <b>' + Math.floor(G.score).toLocaleString() + '</b>' +
+    ' &nbsp;•&nbsp; Survived <b>' + fmtTime(G.time) + '</b> &nbsp;•&nbsp; Ghosts eaten <b>' + G.eaten + '</b>' +
+    ' &nbsp;•&nbsp; Dots on the map <b>' + dots.length + '</b>');
+  if (player.powers.length) {
+    lines.push('Powers held: ' + player.powers.map((p) =>
+      POWER_DEFS[p.id].icon + ' <b>' + POWER_DEFS[p.id].name + '</b> Lv' + p.lvl).join(' &nbsp;•&nbsp; '));
+  } else {
+    lines.push('Powers held: none yet — eat a ghost in EAT MODE or take a skill card.');
+  }
+  lines.push('Stats: ' + WHEEL.map((w) => '<span style="color:' + w.color + '">' + w.name + ' ' + player.stats[w.key] + '</span>').join(' · ') +
+    ' &nbsp;•&nbsp; ' + RESOURCE_DEFS[player.resourceType].name + ' <b>' + Math.floor(player.resource) + '/' + player.resourceMax + '</b>' +
+    (player.weapon ? ' &nbsp;•&nbsp; Weapon <b>' + player.weapon.name + ' ' + (player.weapon.pct >= 0 ? '+' : '') + player.weapon.pct + '%</b>' : '') +
+    (player.stone ? ' &nbsp;•&nbsp; Stone <b>' + player.stone + '</b>' : '') +
+    ' &nbsp;•&nbsp; Light Radius <b>' + (player.lightRadius >= 0 ? '+' : '') + player.lightRadius + '</b>' +
+    ' &nbsp;•&nbsp; Coins <b>' + (Save.data.coins[player.charId] || 0) + '</b>');
+  lines.push('Move speed <b>' + Math.round(272 * player.speedMul) + '</b> &nbsp;•&nbsp; Max HP <b>' + player.maxHp + '</b>' +
+    ' &nbsp;•&nbsp; Magnet <b>' + Math.round(player.magnetR) + '</b> &nbsp;•&nbsp; Chomp <b>+' + player.chompBonus + '</b>' +
+    ' &nbsp;•&nbsp; Eat Mode <b>' + (6 + player.eatBonus).toFixed(1) + 's</b>' +
+    ' &nbsp;•&nbsp; Time Shift <b>' + (player.shiftCd <= 0 ? 'READY' : player.shiftCd.toFixed(1) + 's') + '</b>');
+  return lines;
+}
+function renderPauseSection(name) {
+  for (const b of document.querySelectorAll('#pauseTabs button')) b.classList.toggle('on', b.dataset.ptab === name);
+  const body = document.getElementById('pauseBody');
+  if (!body) return;
+  const row = (a, b) => '<div class="row"><span>' + a + '</span><b>' + b + '</b></div>';
+  if (name === 'options') {
+    body.innerHTML = '<h3>OPTIONS</h3>' +
+      '<button class="pbtn" id="pzResume">▶ RESUME</button>' +
+      '<button class="pbtn" id="pzRestart">↻ RESTART RUN</button>' +
+      '<button class="pbtn" id="pzQuit">⏏ QUIT TO MENU</button>' +
+      '<button class="pbtn" id="pzMute">' + (Snd.muted ? '🔇 UNMUTE' : '🔊 MUTE') + '</button>' +
+      row('Run', fmtTime(G.time) + ' survived · level ' + player.level) + row('Score', Math.floor(G.score).toLocaleString());
+    document.getElementById('pzResume').onclick = togglePause;
+    document.getElementById('pzRestart').onclick = () => { document.getElementById('pauseScreen').classList.add('hidden'); G.state = 'menu'; beginRun(); };
+    document.getElementById('pzQuit').onclick = () => { document.getElementById('pauseScreen').classList.add('hidden'); G.state = 'menu'; document.getElementById('startScreen').classList.remove('hidden'); };
+    document.getElementById('pzMute').onclick = () => { Snd.setMuted(!Snd.muted); renderPauseSection('options'); };
+  } else if (name === 'settings') {
+    const opts = (sel) => Object.keys(BTN_ACTIONS).map((k) =>
+      '<option value="' + k + '"' + (k === sel ? ' selected' : '') + '>' + BTN_ACTIONS[k].label + '</option>').join('');
+    body.innerHTML = '<h3>SETTINGS — BUTTON ASSIGNMENT</h3>' +
+      '<p>The right-thumb skill buttons are yours to map. Saved with your game.</p>' +
+      [0, 1, 2].map((i) => '<div class="row"><span>Button ' + (i + 1) + ' (key ' + ['Q', 'F', 'C'][i] + ')</span><select id="btnSel' + i + '">' + opts(Save.data.btnMap[i]) + '</select></div>').join('') +
+      '<div class="row"><span>Movement button (SPACE)</span><b>DASH when held + ready, else TIME SHIFT</b></div>' +
+      '<button class="pbtn" id="pzWipe">⚠ RESET SAVE</button>';
+    for (let i = 0; i < 3; i++) {
+      document.getElementById('btnSel' + i).onchange = (e) => { Save.data.btnMap[i] = e.target.value; Save.write(true); renderButtons(); };
+    }
+    document.getElementById('pzWipe').onclick = () => { if (window.confirm('Wipe the whole save?')) { Save.wipe(); location.reload(); } };
+  } else if (name === 'game') {
+    body.innerHTML = '<h3>GAME SETTINGS</h3>' +
+      row('Difficulty', Save.data.difficulty.toUpperCase() + ' (set on the menu — applies next run)') +
+      row('Endless mode', Object.keys(Save.data.endlessUnlocked || {}).length ? (G.endlessRun ? 'ON — this run' : 'unlocked') : 'locked — clear the 6-pick path to the Ape') +
+      row('Light radius', (player.lightRadius >= 0 ? '+' : '') + player.lightRadius) +
+      row('The loop', 'Dot waves stack until the map fills. The swarm is the clock.');
+  } else if (name === 'achieve') {
+    body.innerHTML = '<h3>ACHIEVEMENTS (this save)</h3>' +
+      row('Best score', Math.floor(Save.data.best.score).toLocaleString()) +
+      row('Best time', fmtTime(Save.data.best.time || 0)) +
+      row('Best level', Save.data.best.level || 1) +
+      row('Total runs', Save.data.totals.runs || 0) +
+      row('Total ghosts eaten', Save.data.totals.ghosts || 0) +
+      row('Sonic rings banked', Save.data.rings || 0) +
+      row('Team-up', Save.data.teamUnlocked ? 'UNLOCKED (T tags Ms. Pac in)' : 'locked — clear 10 levels with one character') +
+      '<p class="small">The full 95-achievement ledger lives in ACHIEVEMENTS-FIRST.md (design doc); ring payouts land there.</p>';
+  } else if (name === 'equip') {
+    body.innerHTML = '<h3>EQUIPMENT</h3>' +
+      row('Weapon (L5 choice)', player.weapon ? player.weapon.name + ' ' + (player.weapon.pct >= 0 ? '+' : '') + player.weapon.pct + '%' : 'none yet') +
+      row('Infinity Stone (L6 choice)', player.stone || 'none yet') +
+      row('Coins (this character)', Save.data.coins[player.charId] || 0) +
+      row('Fruit bag', player.fruitBag.length ? player.fruitBag.map((k) => FRUITS[k].name).join(', ') : 'empty — touch fruit to store it') +
+      row('Bank charges (L4)', V3.picksMade >= 4 ? player.bankCharges + ' / 3' : 'locked — opens at pick 4') +
+      row('Powers', player.powers.length ? player.powers.map((p) => POWER_DEFS[p.id].name + ' Lv' + p.lvl).join(' · ') : 'none yet');
+  } else if (name === 'talents') {
+    body.innerHTML = '<h3>TALENTS — THIS RUN</h3>' + pauseSessionLines().join('<br>');
+  } else if (name === 'map') {
+    const chip = (s, c) => '<span class="legend-chip" style="color:' + c + '">' + s + '</span>';
+    body.innerHTML = '<h3>MAP — RADAR LEGEND</h3>' +
+      '<div class="row"><span>' + chip('+', '#e83e8c') + ' Consumables (fruit)</span><span>' + chip('◆', '#e8a33d') + ' Loot pickups</span></div>' +
+      '<div class="row"><span>' + chip('○', '#1f9dd8') + ' Blue orbs</span><span>' + chip('●', '#5a6a8a') + ' Ghosts</span></div>' +
+      '<div class="row"><span>' + chip('▲', '#ff7a3b') + ' Mini bosses (elites)</span><span>' + chip('▲', '#e03131') + ' Bosses</span></div>' +
+      '<div class="row"><span>' + chip('★', '#9b59d0') + ' Mega bosses</span><b>none in this prototype yet</b></div>' +
+      '<p>While EAT MODE runs, ghosts <b>light up bright blue</b> on the radar. The radar only shows ground you have explored.</p>' +
+      row('Explored', V3.explored.size + ' / 884 cells') +
+      row('Areas', AREAS.map((a) => a.name).join(' · '));
+  } else if (name === 'rules') {
+    body.innerHTML = '<h3>RULES — EVERYTHING THE TOASTS WOULD HAVE SAID</h3>' +
+      Object.values(TEACH).filter((t) => t && t.title).map((t) => '<p><b>' + t.title + '</b><br>' + t.text + '</p>').join('') +
+      '<p><b>THE LOOP.</b> Dot waves land on a timer and STACK — uneaten, they fill the map. Gather → level → curated picks, then the wheel spins. The swarm is the clock: it starts few and slow and climbs. Fruit stores in your bag (eat it from button 3). Blue orbs grow you a size step and scatter the swarm. THE BANK opens at pick 4: bank an EAT MODE, spend it when cornered.</p>';
+  }
+}
+for (const b of document.querySelectorAll('#pauseTabs button')) {
+  b.addEventListener('click', () => renderPauseSection(b.dataset.ptab));
+}
+// ---------------- Thumb bar (owner control canon) ----------------
+// Bottom strip: LEFT the move pad, CENTRE the START (pause) button, RIGHT
+// three ASSIGNABLE skill buttons + the MOVEMENT button. Desktop keys ride
+// the same map: Q/F/C = buttons 1/2/3, SPACE = movement button.
+const BTN_ACTIONS = {
+  shift: { label: 'SHIFT', do: () => { G.wantShift = true; } },
+  burst: { label: 'BURST', do: () => { G.wantBurst = true; } },
+  fruit: { label: 'FRUIT', do: () => eatStoredFruit() },
+  bank: { label: 'BANK', do: () => bankAction() },
+  dash: { label: 'DASH', do: () => { G.wantDash = true; } },
+  power: { label: 'POWER', do: () => cyclePower() },
+};
+function doButtonAction(a) {
+  Snd.init();
+  if (G.state !== 'playing') return;
+  const act = BTN_ACTIONS[a];
+  if (act) act.do();
+}
+function cyclePower() {
+  if (!player.powers.length) { floater(player.x, player.y - 34, 'NO POWERS YET — eat a ghost in EAT MODE', '#7a4d00'); return; }
+  setActivePower((player.activePower + 1) % player.powers.length);
+}
+function moveButtonAction() {
+  Snd.init();
+  if (G.state !== 'playing') return;
+  if (hasPower('dash') && player.dashCd <= 0) G.wantDash = true;
+  else G.wantShift = true;
+}
+function renderButtons() {
+  for (let i = 0; i < 3; i++) {
+    const lab = document.querySelector ? document.querySelector('#btnSkill' + (i + 1) + ' .blab') : null;
+    if (lab) lab.textContent = (BTN_ACTIONS[Save.data.btnMap[i]] || BTN_ACTIONS.shift).label;
+  }
+}
+renderButtons();
+for (let i = 0; i < 3; i++) {
+  const b = document.getElementById('btnSkill' + (i + 1));
+  if (b) {
+    const fire = (e) => { e.preventDefault(); doButtonAction(Save.data.btnMap[i]); };
+    b.addEventListener('touchstart', fire, { passive: false });
+    b.addEventListener('click', fire);
+  }
+}
+{
+  const mv = document.getElementById('btnMove');
+  if (mv) {
+    const fire = (e) => { e.preventDefault(); moveButtonAction(); };
+    mv.addEventListener('touchstart', fire, { passive: false });
+    mv.addEventListener('click', fire);
+  }
+  const sb = document.getElementById('startBtnBar');
+  if (sb) sb.addEventListener('click', () => { if (G.state === 'playing' || G.state === 'paused') togglePause(); });
+  // the pad: a FIXED-base stick under the left thumb (canon layout) — the
+  // floating field stick still works for mouse / off-pad drags
+  const pad = document.getElementById('padZone');
+  if (pad && pad.addEventListener) {
+    let padStick = null;
+    const base = () => {
+      if (typeof pad.getBoundingClientRect !== 'function') return { x: 90, y: window.innerHeight - 52 };
+      const r = pad.getBoundingClientRect();
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    };
+    pad.addEventListener('touchstart', (e) => {
+      document.body.classList.add('touch');
+      const b0 = base();
+      for (const t of e.changedTouches) if (!padStick) {
+        padStick = { id: t.identifier, baseX: b0.x, baseY: b0.y, knobX: b0.x, knobY: b0.y };
+        stick = padStick;
+      }
+      e.preventDefault();
+    }, { passive: false });
+    pad.addEventListener('touchmove', (e) => {
+      if (!padStick) return;
+      for (const t of e.changedTouches) if (t.identifier === padStick.id) {
+        const v = computeStick(t.clientX - padStick.baseX, t.clientY - padStick.baseY);
+        padStick.knobX = padStick.baseX + v.dx; padStick.knobY = padStick.baseY + v.dy;
+      }
+      e.preventDefault();
+    }, { passive: false });
+    const endPad = (e) => {
+      for (const t of e.changedTouches) if (padStick && t.identifier === padStick.id) {
+        if (stick === padStick) stick = null;
+        padStick = null;
+      }
+    };
+    pad.addEventListener('touchend', endPad);
+    pad.addEventListener('touchcancel', endPad);
+  }
 }
 function beginRun() {
   if (Save.data.hardcoreDeath && Save.data.hardcoreDeath.char === 'pac') {
@@ -1970,7 +3038,8 @@ function beginRun() {
     return;
   }
   resetGame();
-  Teach.fire('resource', player.x, player.y);   // first-sight: Pac's one resource
+  sayLine('runstart', true);
+  Teach.fire('resource', player.x, player.y);   // first-sight toast: Pac's one resource
   G.runCounted = false;
   Save.data.totals.runs++;
   Save.write(true);
@@ -2024,7 +3093,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) Save.
 // The FIRST thing that loads. A modular scene on its own clock, drawn with
 // canvas primitives (style pass comes later). Any click / key / tap skips to
 // the start menu — it never traps the player. It never touches the save.
-const BEAT_DURS = [3.5, 11.5, 7, 9, 17, 8, 6, 7, 11, 4, 3, 5, 5];   // sums to 97s — unhurried on purpose
+const BEAT_DURS = [3.5, 11.5, 7, 9, 20, 8, 6, 7, 11, 5, 5, 5, 5];   // 103s — v3.1 de-rushed: the eat-rows sequence (INTRO.md beats 5-7) breathes at 20s, the portal and the snack get 5s each (were 4s/3s in v3)
 const BEAT_NAMES = ['darkness', 'crawl', 'emperor', 'crime', 'eatrows', 'station',
   'exit', 'vow', 'saloon', 'portal', 'snack', 'walk', 'title'];
 const CRAWL_LINES = [
@@ -2054,15 +3123,15 @@ const PANELS = [
   { scene: 1,  t0: 0, dur: 11.5 },  // 2  crawl
   { scene: 2,  t0: 0, dur: 7 },     // 3  emperor
   { scene: 3,  t0: 0, dur: 9 },     // 4  crime
-  { scene: 4,  t0: 0, dur: 17 },    // 5–7 eatrows / the narrator fails / growth
+  { scene: 4,  t0: 0, dur: 20 },    // 5–7 eatrows / the narrator fails / growth
   { scene: 5,  t0: 0, dur: 8 },     // 8  the Death Star
   { scene: 6,  t0: 0, dur: 6 },     // 9  the exit
   { scene: 7,  t0: 0, dur: 7 },     // 10 the vow
   { scene: 8,  t0: 0, dur: 2 },     // 11a the landing
   { scene: 8,  t0: 2, dur: 3 },     // 11b the Salty Dawg, outside
   { scene: 8,  t0: 5, dur: 6 },     // 11c the Salty Dawg, inside
-  { scene: 9,  t0: 0, dur: 4 },     // 12 the assassin
-  { scene: 10, t0: 0, dur: 3 },     // 13 the snack
+  { scene: 9,  t0: 0, dur: 5 },     // 12 the assassin
+  { scene: 10, t0: 0, dur: 5 },     // 13 the snack
   { scene: 11, t0: 0, dur: 5 },     // 14 the walk
   { scene: 12, t0: 0, dur: 5 }      // 15 title
 ];
@@ -2089,6 +3158,17 @@ function easeOutCubic(p) { return 1 - Math.pow(1 - p, 3); }
 function easeInOut(p) { return p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; }
 function seededRnd(seed) { const x = Math.sin(seed * 127.1) * 43758.5453; return x - Math.floor(x); }
 
+// THE WHISTLE (INTRO.md sound cue — owner canon): an eerie solo whistle in
+// the Kill Bill register drifts in as the assassin approaches the Salty
+// Dawg, BEFORE the portal tears open. Menace first, metal second. Built on
+// Snd.tone's slide: three falling sine phrases — a whistle, not a melody
+// quote. Fired from Intro.update late in the saloon beat, echoed softer as
+// the portal opens.
+function whistleCue(vol) {
+  Snd.tone(1568, 0.9, 'sine', vol, 1318, 0);
+  Snd.tone(1318, 0.8, 'sine', vol * 0.9, 1175, 0.75);
+  Snd.tone(1175, 1.3, 'sine', vol * 0.75, 988, 1.45);
+}
 const Intro = {
   active: false, t: 0, timeScale: 1, autoStart: false,
   fired: {}, parts: [], stars: [], debris: [], geomCache: null, geomKey: '',
@@ -2227,7 +3307,11 @@ const Intro = {
       this.spawnP(p.x - 34, p.y + 12, rand(-24, -8), rand(-4, 8), rand(0.25, 0.5),
         'rgba(170,180,200,0.6)', rand(2, 4.4), 0);
     }
-    if (b.i === 9 && Math.random() < dt * 9) Snd.tone(1400 + Math.random() * 900, 0.03, 'square', 0.018);
+    // THE WHISTLE (INTRO.md): fires once late in the saloon beat — the
+    // assassin is approaching, the portal has NOT torn yet — then a softer
+    // echo as it opens. (v3 shipped random square blips here; not a whistle.)
+    if (b.i === 8 && lt >= 8.4) this.fire('whistle1', () => whistleCue(0.07));
+    if (b.i === 9 && lt >= 0.15) this.fire('whistle2', () => whistleCue(0.04));
     if (b.i === 10) {
       const bite = Math.floor(lt / 0.55);
       if (bite > 0 && lt > 0.9) this.fire('snackbite' + bite, () => Snd.waka(8));
@@ -3072,9 +4156,9 @@ Intro.render = function () {
   }
   // SKIP affordance — in the page margin, always visible
   ctx.save();
-  ctx.globalAlpha = 0.45 + 0.3 * Math.sin(animT * 3);
-  ctx.font = '600 13px "Segoe UI", sans-serif';
-  ctx.fillStyle = '#aab4ff';
+  ctx.globalAlpha = 0.65 + 0.3 * Math.sin(animT * 3);
+  ctx.font = '800 15px "Segoe UI", sans-serif';
+  ctx.fillStyle = '#2e4a7a';
   ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic';
   ctx.fillText('SKIP ▸▸  click · any key · tap', VW - 16, VH - 14);
   ctx.restore();
@@ -3396,11 +4480,15 @@ function weaponCard(kindIdx) {
     { name: 'Longbow Charm', icon: '🏹', lo: 6, hi: 16, line: 'projectile damage' }
   ];
   const k = kinds[kindIdx % kinds.length];
-  const pct = rollSigned(k.lo, k.hi);
+  let pct = rollSigned(k.lo, k.hi);
+  // CAST-IRON STOMACH (Pure Pac, ROSTER.md): bad rolls are blunted on him —
+  // junk never lands at full price. Printed on the card, honestly.
+  const blunted = pct < 0 && player.charId === 'pac';
+  if (blunted) pct = Math.ceil(pct / 2);
   const lr = randi(-2, 4);
   return { tag: 'Weapon Choice', power: false, icon: k.icon, statKey: 'strength',
     name: k.name + ' (' + (pct >= 0 ? '+' : '') + pct + '%)',
-    desc: 'A weapon: ' + (pct >= 0 ? '+' : '') + pct + '% ' + k.line + ' while it is yours. Rolls are SIGNED — this one ' + (pct < 0 ? 'came up BAD (negative) — a real roll, printed honestly.' : pct === 0 ? 'came up at 0 — no modifier.' : 'came up good.') + ' It also rolls Light Radius ' + (lr >= 0 ? '+' : '') + lr + ' steps (your fog reveal ' + (lr >= 0 ? 'grows' : 'shrinks') + ' by ' + Math.abs(lr * LIGHT_STEP_PX) + 'px).',
+    desc: 'A weapon: ' + (pct >= 0 ? '+' : '') + pct + '% ' + k.line + ' while it is yours. Rolls are SIGNED — this one ' + (pct < 0 ? 'came up BAD (negative) — a real roll, printed honestly.' : pct === 0 ? 'came up at 0 — no modifier.' : 'came up good.') + (blunted ? ' CAST-IRON STOMACH blunted the bad roll (halved) — Pure Pac never pays full price for junk.' : '') + ' It also rolls Light Radius ' + (lr >= 0 ? '+' : '') + lr + ' steps (your fog reveal ' + (lr >= 0 ? 'grows' : 'shrinks') + ' by ' + Math.abs(lr * LIGHT_STEP_PX) + 'px).',
     apply: () => {
       player.weapon = { name: k.name, pct };
       player.damageMul += pct / 100;
@@ -3629,7 +4717,7 @@ function updateDanger(dt) {
 // lesson once ever for the area system, a toast after that), and every area
 // wears its own light (a translucent tint while you are inside it).
 const AREAS = [
-  { name: 'The Centre Cross', sub: 'the doodle crossroads', tint: 'rgba(255,217,59,0.05)', test: (x, y) => x > 1350 && x < 2050 && y > 950 && y < 1650 },
+  { name: 'The Centre Ring', sub: 'the doodle arena', tint: 'rgba(255,217,59,0.05)', test: (x, y) => x > 1300 && x < 2100 && y > 900 && y < 1700 },
   { name: 'Shift Bay North-West', sub: 'landing pads and corner brackets', tint: 'rgba(77,178,255,0.05)', test: (x, y) => x < WORLD_W / 2 && y < WORLD_H / 2 },
   { name: 'The Quadrant Bars', sub: 'long runs, longer chases', tint: 'rgba(255,157,226,0.045)', test: (x, y) => x >= WORLD_W / 2 && y < WORLD_H / 2 },
   { name: 'The Long Way Round', sub: 'the southern corridors', tint: 'rgba(55,224,139,0.045)', test: (x, y) => x < WORLD_W / 2 && y >= WORLD_H / 2 },
@@ -3649,9 +4737,9 @@ function updateExploredAndArea() {
   if (ai !== V3.areaIdx) {
     V3.areaIdx = ai;
     if (G.state === 'playing' && G.time > 1) {
-      toast('🗺 ' + AREAS[ai].name);
-      floater(player.x, player.y - 52, AREAS[ai].sub, '#c2caff');
-      Teach.fire('areachange', player.x, player.y);
+      // v3.1: area names ride the ONE objective line — no centre toast,
+      // no floater, no lesson stacked on top (one voice at a time)
+      setObjective('🗺 ' + AREAS[ai].name + ' — ' + AREAS[ai].sub, 3);
     }
   }
 }
@@ -3671,6 +4759,7 @@ function cellExplored(x, y) {
 const APE = { pylons: 4, blastsPerPylon: 2, hp: 300, barrelSpeed: 190, blastArm: 150, blastHalfWidth: 40, blastDamage: 20,
   throwInterval: [2.6, 2.0, 1.5, 2.2], addInterval: 6, enrageStep: 60 };
 function spawnApe() {
+  sayLine('boss', true);
   let bx = wrapPos(player.x + 240, WORLD_W), by = wrapPos(player.y - 300, WORLD_H);
   const slid = pushOutWalls(bx, by, 40); bx = slid.x; by = slid.y;
   V3.boss = { type: 'ape', x: bx, y: by, r: 38, phase: 1, hp: APE.hp, maxHp: APE.hp,
@@ -3767,6 +4856,7 @@ function bossDown() {
   G.score += 2000;
   burst(b.x, b.y, '#ffd93b', 40);
   toast('🏆 THE APE IS DOWN! +2000');
+  sayLine('bosskill', true);
   Snd.levelUp();
   V3.boss = null; V3.pylons = []; V3.barrels = [];
   V3.danger = V3.danger.filter((z) => z.kind !== 'barrelmark');
@@ -4103,59 +5193,82 @@ function drawPartner() {
 // Fog / darkness: the build's darkness layer is the vignette; v3 adds a
 // true reveal disc — darkness closes in beyond revealRadius(), and Light
 // Radius (signed, gear-rolled) pushes that edge out or pulls it in.
-function drawFog() {
-  const R = revealRadius();
-  const g = ctx.createRadialGradient(VW / 2, VH / 2, R * 0.55, VW / 2, VH / 2, R * 1.45);
-  g.addColorStop(0, 'rgba(2,2,12,0)');
-  g.addColorStop(0.75, 'rgba(2,2,12,0.28)');
-  g.addColorStop(1, 'rgba(2,2,12,0.66)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, VW, VH);
-  if (player.lightRadius !== 0) {
-    ctx.save();
-    ctx.fillStyle = player.lightRadius > 0 ? 'rgba(255,240,180,0.9)' : 'rgba(150,160,255,0.9)';
-    ctx.font = '700 10px "Segoe UI", sans-serif'; ctx.textAlign = 'center';
-    ctx.fillText('LIGHT RADIUS ' + (player.lightRadius > 0 ? '+' : '') + player.lightRadius, VW / 2, VH - 8);
-    ctx.restore();
-  }
-}
-// The upgraded radar: a real minimap, always on. Edible ghosts are BLUE and
-// distinct; hunters are pale; fruit pink; stones/pellets gold. The fog rule
-// binds it: only EXPLORED ground and the things on it render at all.
+// The radar: a real minimap on paper, always on, with ONE symbol language
+// (owner UI canon — the legend lives in the pause menu's MAP section):
+//   + magenta cross  = CONSUMABLES (fruit)      ◆ gold diamond = LOOT
+//   ○ cyan ring      = BLUE ORBS                ● pale dot     = GHOSTS
+//   ▲ orange         = MINI BOSSES (elites)     ▲ red, larger  = BOSSES
+//   ★ purple         = MEGA BOSSES (none in this prototype yet)
+// During EAT MODE the ghosts LIGHT UP bright blue with a pulse ring.
+// The fog rule binds it: only EXPLORED ground and the things on it render.
 function drawRadarMinimap() {
-  if (G.state !== 'playing' && G.state !== 'paused') return;
-  const mw = 156, mh = 118, mx = VW - mw - 10, my = VH - mh - 10;
+  if (G.state !== 'playing' && G.state !== 'paused' && G.state !== 'shop') return;
+  const mw = 168, mh = 126, mx = VW - mw - 10, my = playViewH() - mh - 10;
   ctx.save();
-  ctx.fillStyle = 'rgba(6,8,28,0.72)';
-  ctx.strokeStyle = 'rgba(120,140,255,0.55)'; ctx.lineWidth = 1.5;
+  ctx.fillStyle = 'rgba(246,241,222,0.92)';
+  ctx.strokeStyle = '#2e4a7a'; ctx.lineWidth = 2;
   ctx.fillRect(mx, my, mw, mh); ctx.strokeRect(mx, my, mw, mh);
   const px2w = (x) => mx + (wrapPos(x, WORLD_W) / WORLD_W) * mw;
   const py2w = (y) => my + (wrapPos(y, WORLD_H) / WORLD_H) * mh;
-  ctx.fillStyle = 'rgba(120,150,255,0.16)';   // explored cells
+  ctx.fillStyle = 'rgba(46,74,122,0.16)';   // explored cells
   for (const key of V3.explored) {
     const [cx, cy] = key.split(',').map(Number);
     ctx.fillRect(mx + (cx / 34) * mw, my + (cy / 26) * mh, mw / 34 + 1, mh / 26 + 1);
   }
-  const dot = (x, y, color, r) => { if (!cellExplored(x, y)) return; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(px2w(x), py2w(y), r, 0, TAU); ctx.fill(); };
-  for (const f of fruits) dot(f.x, f.y, '#ff4d7e', 2.6);
-  for (const pl of pellets) dot(pl.x, pl.y, '#ffd93b', 2.6);
-  for (const g of ghosts) {
-    if (!g.alive) continue;
-    dot(g.x, g.y, player.eatT > 0 ? '#3b6bff' : (g.elite ? '#ffd93b' : '#dfe6ff'), g.elite ? 3 : 2.2);
+  const seen = (x, y) => cellExplored(x, y);
+  // consumables: magenta cross
+  for (const f of fruits) {
+    if (!seen(f.x, f.y)) continue;
+    const x = px2w(f.x), y = py2w(f.y);
+    ctx.strokeStyle = '#e83e8c'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x - 3.4, y); ctx.lineTo(x + 3.4, y); ctx.moveTo(x, y - 3.4); ctx.lineTo(x, y + 3.4); ctx.stroke();
   }
-  if (V3.boss) dot(V3.boss.x, V3.boss.y, '#ff3b30', 4);
-  if (V3.partner && V3.partner.deployed) dot(V3.partner.x, V3.partner.y, '#ff9de2', 2.6);
-  ctx.fillStyle = '#ffd21f';   // Pac is always the bright centre of his own map
-  ctx.beginPath(); ctx.arc(px2w(player.x), py2w(player.y), 3.2, 0, TAU); ctx.fill();
-  ctx.fillStyle = '#8fa2ff'; ctx.font = '700 8.5px "Segoe UI", sans-serif'; ctx.textAlign = 'left';
-  ctx.fillText('RADAR — EXPLORED ONLY', mx + 5, my + 11);
+  // loot: gold diamonds (pellets, rings, coins, stars)
+  ctx.fillStyle = '#e8a33d';
+  const diamond = (x, y, r) => { ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); ctx.fill(); };
+  for (const pl of pellets) if (seen(pl.x, pl.y)) diamond(px2w(pl.x), py2w(pl.y), 3);
+  for (const r0 of rings) if (seen(r0.x, r0.y)) diamond(px2w(r0.x), py2w(r0.y), 2.4);
+  for (const c0 of coins) if (seen(c0.x, c0.y)) diamond(px2w(c0.x), py2w(c0.y), 2.4);
+  for (const s0 of stars) if (seen(s0.x, s0.y)) diamond(px2w(s0.x), py2w(s0.y), 3.4);
+  // blue orbs: cyan rings
+  ctx.strokeStyle = '#1f9dd8'; ctx.lineWidth = 2;
+  for (const o of orbs) {
+    if (!seen(o.x, o.y)) continue;
+    ctx.beginPath(); ctx.arc(px2w(o.x), py2w(o.y), 3.4, 0, TAU); ctx.stroke();
+  }
+  // ghosts: pale dots — lit bright blue while EAT MODE runs
+  for (const g of ghosts) {
+    if (!g.alive || !seen(g.x, g.y)) continue;
+    const x = px2w(g.x), y = py2w(g.y);
+    if (g.elite) continue;   // elites get the mini-boss triangle below
+    if (player.eatT > 0) {
+      ctx.fillStyle = '#2456ff';
+      ctx.beginPath(); ctx.arc(x, y, 3.4, 0, TAU); ctx.fill();
+      ctx.strokeStyle = 'rgba(36,86,255,' + (0.5 + 0.4 * Math.sin(animT * 8)) + ')'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(x, y, 5.6, 0, TAU); ctx.stroke();
+    } else {
+      ctx.fillStyle = '#5a6a8a';
+      ctx.beginPath(); ctx.arc(x, y, 2.4, 0, TAU); ctx.fill();
+    }
+  }
+  // mini bosses (elites): orange triangles; bosses: red, larger
+  const tri = (x, y, r, color) => { ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y + r * 0.8); ctx.lineTo(x - r, y + r * 0.8); ctx.closePath(); ctx.fill(); };
+  for (const g of ghosts) if (g.alive && g.elite && seen(g.x, g.y)) tri(px2w(g.x), py2w(g.y), 4.4, '#ff7a3b');
+  if (V3.boss && seen(V3.boss.x, V3.boss.y)) tri(px2w(V3.boss.x), py2w(V3.boss.y), 6.4, '#e03131');
+  if (V3.partner && V3.partner.deployed) { ctx.fillStyle = '#e87ac2'; ctx.beginPath(); ctx.arc(px2w(V3.partner.x), py2w(V3.partner.y), 2.8, 0, TAU); ctx.fill(); }
+  // Pac: the bright yellow centre of his own map
+  ctx.fillStyle = '#f7b733';
+  ctx.strokeStyle = '#23232e'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.arc(px2w(player.x), py2w(player.y), 3.6, 0, TAU); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#23232e'; ctx.font = '800 12px "Segoe UI", sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('RADAR', mx + 6, my + 14);
   ctx.restore();
 }
 // The wheel overlay: 7 slices in wheel order, spinning to its landing while
 // the state is 'spin', resting on the landed stat behind the card screen.
 function drawWheelOverlay() {
   if (G.state !== 'spin' && G.state !== 'levelup') return;
-  const cx = VW / 2, cy = Math.min(VH * 0.30, 210), R = 74;
+  const cx = VW / 2, cy = Math.min(playViewH() * 0.30, 210), R = 74;
   const p = G.state === 'spin' ? clamp(V3.spin.animT / V3.spin.dur, 0, 1) : 1;
   const ease = 1 - Math.pow(1 - p, 3);
   const spinIdx = G.state === 'spin'
@@ -4173,13 +5286,13 @@ function drawWheelOverlay() {
     ctx.globalAlpha = 1;
     ctx.strokeStyle = '#0a0d26'; ctx.lineWidth = 2; ctx.stroke();
     const am = (a0 + a1) / 2;
-    ctx.fillStyle = '#fff'; ctx.font = '800 10px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff'; ctx.font = '800 12px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(WHEEL[i].name.slice(0, 3).toUpperCase(), cx + Math.cos(am) * R * 0.68, cy + Math.sin(am) * R * 0.68);
   }
   ctx.fillStyle = '#0a0d26'; ctx.beginPath(); ctx.arc(cx, cy, 17, 0, TAU); ctx.fill();
-  ctx.fillStyle = '#ffd93b'; ctx.font = '900 13px "Segoe UI", sans-serif';
+  ctx.fillStyle = '#ffd93b'; ctx.font = '900 15px "Segoe UI", sans-serif';
   ctx.fillText('🎡', cx, cy);
-  ctx.fillStyle = '#fff'; ctx.font = '800 13px "Segoe UI", sans-serif';
+  ctx.fillStyle = '#fff'; ctx.font = '800 15px "Segoe UI", sans-serif';
   ctx.fillText(G.state === 'spin' ? 'THE WHEEL SPINS…' : 'THE WHEEL DEALT: ' + WHEEL[V3.spin.statIdx].name.toUpperCase(), cx, cy + R + 30);
   ctx.restore();
 }
@@ -4242,9 +5355,13 @@ document.querySelectorAll('[data-diff]').forEach((b) => {
 { const bb2 = document.getElementById('burstBtn');
   if (bb2) bb2.addEventListener('click', () => { G.wantBurst = true; });
 }
+{ const sc = document.getElementById('shopCloseBtn');
+  if (sc) sc.addEventListener('click', () => closeShop());
+}
 // the grace window, shared by card picks and the boss-intro dismissal
+// (v3.1: no lesson fires here — it fired after EVERY pick in v3; the
+// GRACE! floater + shield ring already say it)
 function resumeGrace() {
-  Teach.fire('grace', player.x, player.y);
   player.graceT = 1.5;
   player.invulnUntil = Math.max(player.invulnUntil, G.time + 1.5);
   floater(player.x, player.y - 38, 'GRACE!', '#9df2ff');
@@ -4277,14 +5394,21 @@ function frame(ts) {
     render();
   } else {
     if (G.state === 'playing') {
-      // a first-sight lesson freezes the world until it is dismissed
-      if (!Teach.active) {
-        update(dt);
-        saveTimer += dt;
-        if (saveTimer >= 15) { saveTimer = 0; Save.write(true); }   // periodic mid-run save
-      }
+      // v3.1: the world NEVER freezes for a lesson — toasts don't block
+      update(dt);
+      if (G.objectiveFlashT > 0) G.objectiveFlashT -= dt;
+      saveTimer += dt;
+      if (saveTimer >= 15) { saveTimer = 0; Save.write(true); }   // periodic mid-run save
     }
+    Teach.tick();
     render();
+  }
+  // thumb bar / HUD / objective line exist only while a run is on screen
+  {
+    const inRun = ['playing', 'paused', 'shop', 'spin', 'levelup', 'stonepick', 'bossintro'].includes(G.state);
+    const bc = document.body.classList;
+    if (bc.toggle) bc.toggle('run-ui', inRun);
+    else if (inRun) bc.add('run-ui'); else bc.remove('run-ui');
   }
   G.hudT += dt;
   if (G.hudT > 0.1) {
@@ -4312,7 +5436,7 @@ window.PAC_DEBUG = { G, Intro, player, Save, Teach, beginRun, buildChoices, pick
   fireTrigger, spawnApe, apeDamage, pickStone, tagIn, revealRadius, limitForLevel, eliteChance,
   get choices() { return levelChoices; },
   doTimeShift, requestShift,
-  radarTargets, isWallAt, circleHitsWall, WALLS,
+  radarTargets, isWallAt, circleHitsWall, WALLS, ghostTargetCount,
   get dots() { return dots; }, get fruits() { return fruits; },
   get ghosts() { return ghosts; }, get pellets() { return pellets; } };
 if (TEST_MODE) {

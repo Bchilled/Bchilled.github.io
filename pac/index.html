@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PAC — Arena Muncher · v3.0.0</title>
+<title>PAC — Arena Muncher · v3.1.0 "FEEL FIX"</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   html, body { width:100%; height:100%; overflow:hidden; background:#04040c;
@@ -13,79 +13,97 @@
     -webkit-touch-callout:none; }
   #game { position:absolute; inset:0; display:block; }
 
-  /* ---------- HUD ---------- */
-  #hud { position:absolute; top:0; left:0; right:0; padding:12px 16px;
-    display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
-    pointer-events:none; z-index:5; }
-  .hud-box { background:rgba(6,8,28,.74); border:1px solid rgba(90,110,255,.45);
-    border-radius:10px; padding:8px 13px; min-width:158px; backdrop-filter:blur(4px);
-    box-shadow:0 2px 14px rgba(0,0,10,.45); }
-  .hud-label { font-size:10px; letter-spacing:2px; color:#a9b8ff; text-transform:uppercase; }
-  .hud-value { font-size:22px; font-weight:700; line-height:1.1; font-variant-numeric:tabular-nums; }
-  #hud-mid { text-align:center; }
-  #hud-right { text-align:right; }
-  .bar { height:9px; border-radius:5px; background:rgba(255,255,255,.14); overflow:hidden; margin-top:4px; }
-  .bar > div { height:100%; border-radius:5px; transform-origin:left; transition:transform .12s linear; }
-  #hpFill { background:linear-gradient(90deg,#ff3b6b,#ff7a3b); width:100%; }
-  #xpFill { background:linear-gradient(90deg,#37e08b,#b6ff5e); width:0%; }
-  #comboFill { background:linear-gradient(90deg,#ffd93b,#ff9a3b); width:0%; }
-  #shiftFill { background:linear-gradient(90deg,#4db2ff,#9df2ff); width:100%; }
-  #shiftText { color:#a9b8ff; }
-  #comboText { color:#ffd93b; }
-  #livesText { color:#ff6b81; letter-spacing:3px; font-size:16px; }
+  /* ---------- HUD (v3.1): one slim paper bar + one objective line + the
+     thumb bar. Labels 13-15px, values 19px, ink on cream — readable. ---- */
+  .hidden { display:none !important; }
+  #hudbar { position:absolute; top:0; left:0; right:0; display:flex; align-items:center;
+    gap:16px; padding:8px 14px; background:rgba(246,241,222,.95);
+    border-bottom:2px solid #2e4a7a; z-index:5; pointer-events:none; color:#1c1c26; }
+  .hud-item { display:flex; align-items:center; gap:6px; min-width:0; }
+  .hud-lab { font-size:13px; font-weight:800; letter-spacing:1px; color:#2e4a7a; white-space:nowrap; }
+  .hud-val { font-size:19px; font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .mini-bar { width:74px; height:9px; border-radius:5px; background:rgba(35,35,46,.16); overflow:hidden; }
+  .mini-bar > div { height:100%; width:100%; transform-origin:left; }
+  #comboText { color:#b8860b; }
+  #livesText { color:#e03131; letter-spacing:2px; font-size:17px; }
+  #objective { position:absolute; top:50px; left:0; right:0; text-align:center;
+    font-size:15px; font-weight:700; color:#2e4a7a; background:rgba(246,241,222,.85);
+    padding:5px 10px; z-index:5; pointer-events:none; }
+  body:not(.run-ui) #hudbar, body:not(.run-ui) #objective, body:not(.run-ui) #thumbbar,
+  body:not(.run-ui) #powers, body:not(.run-ui) #muteBtn { display:none !important; }
+
+  /* ---------- Thumb bar (owner control canon) ---------- */
+  #thumbbar { position:absolute; left:0; right:0; bottom:0; height:104px; display:flex;
+    align-items:center; gap:10px; padding:10px 12px; background:rgba(30,32,46,.96);
+    border-top:2px solid #2e4a7a; z-index:6; box-sizing:border-box; }
+  #padZone { flex:1.25; height:84px; border:2px dashed rgba(255,255,255,.25);
+    border-radius:12px; position:relative; touch-action:none; box-sizing:border-box; }
+  #padZone .padlab { position:absolute; inset:0; display:flex; align-items:center;
+    justify-content:center; font-size:13px; font-weight:800; color:rgba(255,255,255,.38);
+    letter-spacing:2px; pointer-events:none; }
+  .thumb-btn { border-radius:14px; border:2px solid rgba(120,140,255,.55);
+    background:rgba(60,70,140,.5); color:#fff; font-weight:800; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    touch-action:none; padding:2px; box-sizing:border-box; }
+  .thumb-btn:active { transform:scale(.94); }
+  .thumb-btn .blab { font-size:15px; line-height:1.05; }
+  .thumb-btn .bkey { font-size:11px; color:rgba(255,255,255,.6); margin-top:2px; }
+  #btnSkill1, #btnSkill2, #btnSkill3 { width:62px; height:62px; }
+  #btnMove { width:78px; height:78px; border-color:rgba(255,190,60,.85); background:rgba(150,100,20,.5); }
+  #startBtnBar { width:78px; height:78px; border-radius:18px; border-color:rgba(255,255,255,.6);
+    background:rgba(240,240,250,.14); }
 
   /* ---------- Power slots ---------- */
-  #powers { position:absolute; left:14px; bottom:14px; display:flex; gap:8px; z-index:5; }
-  .slot { width:64px; height:64px; border-radius:12px; background:rgba(6,8,28,.66);
+  #powers { position:absolute; left:14px; bottom:118px; display:flex; gap:8px; z-index:5; }
+  .slot { width:56px; height:56px; border-radius:12px; background:rgba(6,8,28,.66);
     border:2px solid rgba(120,130,200,.35); display:flex; flex-direction:column;
     align-items:center; justify-content:center; position:relative; pointer-events:auto; cursor:pointer; }
   .slot .ico { font-size:24px; line-height:1; }
-  .slot .nm { font-size:8.5px; letter-spacing:.5px; color:#aab4ff; text-align:center; margin-top:2px; padding:0 2px; }
-  .slot .key { position:absolute; top:2px; left:5px; font-size:9px; color:#7787d9; font-weight:700; }
-  .slot .lvl { position:absolute; top:2px; right:5px; font-size:9px; color:#ffd93b; font-weight:700; }
+  .slot .nm { display:none; }
+  .slot .key { position:absolute; top:2px; left:5px; font-size:10px; color:#7787d9; font-weight:700; }
+  .slot .lvl { position:absolute; top:2px; right:5px; font-size:10px; color:#ffd93b; font-weight:700; }
   .slot.active { border-color:#ffd93b; box-shadow:0 0 14px rgba(255,217,59,.45); }
   .slot.empty { opacity:.35; border-style:dashed; }
   .slot .cd { position:absolute; bottom:0; left:0; height:4px; background:#37e08b; border-radius:2px; }
-
-  #eatBanner { position:absolute; top:64px; left:50%; transform:translateX(-50%);
-    font-size:30px; font-weight:900; letter-spacing:4px; color:#4db2ff;
-    text-shadow:0 0 18px rgba(77,178,255,.9); display:none; z-index:5; pointer-events:none; }
 
   /* ---------- Buttons ---------- */
   .ctl-btn { position:absolute; z-index:6; pointer-events:auto; cursor:pointer;
     background:rgba(6,8,28,.7); color:#fff; border:1px solid rgba(120,140,255,.5);
     border-radius:10px; padding:9px 13px; font-size:15px; }
-  #muteBtn { top:86px; right:14px; }
-  #pauseBtn { top:84px; right:76px; min-width:52px; min-height:48px; font-size:17px;
-    border-radius:12px; background:rgba(6,8,28,.78); }
-  #dashBtn { right:16px; bottom:18px; width:88px; height:88px; border-radius:50%;
-    font-size:14px; font-weight:800; letter-spacing:1px; display:none;
-    background:rgba(255,160,30,.28); border-color:rgba(255,190,60,.8); }
-  body.touch #dashBtn { display:block; }
-  #shiftBtn { right:16px; bottom:120px; width:88px; height:88px; border-radius:50%;
-    font-size:12px; font-weight:800; letter-spacing:1px; display:none; opacity:.45;
-    background:rgba(60,140,255,.25); border-color:rgba(120,200,255,.7); }
-  #shiftBtn.ready { opacity:1; box-shadow:0 0 16px rgba(120,200,255,.55); }
-  body.touch #shiftBtn { display:block; }
-  #dashBtn:active, #shiftBtn:active { transform:scale(.93); }
+  #muteBtn { top:56px; right:14px; }
 
   /* ---------- Overlays ---------- */
   .overlay { position:absolute; inset:0; display:flex; flex-direction:column;
     align-items:center; justify-content:center; background:rgba(2,2,12,.78);
     z-index:10; text-align:center; padding:20px; }
-  /* first-sight teaching panel */
-  #teachTip { position:absolute; left:50%; bottom:11%; transform:translateX(-50%); z-index:30;
-    width:min(540px, calc(100% - 28px)); background:rgba(4,6,24,.95); border:2px solid #ffe93b;
-    border-radius:14px; padding:16px 20px 12px; text-align:center; cursor:pointer;
-    box-shadow:0 0 34px rgba(255,233,59,.35); }
-  #teachTitle { font-size:22px; font-weight:900; letter-spacing:.12em; color:#ffe93b; margin-bottom:7px; }
-  #teachText { font-size:16px; line-height:1.45; color:#f2f4ff; }
-  #teachHint { margin-top:11px; font-size:11.5px; font-weight:700; letter-spacing:.14em; color:#9fb2d8; }
+  /* first-sight hint toast (v3.1): small, corner, auto-dismissing — never
+     a modal, never centred, never stacked */
+  #teachTip { position:absolute; left:12px; bottom:118px; z-index:30;
+    width:min(320px, 72vw); background:rgba(246,241,222,.96); border:2px solid #2b2b2b;
+    border-radius:10px; padding:9px 12px; text-align:left; cursor:pointer;
+    box-shadow:2px 3px 0 rgba(20,20,30,.35); }
+  #teachTitle { font-size:15px; font-weight:900; letter-spacing:.06em; color:#7a4d00; margin-bottom:2px; }
+  #teachText { font-size:14px; line-height:1.35; color:#1c1c26; }
+  #teachHint { display:none; }
   .overlay h1 { font-size:64px; font-weight:900; letter-spacing:6px; color:#ffe93b;
     text-shadow:0 0 30px rgba(255,220,40,.55), 4px 4px 0 #ff5e3a; }
   .overlay h2 { font-size:34px; font-weight:800; letter-spacing:3px; color:#ffe93b; margin-bottom:8px; }
-  .overlay p { color:#d3d9ff; max-width:560px; line-height:1.6; font-size:15px; }
-  .overlay .small { font-size:12.5px; color:#9fb0ff; margin-top:10px; line-height:1.7; }
+  .overlay p { color:#d3d9ff; max-width:560px; line-height:1.6; font-size:16px; }
+  .overlay .small { font-size:14px; color:#9fb0ff; margin-top:10px; line-height:1.7; }
+  /* pause sections (v3.1) */
+  #pauseTabs { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-width:720px; margin-bottom:12px; }
+  #pauseTabs button { background:rgba(30,36,84,.85); color:#dfe6ff; border:1px solid rgba(120,140,255,.5);
+    border-radius:9px; padding:8px 12px; font-size:14px; font-weight:700; cursor:pointer; }
+  #pauseTabs button.on { background:#ffd93b; color:#1c1c26; border-color:#ffd93b; }
+  #pauseBody { max-width:640px; width:92%; max-height:52vh; overflow-y:auto; text-align:left;
+    font-size:15px; line-height:1.55; background:rgba(6,8,28,.55); border:1px solid rgba(90,110,255,.35);
+    border-radius:10px; padding:12px 16px; }
+  #pauseBody h3 { margin:2px 0 8px; font-size:16px; color:#ffd93b; }
+  #pauseBody .row { display:flex; justify-content:space-between; gap:12px; padding:2px 0; }
+  #pauseBody select { font-size:15px; padding:4px 6px; border-radius:6px; }
+  #pauseBody .pbtn { background:rgba(30,36,84,.9); color:#fff; border:1px solid rgba(120,140,255,.55);
+    border-radius:9px; padding:9px 14px; font-size:15px; font-weight:700; cursor:pointer; margin:3px 4px 3px 0; }
+  #pauseBody .legend-chip { display:inline-block; min-width:26px; text-align:center; font-weight:900; }
   .big-btn { margin-top:22px; background:linear-gradient(180deg,#ffd93b,#ff9a3b);
     color:#201200; border:none; border-radius:12px; padding:14px 42px;
     font-size:20px; font-weight:900; letter-spacing:2px; cursor:pointer;
@@ -103,7 +121,7 @@
   .card .tag.power { color:#ff9de2; }
   .card .ico { font-size:38px; margin:8px 0 4px; }
   .card .name { font-size:16.5px; font-weight:800; }
-  .card .desc { font-size:13px; color:#c2caff; margin-top:6px; line-height:1.5; }
+  .card .desc { font-size:14.5px; color:#c2caff; margin-top:6px; line-height:1.5; }
 
   #toast { position:absolute; top:38%; left:50%; transform:translate(-50%,-50%);
     font-size:27px; font-weight:900; letter-spacing:2px; color:#fff;
@@ -119,6 +137,9 @@
   .diff-btn { margin-top:10px; background:transparent; color:#8fa2ff; border:1px solid rgba(120,140,255,.4);
     border-radius:9px; padding:8px 14px; font-size:13px; letter-spacing:1px; cursor:pointer; }
   .diff-btn.on { background:#ffd93b; color:#201200; border-color:#ffd93b; font-weight:800; }
+  .shop-item { background:rgba(20,26,66,.9); color:#fff; border:2px solid rgba(110,130,255,.55);
+    border-radius:10px; padding:12px 18px; font-size:15px; font-weight:700; cursor:pointer; min-width:280px; }
+  .shop-item:disabled { opacity:.4; cursor:default; }
   #resFill { background:#ff5e3a; width:0%; }
   #tombstone { margin-top:14px; max-width:520px; background:rgba(40,10,20,.85); border:2px solid #8a4a5e;
     border-radius:12px; padding:12px 16px; color:#ffb3c0; line-height:1.55; font-size:14px; }
@@ -131,50 +152,46 @@
   #debugState { position:absolute; bottom:2px; right:4px; font-size:9px; color:#334; z-index:1; }
 
   /* ---------- Intro: game chrome hidden while the intro scene owns the screen ---------- */
-  body.intro-on #hud, body.intro-on #powers, body.intro-on #muteBtn, body.intro-on #pauseBtn,
-  body.intro-on #dashBtn, body.intro-on #shiftBtn, body.intro-on #eatBanner,
+  body.intro-on #hudbar, body.intro-on #objective, body.intro-on #thumbbar, body.intro-on #powers, body.intro-on #muteBtn, body.intro-on #eatBanner,
   body.intro-on #toast { display:none !important; }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 
-<div id="hud">
-  <div class="hud-box">
-    <div class="hud-label">Score</div>
-    <div class="hud-value" id="scoreText">0</div>
-    <div class="hud-label" style="margin-top:3px;">HP <span id="livesText"></span></div>
-    <div class="bar"><div id="hpFill"></div></div>
-    <div class="hud-label" style="margin-top:3px;">XP — Level <span id="levelText">1</span></div>
-    <div class="bar"><div id="xpFill"></div></div>
-    <div class="hud-label" style="margin-top:3px;"><span id="resText">RAGE 0</span> (F = burst)</div>
-    <div class="bar"><div id="resFill"></div></div>
-  </div>
-  <div class="hud-box" id="hud-mid">
-    <div class="hud-label" id="timeLabel">Level Time Left</div>
-    <div class="hud-value" id="timeText">0:00</div>
-    <div class="hud-label" style="margin-top:3px;">Combo <span id="comboText">x0</span></div>
-    <div class="bar"><div id="comboFill"></div></div>
-  </div>
-  <div class="hud-box" id="hud-right">
-    <div class="hud-label">Best</div>
-    <div class="hud-value" id="bestText">0</div>
-    <div class="hud-label" style="margin-top:3px;">Eaten</div>
-    <div class="hud-value" id="eatenText" style="font-size:16px;">0</div>
-    <div class="hud-label" style="margin-top:3px;">Time Shift <span id="shiftText">READY — E</span></div>
-    <div class="bar"><div id="shiftFill"></div></div>
-  </div>
+<div id="hudbar">
+  <div class="hud-item"><span class="hud-lab">SCORE</span><span class="hud-val" id="scoreText">0</span></div>
+  <div class="hud-item"><span class="hud-lab">LV</span><span class="hud-val" id="levelText">1</span><div class="mini-bar"><div id="xpFill" style="background:#37e08b;"></div></div></div>
+  <div class="hud-item"><span class="hud-val" id="livesText" style="color:#e03131;"></span></div>
+  <div class="hud-item"><span class="hud-lab" id="resText">RAGE 0</span><div class="mini-bar"><div id="resFill"></div></div></div>
+  <div class="hud-item"><span class="hud-lab">HP</span><div class="mini-bar"><div id="hpFill" style="background:#ff3b6b;"></div></div></div>
+  <div class="hud-item"><span class="hud-lab">TIME</span><span class="hud-val" id="timeText">0:00</span></div>
+  <div class="hud-item"><span class="hud-lab">COMBO</span><span class="hud-val" id="comboText">x0</span></div>
+  <div class="hud-item" style="margin-left:auto;"><span class="hud-val" id="fruitText" style="color:#e83e8c;"></span><span class="hud-val" id="bankText" style="color:#7a4d00; margin-left:8px;"></span></div>
+</div>
+<div id="objective"></div>
+
+<div id="thumbbar">
+  <div id="padZone"><div class="padlab">◀ ▲ ▼ ▶ MOVE</div></div>
+  <button class="thumb-btn" id="startBtnBar"><span class="blab">START</span><span class="bkey">P · pause</span></button>
+  <button class="thumb-btn" id="btnSkill1"><span class="blab">SHIFT</span><span class="bkey">Q</span></button>
+  <button class="thumb-btn" id="btnSkill2"><span class="blab">BURST</span><span class="bkey">F</span></button>
+  <button class="thumb-btn" id="btnSkill3"><span class="blab">FRUIT</span><span class="bkey">C</span></button>
+  <button class="thumb-btn" id="btnMove"><span class="blab">SHIFT</span><span class="bkey">SPACE</span></button>
 </div>
 
-<div id="eatBanner">EAT MODE!</div>
+<!-- legacy floating buttons (v3.0) — hidden; the thumb bar owns controls now -->
+<button class="ctl-btn hidden" id="dashBtn">DASH</button>
+<button class="ctl-btn hidden" id="shiftBtn" title="Time Shift (E)">SHIFT</button>
+<button class="ctl-btn hidden" id="tagBtn" title="Tag in partner (T)">TAG ⇄</button>
+<button class="ctl-btn hidden" id="burstBtn" title="Resource burst (F)">BURST</button>
+<button class="ctl-btn hidden" id="pauseBtn" title="Pause (P)">⏸</button>
+
+<div id="eatBanner" class="hidden"></div>
 <div id="powers"></div>
 <div id="toast"></div>
 <button class="ctl-btn" id="muteBtn" title="Mute (M)">🔊</button>
-<button class="ctl-btn" id="pauseBtn" title="Pause (P)">⏸</button>
-<button class="ctl-btn" id="dashBtn">DASH</button>
-<button class="ctl-btn" id="shiftBtn" title="Time Shift (E)">SHIFT</button>
-<button class="ctl-btn" id="tagBtn" title="Tag in partner (T)">TAG ⇄</button>
-<button class="ctl-btn" id="burstBtn" title="Resource burst (F)">BURST</button>
+<div class="hud-item hidden" style="display:none;"><span id="bestText"></span><span id="eatenText"></span><span id="shiftText"></span><span id="comboFill"></span><span id="shiftFill"></span></div>
 
 <!-- first-sight teaching tooltip: above every overlay (incl. the card
      screen); captures the tap so a dismiss can never click through -->
@@ -234,6 +251,15 @@
   <button class="big-btn" id="bossGoBtn">FIGHT THE APE ▶</button>
 </div>
 
+<div class="overlay hidden" id="shopScreen">
+  <h2>🛒 THE CROOKED LITTLE SHOP</h2>
+  <p id="shopLine">…</p>
+  <p class="small" id="shopWallet"></p>
+  <div id="shopItems" style="display:flex; flex-direction:column; gap:10px; margin-top:16px;"></div>
+  <button class="big-btn" id="shopCloseBtn">BACK TO THE MAZE ▶</button>
+  <p class="small">Stock is DRAFT — the fence hasn't had his say yet.</p>
+</div>
+
 <div class="overlay hidden" id="gameoverScreen">
   <h2>GAME OVER</h2>
   <p id="finalStats"></p>
@@ -243,12 +269,16 @@
 
 <div class="overlay hidden" id="pauseScreen" style="background:rgba(2,2,12,.5);">
   <h2>PAUSED</h2>
-  <p id="pauseStats"></p>
-  <p class="small">Press P to resume &nbsp;•&nbsp; Time Shift: E / SHIFT &nbsp;•&nbsp; Dash: SPACE &nbsp;•&nbsp; Mute: M</p>
+  <div id="pauseTabs">
+    <button data-ptab="options">OPTIONS</button><button data-ptab="settings">SETTINGS</button><button data-ptab="game">GAME SETTINGS</button><button data-ptab="achieve">ACHIEVEMENTS</button><button data-ptab="equip">EQUIPMENT</button><button data-ptab="talents">TALENTS</button><button data-ptab="map">MAP</button><button data-ptab="rules">RULES</button>
+  </div>
+  <div id="pauseBody"></div>
+  <p class="small">P or the START button resumes. The game is frozen while this is open.</p>
 </div>
 
 <div id="savedTag">✓ Progress saved</div>
 <div id="debugState"></div>
+<script src="sprites/sprites.js"></script>
 <script src="game.js"></script>
 </body>
 </html>
