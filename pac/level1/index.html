@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PAC — Level 1</title>
+<!--
+  PAC LEVEL 1 — v0.1.0 (Claude, 2026-10-20)
+  Purpose (Brent): get Pac in the world; see how he looks, moves, the scale, how the world looks.
+  Scope: Original Pac on the SHARED RIG (every character uses the same skeleton + gear anchors,
+  scaled per character), Tron-style Pac-Man world of our own, pellets / power pellets / cherries,
+  edge wrap tunnel, Duke-style one-liners. NO ghosts yet, NO units (level 1 is solo).
+  Controls: WASD/arrows, click-to-move, gamepad left stick. G = toggle test gear. V = voice on/off.
+-->
+<style>
+  html,body{margin:0;height:100%;background:#03040a;overflow:hidden;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#cfe3ff}
+  canvas{display:block}
+  #hud{position:fixed;top:12px;left:14px;font-size:13px;line-height:1.5;pointer-events:none;text-shadow:0 0 6px #000}
+  #hud b{color:#ffe14d}
+  #help{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:12px;color:#7f93b8;pointer-events:none}
+  #say{position:fixed;left:50%;top:18%;transform:translateX(-50%);background:#0b1030e6;border:1px solid #2a6cff;
+       color:#fff;padding:8px 14px;border-radius:10px;font-size:16px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+</style></head><body>
+<div id="hud"></div>
+<div id="say"></div>
+<div id="help">WASD / arrows / click to move · gamepad stick · G gear on/off · V voice on/off</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+// ======================= SCALE: 1 unit = 1 metre. Pac stands ~1.7 m. =======================
+const MAP = 64;              // world is 64 x 64 m
+const HALF = MAP/2;
+const SPEED = 7.5;           // m/s walking pace (first-pass tuning)
+const PAC_SCALE = 1.0;       // Original Pac = reference size; other characters scale the same rig
+
+// ---------------- renderer / scene / camera (locked camera, MOBA angle) ----------------
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x03040a);
+scene.fog = new THREE.Fog(0x03040a, 30, 70);
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 300);
+const CAM_OFF = new THREE.Vector3(0, 9.5, 9);   // locked offset: high and behind, like a MOBA
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+
+scene.add(new THREE.HemisphereLight(0x8fb4ff, 0x0a0a20, 0.55));
+const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(-10,25,12); scene.add(sun);
+
+// ---------------- the world: our own neon Pac-Man universe ----------------
+// floor: near-black with a neon grid (Tron)
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(MAP, MAP), new THREE.MeshStandardMaterial({color:0x05070f, roughness:.9}));
+floor.rotation.x = -Math.PI/2; scene.add(floor);
+const grid = new THREE.GridHelper(MAP, MAP/2, 0x1b3cff, 0x0d1d66); grid.position.y = 0.01; scene.add(grid);
+grid.material.transparent = true; grid.material.opacity = 0.55;
+
+// maze walls: neon blue slabs (Pac-Man blue, Tron glow). Each wall = [x, z, width, depth]
+const WALLS = [];
+const wallMat = new THREE.MeshStandardMaterial({color:0x060a24, emissive:0x0c1f7a, emissiveIntensity:0.8, roughness:.5, transparent:true, opacity:0.92});
+const edgeMat = new THREE.LineBasicMaterial({color:0x4fa8ff});
+function wall(x,z,w,d,h=1.4){
+  const g = new THREE.BoxGeometry(w,h,d);
+  const m = new THREE.Mesh(g, wallMat); m.position.set(x,h/2,z); scene.add(m);
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(g), edgeMat); e.position.copy(m.position); scene.add(e);
+  WALLS.push({x0:x-w/2, x1:x+w/2, z0:z-d/2, z1:z+d/2});
+}
+// outer border with TUNNEL gaps on left/right middle (edge wrap, like the arcade)
+const T = 6; // tunnel opening width
+wall(0,-HALF, MAP,1); wall(0,HALF, MAP,1);
+wall(-HALF,-(HALF+T/2)/2-0.0, 1, HALF-T/2); wall(-HALF,(HALF+T/2)/2, 1, HALF-T/2);
+wall(HALF,-(HALF+T/2)/2, 1, HALF-T/2);  wall(HALF,(HALF+T/2)/2, 1, HALF-T/2);
+// inner maze blocks (corridors, corners, escape routes)
+[[-20,-20,8,2],[20,-20,8,2],[-20,20,8,2],[20,20,8,2],
+ [-20,-14,2,6],[20,-14,2,6],[-20,14,2,6],[20,14,2,6],
+ [0,-22,14,2],[0,22,14,2],[0,-18,2,6],[0,18,2,6],
+ [-10,0,2,10],[10,0,2,10],[-27,-6,4,2],[27,6,4,2],[-27,6,4,2],[27,-6,4,2],
+ [-11,-26,6,2],[11,26,6,2],[11,-26,6,2],[-11,26,6,2]].forEach(a=>wall(...a));
+// centre: the spawn "ghost house" style ring, open (no ghosts yet)
+wall(0,-4,8,1,0.8); wall(-4,0,1,8,0.8); wall(4,0,1,8,0.8);
+
+function blocked(x,z,r){ for(const w of WALLS){ if(x>w.x0-r && x<w.x1+r && z>w.z0-r && z<w.z1+r) return true;} return false; }
+
+// ---------------- pickups: pellet highways, power pellets, big cherries ----------------
+const pellets = [];
+const pelletGeo = new THREE.SphereGeometry(0.16, 10, 8);
+const pelletMat = new THREE.MeshBasicMaterial({color:0xfff2b0});
+function addPellet(x,z,kind){
+  if(Math.abs(x)>HALF-1.2 || Math.abs(z)>HALF-1.2 || blocked(x,z,0.9)) return;
+  if(pellets.some(p=>Math.hypot(p.x-x,p.z-z)<1.1)) return;
+  let mesh;
+  if(kind==='power'){ mesh = new THREE.Mesh(new THREE.SphereGeometry(0.55,20,14), new THREE.MeshBasicMaterial({color:0x2a7bff})); }
+  else if(kind==='cherry'){ mesh = makeCherry(); }
+  else mesh = new THREE.Mesh(pelletGeo, pelletMat);
+  mesh.position.set(x, kind==='pellet'?0.6:0.9, z); scene.add(mesh);
+  pellets.push({x,z,kind,mesh,ph:Math.random()*6});
+}
+function makeCherry(){
+  const g = new THREE.Group();
+  const red = new THREE.MeshStandardMaterial({color:0xff1f3d, emissive:0x7a0012, roughness:.3});
+  const a = new THREE.Mesh(new THREE.SphereGeometry(0.45,18,12), red); a.position.set(-0.32,0,0);
+  const b = a.clone(); b.position.set(0.34,-0.1,0.1);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.9,6), new THREE.MeshStandardMaterial({color:0x2fbf3a}));
+  stem.position.set(0,0.45,0); stem.rotation.z = 0.2;
+  g.add(a,b,stem); g.scale.setScalar(1.6); return g;   // BIG cherries
+}
+// dot highways: a ring around spawn, then roads leading out down the corridors
+for(let i=0;i<24;i++){ const t=i/24*Math.PI*2; addPellet(Math.cos(t)*7, Math.sin(t)*7,'pellet'); }
+for(let v=-28; v<=28; v+=1.6){ addPellet(v, 8,'pellet'); addPellet(v,-8,'pellet'); addPellet(-15, v,'pellet'); addPellet(15, v,'pellet'); addPellet(v, 0,'pellet'); }
+for(let v=-28; v<=28; v+=1.6){ addPellet(v, 29,'pellet'); addPellet(v,-29,'pellet'); addPellet(-29, v,'pellet'); addPellet(29, v,'pellet'); }
+// figure-eight pattern (completing a pattern pays a bonus later)
+for(let i=0;i<40;i++){ const t=i/40*Math.PI*2; addPellet(Math.sin(t)*6+22, Math.sin(2*t)*3-14,'pellet'); }
+[[-28,-28],[28,-28],[-28,28],[28,28]].forEach(p=>addPellet(p[0],p[1],'power'));
+[[-22,0],[22,0]].forEach(p=>addPellet(p[0],p[1],'cherry'));
+
+// ======================= THE SHARED RIG =======================
+// Every character is built on this one skeleton. Bones carry GEAR ANCHORS; gear attaches to anchors,
+// never to a specific character, so a piece made once fits everyone. Characters differ by
+// proportions (rig.scale, limb lengths) and by their own body/face meshes.
+function buildRig(p){
+  // p = proportions: {legLen, legW, armLen, armW, bodyR}
+  const rig = {root:new THREE.Group(), bones:{}, anchors:{}};
+  const B = rig.bones, A = rig.anchors;
+  B.hips = new THREE.Group(); B.hips.position.y = p.legLen; rig.root.add(B.hips);
+  B.body = new THREE.Group(); B.body.position.y = p.bodyR*0.95; B.hips.add(B.body);
+  B.head = new THREE.Group(); B.head.position.y = p.bodyR*0.78; B.body.add(B.head);      // top of the round body
+  for(const s of [-1,1]){
+    const side = s<0?'L':'R';
+    const leg = new THREE.Group(); leg.position.set(s*p.bodyR*0.42, 0, 0); B.hips.add(leg); B['leg'+side]=leg;
+    const foot = new THREE.Group(); foot.position.y = -p.legLen; leg.add(foot); B['foot'+side]=foot;
+    const arm = new THREE.Group(); arm.position.set(s*p.bodyR*0.98, p.bodyR*0.05, 0); B.body.add(arm); B['arm'+side]=arm;
+    const hand = new THREE.Group(); hand.position.y = -p.armLen; arm.add(hand); B['hand'+side]=hand;
+  }
+  // the 11 gear anchors (headpiece, chest, gloves x2, weapon arms x2, legs x2, boots x2, neck, rings, banner)
+  A.headpiece = B.head; A.chest = B.body; A.neck = B.body; A.banner = B.body;
+  A.gloveL = B.handL; A.gloveR = B.handR; A.weaponL = B.handL; A.weaponR = B.handR;
+  A.legL = B.legL; A.legR = B.legR; A.bootL = B.footL; A.bootR = B.footR;
+  rig.p = p; return rig;
+}
+
+// ---------------- ORIGINAL PAC on the rig ----------------
+const YEL = new THREE.MeshToonMaterial({color:0xffd21f});
+const INK = new THREE.MeshBasicMaterial({color:0x111111, side:THREE.BackSide});   // outline shell (sketch line look)
+function outlined(geo, mat, k=1.06){ const g=new THREE.Group(); const m=new THREE.Mesh(geo,mat); const o=new THREE.Mesh(geo,INK); o.scale.setScalar(k); g.add(o,m); return g; }
+
+const PAC_P = {legLen:0.55, legW:0.11, armLen:0.5, armW:0.09, bodyR:0.62};
+const pac = buildRig(PAC_P);
+pac.root.scale.setScalar(PAC_SCALE);
+scene.add(pac.root);
+{
+  const B = pac.bones, r = PAC_P.bodyR;
+  // body = two jaws (the mouth IS the pie slice). Upper jaw carries eyes and cap.
+  const upper = new THREE.Group(), lower = new THREE.Group();
+  const hemi = new THREE.SphereGeometry(r, 28, 18, 0, Math.PI*2, 0, Math.PI/2);
+  const up = outlined(hemi, YEL); upper.add(up);
+  const lo = outlined(hemi, YEL); lo.rotation.x = Math.PI; lower.add(lo);
+  // mouth interior: dark red discs inside each jaw
+  const mouthMat = new THREE.MeshBasicMaterial({color:0x5a0a12, side:THREE.DoubleSide});
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(r*0.985, 28), mouthMat); disc.rotation.x = Math.PI/2; upper.add(disc);
+  const disc2 = disc.clone(); lower.add(disc2);
+  const tongue = new THREE.Mesh(new THREE.SphereGeometry(r*0.42, 14, 10), new THREE.MeshToonMaterial({color:0xff6f86}));
+  tongue.scale.set(1,0.25,1); tongue.position.set(0,0.02,r*0.35); lower.add(tongue);
+  // eyes (front = +z)
+  for(const s of [-1,1]){
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(r*0.13,12,10), new THREE.MeshBasicMaterial({color:0x111111}));
+    eye.scale.set(0.9,1.4,0.6); eye.position.set(s*r*0.3, r*0.42, r*0.84); upper.add(eye);
+    const shine = new THREE.Mesh(new THREE.SphereGeometry(r*0.04,8,6), new THREE.MeshBasicMaterial({color:0xffffff}));
+    shine.position.set(s*r*0.3+0.02, r*0.5, r*0.93); upper.add(shine);
+  }
+  // red cap, worn backwards (part of his body art, not gear)
+  const capMat = new THREE.MeshToonMaterial({color:0xe0262c});
+  const cap = outlined(new THREE.SphereGeometry(r*1.02, 24, 12, 0, Math.PI*2, 0, Math.PI*0.26), capMat, 1.04);
+  cap.rotation.x = -0.55; cap.position.y = 0.02; upper.add(cap);   // sits back on the head so the face shows
+  const brim = outlined(new THREE.CylinderGeometry(r*0.55, r*0.55, 0.05, 20, 1, false, -Math.PI*0.5, Math.PI), capMat, 1.05);
+  brim.position.set(0, r*0.62, -r*0.72); brim.rotation.x = -0.15; upper.add(brim);   // brim points BACK
+  B.body.add(upper, lower);
+  pac.jawU = upper; pac.jawL = lower;
+  // limbs: simple sketchy capsules
+  function limb(len, w){ const g = new THREE.Group(); const m = outlined(new THREE.CylinderGeometry(w,w,len,10), YEL, 1.12); m.position.y = -len/2; g.add(m); return g; }
+  for(const s of ['L','R']){
+    B['leg'+s].add(limb(PAC_P.legLen, PAC_P.legW));
+    const shoe = outlined(new THREE.SphereGeometry(0.17,14,10), new THREE.MeshToonMaterial({color:0xffd21f}), 1.08);
+    shoe.scale.set(1,0.55,1.6); shoe.position.set(0,0.05,0.08); B['foot'+s].add(shoe);
+    B['arm'+s].add(limb(PAC_P.armLen, PAC_P.armW));
+    const fist = outlined(new THREE.SphereGeometry(0.14,12,10), YEL, 1.1); B['hand'+s].add(fist);
+  }
+  // simple blob shadow
+  const sh = new THREE.Mesh(new THREE.CircleGeometry(0.75, 24), new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.45}));
+  sh.rotation.x = -Math.PI/2; sh.position.y = 0.02; pac.root.add(sh);
+}
+
+// ---------------- TEST GEAR: one plain set, made ONCE, mounted on anchors ----------------
+// Proves the system: pieces only know anchor names, so the same set fits any rig.
+const gear = [];
+function equip(anchor, mesh){ pac.anchors[anchor].add(mesh); gear.push(mesh); mesh.visible = false; }
+{
+  const steel = new THREE.MeshToonMaterial({color:0xaab4c4});
+  const helm = outlined(new THREE.SphereGeometry(0.7, 22, 12, 0, Math.PI*2, 0, Math.PI*0.36), steel, 1.04);
+  helm.position.y = 0.06; equip('headpiece', helm);
+  for(const s of ['L','R']){
+    const boot = outlined(new THREE.CylinderGeometry(0.15,0.18,0.3,12), new THREE.MeshToonMaterial({color:0x6b4a2b}), 1.08);
+    boot.position.y = 0.17; equip('boot'+s, boot);
+    const glove = outlined(new THREE.SphereGeometry(0.16,12,10), new THREE.MeshToonMaterial({color:0x3b3b3b}), 1.08);
+    equip('glove'+s, glove);
+  }
+  const blade = new THREE.Group();
+  const b1 = outlined(new THREE.BoxGeometry(0.08,0.9,0.03), steel, 1.1); b1.position.y = 0.55;
+  const hilt = outlined(new THREE.BoxGeometry(0.3,0.06,0.06), new THREE.MeshToonMaterial({color:0x553300}), 1.1); hilt.position.y = 0.08;
+  blade.add(b1, hilt); blade.rotation.x = Math.PI/2.4; equip('weaponR', blade);
+}
+
+// ======================= VOICE: Duke-style one-liners =======================
+const LINES = {
+  start:  ["Time to chew pellets and kick ass. And I'm all outta ass.", "Hail to the chomp, baby.", "Who ordered the yellow menace?"],
+  pellet: ["Pellets of steel.", "Mmm. Crunchy.", "Waka waka, motherf—", "Don't mind if I do."],
+  power:  ["Oh, it's PILL time.", "Now I'm the one doing the chasing.", "Blue ball season, boys."],
+  cherry: ["Cherry popped.", "Fruit. Technically healthy.", "That's what I call a cherry on top."],
+  idle:   ["I'm not getting any rounder standing here.", "Somebody feed me before I eat the scenery.", "This maze is giving claustrophobia. And I'm a circle."],
+  wrap:   ["Shortcut, suckers.", "Out one side, in the other. Like Taco Tuesday."]
+};
+let voice = false, sayT = 0;
+const sayEl = document.getElementById('say');
+function say(kind, force){
+  if(!force && performance.now() < sayT) return;
+  const pool = LINES[kind]; const line = pool[Math.floor(Math.random()*pool.length)];
+  sayEl.textContent = line; sayEl.style.opacity = 1; sayT = performance.now()+3500;
+  clearTimeout(say._h); say._h = setTimeout(()=>sayEl.style.opacity=0, 2600);
+  if(voice && 'speechSynthesis' in window){ try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(line); u.rate = 1.05; u.pitch = 0.7; speechSynthesis.speak(u);}catch(e){} }
+}
+
+// ======================= INPUT: WASD, click-to-move, gamepad =======================
+const keys = {};
+addEventListener('keydown', e=>{
+  keys[e.key.toLowerCase()] = true;
+  if(e.key.toLowerCase()==='g'){ const on = !gear[0].visible; gear.forEach(g=>g.visible=on); }
+  if(e.key.toLowerCase()==='v'){ voice = !voice; say('start', true); }
+});
+addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; });
+let target = null;
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+renderer.domElement.addEventListener('pointerdown', e=>{
+  mouse.set(e.clientX/innerWidth*2-1, -(e.clientY/innerHeight)*2+1);
+  ray.setFromCamera(mouse, camera);
+  const hit = ray.intersectObject(floor)[0];
+  if(hit) target = hit.point.clone();
+});
+
+// ======================= LOOP =======================
+const P = {x:0, z:6, vx:0, vz:0, face:0, walk:0, mouth:0, pellets:0, level:1, xp:0};
+const XP_NEED = [0, 20, 45, 75, 110, 150, 200];   // levels 1..6 inside the map (first-pass)
+const hud = document.getElementById('hud');
+let last = performance.now(), idleT = 0, started = false;
+
+function input(){
+  let x = 0, z = 0;
+  if(keys.a||keys.arrowleft) x-=1; if(keys.d||keys.arrowright) x+=1;
+  if(keys.w||keys.arrowup) z-=1; if(keys.s||keys.arrows||keys.arrowdown) z+=1;
+  const gp = navigator.getGamepads ? [...navigator.getGamepads()].find(g=>g) : null;
+  if(gp){ const ax = gp.axes[0]||0, az = gp.axes[1]||0; if(Math.hypot(ax,az)>0.2){ x = ax; z = az; } }
+  if(x||z){ target = null; const l = Math.hypot(x,z); return [x/l, z/l, Math.min(1,l)]; }
+  if(target){ const dx = target.x-P.x, dz = target.z-P.z, d = Math.hypot(dx,dz); if(d<0.3){ target=null; return [0,0,0]; } return [dx/d, dz/d, 1]; }
+  return [0,0,0];
+}
+
+function loop(now){
+  const dt = Math.min(0.05, (now-last)/1000); last = now;
+  if(!started){ started = true; setTimeout(()=>say('start',true), 600); }
+  const [ix, iz, mag] = input();
+  const moving = mag > 0;
+  // movement with a short acceleration (no instant start/stop)
+  const tvx = ix*SPEED*mag, tvz = iz*SPEED*mag, acc = moving?14:18;
+  P.vx += (tvx-P.vx)*Math.min(1,acc*dt); P.vz += (tvz-P.vz)*Math.min(1,acc*dt);
+  const r = PAC_P.bodyR*0.9*PAC_SCALE;
+  let nx = P.x + P.vx*dt, nz = P.z + P.vz*dt;
+  if(!blocked(nx, P.z, r)) P.x = nx; else P.vx = 0;
+  if(!blocked(P.x, nz, r)) P.z = nz; else P.vz = 0;
+  // EDGE WRAP: through the side tunnels, out the other side
+  if(P.x < -HALF-1){ P.x = HALF+0.9; say('wrap', true); }
+  if(P.x >  HALF+1){ P.x = -HALF-0.9; say('wrap', true); }
+  const sp = Math.hypot(P.vx, P.vz);
+  if(sp > 0.4){ const want = Math.atan2(P.vx, P.vz); let d = want-P.face; d = Math.atan2(Math.sin(d),Math.cos(d)); P.face += d*Math.min(1, 12*dt); idleT = 0; }
+  else { idleT += dt; if(idleT > 9){ idleT = 0; say('idle'); } }
+  P.walk += sp*dt*2.2;
+
+  // ---- animate the rig ----
+  const B = pac.bones, k = Math.min(1, sp/SPEED);
+  pac.root.position.set(P.x, 0, P.z); pac.root.rotation.y = P.face;
+  B.legL.rotation.x =  Math.sin(P.walk)*0.7*k; B.legR.rotation.x = -Math.sin(P.walk)*0.7*k;
+  B.armL.rotation.x = -Math.sin(P.walk)*0.6*k; B.armR.rotation.x =  Math.sin(P.walk)*0.6*k;
+  B.armL.rotation.z = -0.25; B.armR.rotation.z = 0.25;
+  B.body.position.y = PAC_P.bodyR*0.95 + Math.abs(Math.sin(P.walk))*0.06*k;
+  B.body.rotation.x = 0.12*k;          // lean into the run
+  // waka: jaws open and close while moving; rest pose = a grin
+  P.mouth = moving ? (0.5+0.5*Math.sin(now/1000*14)) : Math.max(0, P.mouth - dt*3);
+  const open = 0.08 + P.mouth*0.5;
+  pac.jawU.rotation.x = -open; pac.jawL.rotation.x = open*0.6;
+
+  // ---- pickups ----
+  for(let i=pellets.length-1;i>=0;i--){
+    const p = pellets[i];
+    p.ph += dt*3; if(p.kind!=='pellet'){ p.mesh.position.y = 0.9 + Math.sin(p.ph)*0.15; p.mesh.rotation.y += dt; }
+    if(Math.hypot(p.x-P.x, p.z-P.z) < (p.kind==='pellet'?0.9:1.3)){
+      scene.remove(p.mesh); pellets.splice(i,1);
+      if(p.kind==='pellet'){ P.pellets++; P.xp += 1; if(P.pellets%25===0) say('pellet'); }
+      if(p.kind==='power'){ P.xp += 10; say('power', true); }
+      if(p.kind==='cherry'){ P.xp += 15; say('cherry', true); }
+      while(P.level < 6 && P.xp >= XP_NEED[P.level]){ P.level++; }
+    }
+  }
+  // ---- camera: locked, smooth follow ----
+  const want = new THREE.Vector3(P.x, 0, P.z).add(CAM_OFF);
+  camera.position.lerp(want, Math.min(1, 8*dt));
+  camera.lookAt(P.x, 0.9, P.z - 0.5);
+
+  hud.innerHTML = `<b>PAC</b> · Original · Level ${P.level}${P.level>=6?' (max in this map)':''}<br>pellets ${P.pellets} · xp ${P.xp}/${XP_NEED[Math.min(P.level,6)]}<br>gear ${gear[0].visible?'ON':'off'} · voice ${voice?'ON':'off'}`;
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+// test hook for automated checks (not used by the game)
+window.__pac = {P, setKey:(k,v)=>keys[k]=v, gear};
+</script>
+</body></html>
