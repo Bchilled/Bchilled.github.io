@@ -211,14 +211,14 @@ function placeLights(cz){ const s = LSLOTS.slice().sort((a,b)=>Math.abs(a.z-cz)-
 function animateWorld(rdt, rtNow, focusZ, beat){
   const bn = Math.floor(beat), onBeat = (beat%1) < 0.15;
   // the pit's light-up tiles: one tiny texture, rewritten each frame (was 330 see-through planes)
-  if(tileTex){ const D = tileTex.image.data; for(let a=0;a<TX;a++) for(let b=0;b<TZ;b++){ const v = Math.sin(rtNow*2.4 + a*0.7 + b*1.3 + bn), k = v > 0.3 ? (onBeat?0.62:0.38) : 0.03, C = TILE_COLS[(a+b+bn)%5], o = (b*TX+a)*4;
+  if(tileTex){ const D = tileTex.image.data; for(let a=0;a<TX;a++) for(let b=0;b<TZ;b++){ const v = Math.sin(rtNow*2.4 + a*0.7 + b*1.3 + bn), k = v > 0.3 ? (onBeat?0.42:0.25) : 0.025, C = TILE_COLS[(a+b+bn)%5], o = (b*TX+a)*4;
     D[o] = Math.min(255, C.r*k*255); D[o+1] = Math.min(255, C.g*k*255); D[o+2] = Math.min(255, C.b*k*255); D[o+3] = 255; } tileTex.needsUpdate = true; }
   DISCOS.forEach(d=>d.rotation.y += rdt*0.8);
   LASERS.forEach(L=>{ L.m.rotation.z = Math.sin(rtNow*0.6+L.ph)*1.1; L.m.rotation.x = Math.cos(rtNow*0.45+L.ph)*0.7; });
   SPOTS.forEach(s=>{ s.m.position.x = Math.sin(rtNow*s.w + s.ph)*20; s.m.position.z = s.cz + Math.cos(rtNow*s.w*1.3 + s.ph)*s.hz; s.m.position.y = 0.06 + floorY(s.m.position.x, s.m.position.z); });
   BEAMS.forEach(b=>{ b.m.rotation.z = Math.sin(rtNow*0.5 + b.ph)*0.25; b.m.material.opacity = 0.025 + (onBeat?0.02:0); });
   for(const L of LEDS) L.material.uniforms.uT.value = rtNow;
-  animateDress(rtNow, onBeat);
+  animateDress(rtNow, onBeat); animateBalloons(rtNow);
   for(let i=0;i<airPos.length/3;i++){ airPos[i*3+1] += rdt*0.35; airPos[i*3] += Math.sin(rtNow+i)*rdt*0.3; if(airPos[i*3+1] > 9) airPos[i*3+1] = 0.3; if(Math.abs(airPos[i*3+2]-focusZ) > 40) airPos[i*3+2] = focusZ + rnd(-38,38); }
   air.geometry.attributes.position.needsUpdate = true;
   placeLights(focusZ);
@@ -243,7 +243,7 @@ function dotPos(P, i){ return PATFN[P.k](P, i, gt); }
 function highway(points, spacing=1.7){ // a smooth static path of dots through the given waypoints
   const curve = new THREE.CatmullRomCurve3(points.map(([x,z])=>new THREE.Vector3(x,0,z)), false, 'catmullrom', 0.3);
   const L = curve.getLength(), n = Math.max(6, Math.floor(L/spacing)), pts = [];
-  for(let i=0;i<n;i++){ const p = curve.getPointAt(i/(n-1)); if(!blocked(p.x, p.z, 0.4)) pts.push([p.x, p.z]); }
+  for(let i=0;i<n;i++){ const p = curve.getPointAt(i/(n-1)); if(!blocked(p.x, p.z, 0.4) && inLane(p.x, p.z)) pts.push([p.x, p.z]); }
   if(pts.length < 4) return null;
   return addPat({k:'path', pts, n:pts.length, az:(points[0][1]+points[points.length-1][1])/2, z0:points[0][1], z1:points[points.length-1][1], hw:true});
 }
@@ -261,20 +261,21 @@ const seededRooms = new Set();
 function seedRoom(ri, gateOpen){
   if(seededRooms.has(ri)) return; seededRooms.add(ri); const R = ROOMS[ri];
   // highways: from the room's entry to each of its exit doors, snaking through open floor
-  const entryZ = R.z1 - 4, exits = DOORS[ri] || [];
+  // v0.10: the dot highways are the GUIDED PATH (Brent: "lanes and guided paths") and stay inside the lane
+  const entryZ = R.z1 - 4, exits = DOORS[ri] || [], LX = Math.min(24, BOUNDS.x1 - 4);
   for(const [dx,dz] of exits){
     if(ri===4 && !gateOpen) continue;
-    const mid1 = [clamp(dx*0.5 + rnd(-10,10), -24, 24), lerp(entryZ, dz, 0.33)], mid2 = [clamp(dx + rnd(-8,8), -24, 24), lerp(entryZ, dz, 0.66)];
+    const mid1 = [clamp(dx*0.5 + rnd(-10,10), -LX, LX), lerp(entryZ, dz, 0.33)], mid2 = [clamp(dx + rnd(-8,8), -LX, LX), lerp(entryZ, dz, 0.66)];
     highway([[rnd(-6,6), entryZ], mid1, mid2, [dx, dz + 3]]);
   }
-  // a side highway hugging one wall (a reason to explore the edges)
-  const side = Math.random()<.5 ? -22 : 22; highway([[side, R.z1-8], [side*0.8, (R.z0+R.z1)/2], [side, R.z0+10]], 2.0);
-  // moving set pieces in open spots
-  const nSet = ri===0 ? 2 : 3;
+  // a side highway hugging one edge of the lane
+  const side = Math.random()<.5 ? -LX : LX; highway([[side, R.z1-8], [side*0.8, (R.z0+R.z1)/2], [side, R.z0+10]], 2.0);
+  // moving set pieces in open spots (not in the campaign any more: Brent wants World 1 simpler — bad guys, not puzzles)
+  const nSet = MODE==='campaign' ? 0 : ri===0 ? 2 : 3;
   for(let i=0;i<nSet;i++){ for(let tries=0; tries<20; tries++){ const cx = rnd(-18,18), cz = rnd(R.z0+14, R.z1-14); if(!blocked(cx,cz,7)){ setPiece(cx, cz); break; } } }
 }
-function refillRoom(ri){ const R = ROOMS[ri]; for(let tries=0; tries<20; tries++){ const cx = rnd(-18,18), cz = rnd(R.z0+12, R.z1-12); if(!blocked(cx,cz,7)){ setPiece(cx, cz); break; } }
-  const z0 = R.z1 - 6; highway([[rnd(-20,20), z0], [rnd(-20,20), lerp(R.z1,R.z0,0.5)], [rnd(-16,16), R.z0+8]]); }
+function refillRoom(ri){ const R = ROOMS[ri]; if(MODE!=='campaign') for(let tries=0; tries<20; tries++){ const cx = rnd(-18,18), cz = rnd(R.z0+12, R.z1-12); if(!blocked(cx,cz,7)){ setPiece(cx, cz); break; } }
+  const z0 = R.z1 - 6, LX = Math.min(20, BOUNDS.x1 - 4); highway([[rnd(-LX,LX), z0], [rnd(-LX,LX), lerp(R.z1,R.z0,0.5)], [rnd(-LX,LX), R.z0+8]]); }
 function resetDots(){ PATS = []; seededRooms.clear(); }
 
 // ---------------- PICKUPS: fruit heals, coins spin and carry out of the run ----------------
@@ -286,8 +287,8 @@ function buildPickups(){
   coinMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.07,20), new THREE.MeshStandardMaterial({color:0xffc830, metalness:0.9, roughness:0.25, emissive:0x3a2800}));
 }
 function addPick(kind, x, z){ const o = kind==='fruit' ? fruitMesh.clone() : coinMesh.clone(); if(kind==='coin'){ o.rotation.x = Math.PI/2; o.add(at(glow(0xffd040,1.4,0.5),0,0,0)); } const g = new THREE.Group(); g.add(o); g.position.set(x, 0.6, z); scene.add(g); PICKS.push({kind, x, z, g, t:Math.random()*6}); }
-function seedPickups(ri){ const R = ROOMS[ri]; for(let i=0;i<3;i++){ for(let tr=0;tr<20;tr++){ const x = rnd(-24,24), z = rnd(R.z0+6, R.z1-6); if(!blocked(x,z,1)){ addPick('fruit', x, z); break; } } }
-  for(let i=0;i<6;i++){ for(let tr=0;tr<20;tr++){ const x = rnd(-26,26), z = rnd(R.z0+4, R.z1-4); if(!blocked(x,z,0.8)){ addPick('coin', x, z); break; } } } }
+function seedPickups(ri){ const R = ROOMS[ri]; for(let i=0;i<3;i++){ for(let tr=0;tr<20;tr++){ const x = rnd(-24,24), z = rnd(R.z0+6, R.z1-6); if(!blocked(x,z,1) && inLane(x,z)){ addPick('fruit', x, z); break; } } }
+  for(let i=0;i<6;i++){ for(let tr=0;tr<20;tr++){ const x = rnd(-26,26), z = rnd(R.z0+4, R.z1-4); if(!blocked(x,z,0.8) && inLane(x,z)){ addPick('coin', x, z); break; } } } }
 function clearPickups(){ PICKS.forEach(p=>scene.remove(p.g)); PICKS.length = 0; clearBuffs(); }
 
 // ---------------- POWER-UPS: glowing capsules that turn up now and then (Brent: more random buffs) ----------------
@@ -311,3 +312,18 @@ function addFirebar(x, z, len=7, speed=1.4){ const g = new THREE.Group(); g.posi
   scene.add(g); FIREBARS.push({g, x, z, len:len*0.75, speed, ang:Math.random()*6});
   for(let i=0;i<5;i++) addPick('coin', x + Math.cos(i*1.26)*2.2, z + Math.sin(i*1.26)*2.2); addPick('fruit', x, z+1.5); }
 function clearFirebars(){ FIREBARS.forEach(f=>scene.remove(f.g)); FIREBARS.length = 0; }
+
+// ---------------- v0.10 BALLOONS you can pop (Brent: "pop balloons, break tables… break stuff as you go") ----------------
+// Bunches of balloons tied down along the lane. Walk through them or hit them with anything and they pop in a burst of confetti.
+const BALLOONS = []; let balloonMesh = null;
+const BALLOON_AT = [[-10,9],[10,5],[-12,-22],[12,-30],[-9,-64],[9,-84],[-12,-122],[13,-170],[-12,-188],[-12,-230],[12,-262],[-14,-300],[2,-350],[-13,-388],[13,-402]];
+function buildBalloons(){ const cols = [0xff4fb8,0x41e4ff,0xffd84a,0xb070ff,0xf4f4f4,0xff3b4a,0x7cff4f];
+  for(const [cx,cz] of BALLOON_AT){ if(blocked(cx, cz, 0.8)) continue; for(let i=0;i<6;i++){ const a = i/6*6.283 + Math.random(); BALLOONS.push({x:cx + Math.cos(a)*0.55, z:cz + Math.sin(a)*0.55, y:rnd(1.9,2.9), ph:Math.random()*6, col:pick(cols), alive:true}); } }
+  balloonMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.34, 10, 8), new THREE.MeshLambertMaterial({color:0xffffff}), BALLOONS.length);
+  BALLOONS.forEach((b,i)=>balloonMesh.setColorAt(i, tmpC.setHex(b.col))); balloonMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); balloonMesh.frustumCulled = false; scene.add(balloonMesh); }
+function resetBalloons(){ BALLOONS.forEach(b=>b.alive = true); }
+function popBalloon(b, h){ b.alive = false; const y = b.y + floorY(b.x, b.z); burst(b.x, y, b.z, b.col, 14, 6, 9, 0.6); burst(b.x, y, b.z, 0xffffff, 6, 4, 9, 0.5); SFX.pop();
+  if(h && h.isPlayer){ addScore(5); if(Math.random() < 0.12) addPick('coin', b.x, b.z); } }
+function popNear(x, z, r, h){ for(const b of BALLOONS) if(b.alive && Math.abs(b.z - z) < r + 0.4 && hyp(b.x-x, b.z-z) < r + 0.34) popBalloon(b, h); }
+function animateBalloons(t){ if(!balloonMesh) return; BALLOONS.forEach((b,i)=>{ if(b.alive){ dummy.position.set(b.x + Math.sin(t*0.9 + b.ph)*0.12, b.y + floorY(b.x, b.z) + Math.sin(t*1.6 + b.ph)*0.1, b.z); dummy.scale.set(1, 1.2, 1); } else { dummy.position.set(b.x, -20, b.z); dummy.scale.setScalar(0.001); }
+    dummy.rotation.set(0,0,0); dummy.updateMatrix(); balloonMesh.setMatrixAt(i, dummy.matrix); }); balloonMesh.instanceMatrix.needsUpdate = true; }

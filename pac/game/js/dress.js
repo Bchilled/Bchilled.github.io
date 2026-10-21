@@ -478,7 +478,25 @@ function ledScreen(x, y, z, w, h, ry, c1, c2, mode){ const mat = new THREE.Shade
 // velvet ropes between the brass posts: a sagging line of six short tubes (cheap), placed where placeAll() put 'rope'
 function ropes(kits){ for(const p of PLACE){ if(p.kind!=='rope') continue; const k = kits[roomIndex(p.z)], dx = Math.cos(p.rot), dz = -Math.sin(p.rot); let px = p.x, pz = p.z, py = 0.95;
     for(let i=1;i<=6;i++){ const f = i/6, x = p.x+dx*4*f, z = p.z+dz*4*f, y = 0.95 - 0.26*Math.sin(f*Math.PI); k.seg(px, py, pz, x, y, z, 0.07, 0x8a1030, {round:true}); px = x; py = y; pz = z; } } }
-function dressClub(){ const kits = [entrance, dance, bar, vip, backstage, stage].map(f=>{ const k = new Kit(); f(k); return k; }); ropes(kits); return kits; }
+// v0.10 the LANE's edges (Brent: "lanes and guided paths"): a rail down both sides of the 36 m play lane, in each room's style —
+// bollards and chains on the street, velvet ropes in the lobby and VIP, a brass rail with a light strip in the bar, crowd
+// barriers backstage and at the stage. The dance floor already has its pit rails. The game keeps you inside (BOUNDS in main.js).
+function railPost(k, x, z, st){ if(st==='bollard'){ k.cyl(x,0,z,0.13,0.9,0x2a2a30,{seg:8}); k.cyl(x,0.7,z,0.137,0.12,0xe8c020,{seg:8}); }
+  else if(st==='velvet'){ k.cyl(x,0,z,0.2,0.05,0xc8a050,{seg:10}); k.cyl(x,0,z,0.045,1.0,0xc8a050,{seg:6}); k.ball(x,1.03,z,0.07,0xd8b060,{seg:6}); }
+  else if(st==='brass') k.cyl(x,0,z,0.04,1.05,0xc8a050,{seg:6});
+  else { k.box(x,0,z,0.5,0.05,0.12,0x5a5a62); k.cyl(x,0,z,0.03,1.1,0x9a9aa8,{seg:5}); } }
+function railLink(k, x, za, zb, st, col){ const zm = (za+zb)/2;
+  if(st==='bollard'){ k.seg(x,0.82,za, x,0.62,zm, 0.035, 0x18181c); k.seg(x,0.62,zm, x,0.82,zb, 0.035, 0x18181c); }
+  else if(st==='velvet'){ k.seg(x,0.95,za, x,0.74,zm, 0.06, 0x8a1030, {round:true}); k.seg(x,0.74,zm, x,0.95,zb, 0.06, 0x8a1030, {round:true}); }
+  else if(st==='brass'){ k.seg(x,1.05,za, x,1.05,zb, 0.065, 0xd8b060, {round:true}); k.box(x, 0.95, zm, 0.04, 0.03, Math.abs(zb-za), col, {glow:true}); }
+  else { for(const y of [1.08, 0.18]) k.seg(x,y,za, x,y,zb, 0.04, 0x9a9aa8, {round:true}); const n = 6; for(let i=1;i<n;i++){ const z = za + (zb-za)*i/n; k.seg(x,0.18,z, x,1.08,z, 0.02, 0x8a8a96); } } }
+function railLine(k, x, z0, z1, st, col){ const n = Math.max(1, Math.round(Math.abs(z1-z0)/(st==='bollard' ? 2.6 : 2.0)));
+  for(let i=0;i<=n;i++) railPost(k, x, z0 + (z1-z0)*i/n, st); for(let i=0;i<n;i++) railLink(k, x, z0 + (z1-z0)*i/n, z0 + (z1-z0)*(i+1)/n, st, col); }
+function laneRails(kits){ const X = 18.4;
+  for(const s of [-1,1]){ railLine(kits[0], s*X, 49, 14.5, 'bollard'); railLine(kits[0], s*X, 13.4, 0.6, 'velvet');
+    railLine(kits[3], s*X, -200.6, -289.4, 'velvet'); railLine(kits[4], s*X, -290.6, -369.4, 'metal'); railLine(kits[5], s*X, -370.6, -436.4, 'metal'); }
+  railLine(kits[2], -X, -110.6, -199.4, 'brass', 0xffb340); for(const [a,b] of [[-110.6,-115.6],[-136.4,-147.6],[-172.4,-199.4]]) railLine(kits[2], X, a, b, 'brass', 0xffb340); }
+function dressClub(){ const kits = [entrance, dance, bar, vip, backstage, stage].map(f=>{ const k = new Kit(); f(k); return k; }); ropes(kits); laneRails(kits); return kits; }
 const FL = [];
 function finishDress(){
   ledScreen(0, 1.2, -109.5, 11.4, 4.9, 0, 0xff4fb8, 0x41e4ff, 0);                        // behind the DJ

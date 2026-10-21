@@ -88,7 +88,7 @@ function perFrameUi(P0){
   const arc = $('cdArc'), show = state==='play' && P0 && !P0.dead && !inspect && SAVE.set.cdArc !== false;
   arc.style.display = show ? 'block' : 'none';
   if(show){ const [sx, sy] = project(P0.x, floorY(P0.x, P0.z), P0.z); arc.style.transform = `translate(${sx|0}px,${sy|0}px)`;
-    if(!CA.length) for(let i=0;i<3;i++){ const d = document.createElement('div'); d.className = 'ca'; d.innerHTML = '<span></span><i></i>'; arc.appendChild(d); CA.push({d, ic:d.lastChild, k:null, f:-1}); }
+    if(!CA.length) for(let i=0;i<3;i++){ const d = document.createElement('div'); d.className = 'ca'; d.innerHTML = '<span></span><i></i>'; arc.appendChild(d); CA.push({d, ic:d.lastChild, k:undefined, f:-1}); }
     CA.forEach((c, i)=>{ const k = P0.act[i]; if(k !== c.k){ c.k = k; c.d.style.display = k ? '' : 'none'; if(k){ c.ic.textContent = ABIL[k].ic; c.d.style.setProperty('--el', hexc(EL[ABIL[k].el].col)); } }
       if(!k) return; const f = Math.round(clamp((P0.cd[k]||0)/cdOf(P0,k), 0, 1)*40)/40; if(f !== c.f){ c.f = f; c.d.style.setProperty('--cd', (f*100)+'%'); c.d.classList.toggle('rdy', f <= 0); } }); }
   const aiming = P0 && P0.dragAim && P0.aimHold != null && state==='play';
@@ -125,7 +125,7 @@ function updateHud(){
   const hp = clamp(P0.hp/P0.maxhp,0,1), en = clamp(P0.energy/P0.maxEnergy,0,1);
   $('gHpF').style.height = (hp*100)+'%'; setTxt($('gHpT'), Math.max(0,Math.round(P0.hp))); $('gHp').classList.toggle('shield', P0.shieldT>0);
   $('gEnF').style.height = (en*100)+'%'; setTxt($('gEnT'), Math.round(P0.energy));
-  const xpN = XPC[Math.min(25,P0.level+1)], xpP = XPC[P0.level], xf = P0.level>=25 ? 1 : (P0.xp-xpP)/(xpN-xpP);
+  const xpN = XPC[Math.min(RUN_CAP,P0.level+1)], xpP = XPC[P0.level], xf = P0.level>=RUN_CAP ? 1 : (P0.xp-xpP)/(xpN-xpP);
   $('xpBar').firstChild.style.width = (clamp(xf,0,1)*100)+'%'; setTxt($('lvN'), 'LV '+P0.level);
   $('mHp').style.width = hp*100+'%'; $('mEn').style.width = en*100+'%'; $('mXp').style.width = clamp(xf,0,1)*100+'%'; setTxt($('mLv'), 'LV '+P0.level);
   for(const [s] of SLOT_DEF) setCd($('sl_'+s), slotInfo(P0, s));
@@ -215,7 +215,7 @@ function chooseOffer(o){ if(!jackOffers || !o) return; const offers = jackOffers
 // ================= MENUS =================
 function hideAllOverlays(){ ['mainMenu','subOv','sheetOv','jack','tally'].forEach(id=>$(id).classList.add('hide')); sheetMode = null; camera.clearViewOffset(); }
 let menuHero = null;
-function showMenuHero(){ if(menuHero) scene.remove(menuHero.root); menuHero = makeRig(SAVE.char, 0); if(SAVE.char==='pac') equipSet(menuHero, SAVE.pac.gear); menuHero.root.position.set(0,0,-30); scene.add(menuHero.root); }
+function showMenuHero(){ if(menuHero) scene.remove(menuHero.root); menuHero = makeRig(SAVE.char, 0); menuHero.root.position.set(0,0,-30); scene.add(menuHero.root); }
 function renderMain(){ const C = CHARS[SAVE.char], L = SAVE.lvl[SAVE.char];
   $('mmCn').textContent = C.name; $('mmCl').textContent = `${C.sub} · Level ${L.level} / 100`;
   $('mCharS').textContent = SAVE.unlocked.length > 1 ? SAVE.unlocked.map(k=>CHARS[k].name).join(' · ') : 'Beat a world boss to unlock more';
@@ -284,18 +284,18 @@ const GEAR_HAS = {Headpiece:1, Gloves:1, 'Weapon 1':1, Boots:1};
 function openSheet(mode){ sheetMode = mode; sheetTab = 'stats'; $('sheetOv').classList.remove('hide'); if(mode==='loadout') $('mainMenu').classList.add('hide'); renderSheet(); }
 function closeSheet(){ const was = sheetMode; $('sheetOv').classList.add('hide'); camera.clearViewOffset(); sheetMode = null; if(was==='loadout'){ $('mainMenu').classList.remove('hide'); showMenuHero(); renderMain(); } }
 function renderSheet(){
-  const ch = sheetMode==='pause' ? player().char : SAVE.char, C = CHARS[ch], L = SAVE.lvl[ch], gear = ch==='pac' ? SAVE.pac.gear : null;
+  const ch = sheetMode==='pause' ? player().char : SAVE.char, C = CHARS[ch], L = SAVE.lvl[ch], gear = null;
   $('dollT').textContent = C.name;
-  $('dollSlots').innerHTML = GEAR_SLOTS.map(([n,x,y])=>{ const has = gear && GEAR_HAS[n]; return `<div class="gslot ${has?'has '+gear:''}" style="left:calc(${x}% - 29px);top:calc(${y}% - 29px)">${n}${has?`<span style="font-size:9px">${gear}</span>`:''}</div>`; }).join('');
+  $('dollSlots').innerHTML = '';   // v0.10: no gear slots (Brent: no helmets, armour or weapons)
   $('sheetT').textContent = sheetMode==='pause' ? 'Paused' : 'Loadout';
   $('sheetSub').textContent = `${C.name} · ${C.sub} · Character level ${L.level} / 100 · Coins ${SAVE.coins}`;
-  const tabs = sheetMode==='pause' ? [['stats','Stats'],['abil','Abilities'],['rules','Rules'],['set','Settings']] : C.loadout ? [['stats','Stats'],['gear','Gear'],['abil','Abilities'],['tal','Talents']] : [['stats','Stats']];
+  const tabs = sheetMode==='pause' ? [['stats','Stats'],['abil','Abilities'],['rules','Rules'],['set','Settings']] : C.loadout ? [['stats','Stats'],['abil','Abilities'],['tal','Talents']] : [['stats','Stats']];
   if(!tabs.some(t=>t[0]===sheetTab)) sheetTab = tabs[0][0];
   $('sheetTabs').innerHTML = tabs.map(([k,l])=>`<button class="btn ${k===sheetTab?'sel':''}" data-t="${k}">${l}</button>`).join('');
   $('sheetTabs').querySelectorAll('.btn').forEach(b=>b.onclick = ()=>{ sheetTab = b.dataset.t; renderSheet(); });
   let h = '';
   if(sheetMode==='pause'){ const P0 = player();
-    if(sheetTab==='stats') h = `<table><tr><td>Run level</td><td>${P0.level} / 25</td></tr><tr><td>Health</td><td>${Math.round(P0.hp)} / ${P0.maxhp}</td></tr><tr><td>Energy</td><td>${Math.round(P0.energy)} / ${P0.maxEnergy}</td></tr>
+    if(sheetTab==='stats') h = `<table><tr><td>Run level</td><td>${P0.level}</td></tr><tr><td>Health</td><td>${Math.round(P0.hp)} / ${P0.maxhp}</td></tr><tr><td>Energy</td><td>${Math.round(P0.energy)} / ${P0.maxEnergy}</td></tr>
       <tr><td>Damage</td><td>×${P0.mods.dmg.toFixed(2)}</td></tr><tr><td>Area</td><td>×${P0.mods.area.toFixed(2)}</td></tr><tr><td>Cooldowns</td><td>×${P0.mods.cdr.toFixed(2)}</td></tr><tr><td>Speed</td><td>×${P0.mods.speed.toFixed(2)}</td></tr>
       <tr><td>Crit</td><td>${Math.round(P0.mods.crit*100)}%</td></tr><tr><td>Damage taken</td><td>-${Math.round(P0.mods.armor*100)}%</td></tr><tr><td>Score</td><td>${Math.round(ST.score).toLocaleString()}</td></tr></table>`;
     if(sheetTab==='abil'){ const row = (lab, I, d, i)=>`<tr${i!=null?` class="swp${swapSel===i?' sel':''}" draggable="true" data-i="${i}"`:''}><td>${lab}${i!=null?' <span class="swh">⇅</span>':''}</td><td>${I?`<b style="color:${I.el?hexc(EL[I.el].col):'inherit'}">${I.ic} ${I.nm}</b><br><span class="note">${d}</span>`:'<span class="note">empty</span>'}</td></tr>`;

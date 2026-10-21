@@ -60,23 +60,26 @@ const PERKS = {multishot:{n:'Extra Pellet', ic:'➕', d:'+1 projectile on everyt
   overkill:{n:'Overkill', ic:'💥', d:'Kills explode and hurt what\'s next to them.'}, thick:{n:'Thick Skin', ic:'🪨', d:'-10% damage taken, and you barely get knocked around.'}};
 const TALENTS = {Glutton:['+5% pickup range','+10 max health','+1 HP/s regen','Eating dots heals'], Brawler:['+5% damage','-4% damage taken','+5% crit','Bigger bites'], 'Ghost Buster':['+10% XP','Blue orb lasts longer','+8% speed','Eat chains score more']};
 // run XP (v0.8: quicker than v0.7 — Brent found it a little slow)
-const XPC = [0]; for(let L=1; L<=25; L++){ const inc = L===1?25 : L===2?45 : L===3?70 : L===4?95 : 85 + (L-5)*20; XPC.push(XPC[L-1]+inc); }
+// v0.10 (Brent: "they can level past 25"): the run level goes to 60; past 25 the steps grow gently
+const RUN_CAP = 60, RANK_MAX = 7;   // an ability has 8 levels like a Vampire Survivors weapon: the pick plus 7 rank-ups
+const XPC = [0]; for(let L=1; L<=RUN_CAP; L++){ const inc = L===1?25 : L===2?45 : L===3?70 : L===4?95 : L<=25 ? 85 + (L-5)*20 : 485 + (L-25)*30; XPC.push(XPC[L-1]+inc); }
 const shopList = () => Object.keys(ABIL).filter(k=>ABIL[k].req);
 // which abilities can show up for this hero (bought shop abilities only for the player's Pac)
-function canGet(h, k){ const A = ABIL[k]; if(A.who !== 'all' && A.who !== h.char) return false; if(A.req && h.isPlayer && h.char==='pac' && !SAVE.pac.bought.includes(k)) return false; if(A.req && h.isPlayer && h.char!=='pac') return false; return true; }
+function canGet(h, k){ const A = ABIL[k]; if(A.who !== 'all' && A.who !== h.char) return false;
+  // v0.10: the Poke Bro only gets his own creature moves (his full set to 25 is being written)
+  if(h.char==='ballboy' && A.who==='all') return false; if(A.req && h.isPlayer && h.char==='pac' && !SAVE.pac.bought.includes(k)) return false; if(A.req && h.isPlayer && h.char!=='pac') return false; return true; }
 
-function applyLoadout(h){ // Pac's out-of-game loadout: stats, talents, gear
+function applyLoadout(h){ // Pac's out-of-game loadout: stats and talents (v0.10: gear removed — Brent: "too complex for this system")
   if(!(h.isPlayer && h.char==='pac')) return; const st = SAVE.pac.stats, m = h.mods;
   m.dmg *= 1 + 0.02*(st.Strength||0); h.maxhp += 6*(st.Vitality||0); m.regen *= 1 + 0.06*(st.Spirit||0); m.cdr *= Math.pow(0.98, st.Intellect||0);
   m.speed *= 1 + 0.015*(st.Agility||0); m.area *= 1 + 0.02*(st.Speciality||0); m.pickup *= 1 + 0.05*(st.Nature||0);
   const T = SAVE.pac.talents, has = (tree,i)=>T[tree+i];
   if(has('Glutton',0)) m.pickup *= 1.05; if(has('Glutton',1)) h.maxhp += 10; if(has('Glutton',2)) m.hpRegen += 1;
   if(has('Brawler',0)) m.dmg *= 1.05; if(has('Brawler',1)) m.armor += 0.04; if(has('Brawler',2)) m.crit += 0.05; if(has('Ghost Buster',2)) m.speed *= 1.08;
-  const g = SAVE.pac.gear; if(g){ const b = {crude:[0.03,10], quality:[0.07,20], epic:[0.12,35]}[g]; m.dmg *= 1+b[0]; h.maxhp += b[1]; }
-  h.hp = h.maxhp; equipSet(h.rig, SAVE.pac.gear);
+  h.hp = h.maxhp;
 }
 const xpMult = h => (h.buff.xp>0?2:1) * (h.isPlayer && h.char==='pac' && SAVE.pac.talents['Ghost Buster0'] ? 1.1 : 1);
-function gainXP(h, n){ if(!h || h.level >= 25) return; h.xp += n*xpMult(h); while(h.level < 25 && h.xp >= XPC[h.level+1]){ h.level++; onLevel(h); } }
+function gainXP(h, n){ if(!h || h.level >= RUN_CAP) return; h.xp += n*xpMult(h); while(h.level < RUN_CAP && h.xp >= XPC[h.level+1]){ h.level++; onLevel(h); } }
 const pendingLv = [];
 function onLevel(h){ burst(h.x,1,h.z,0xffe14d,60,11);
   if(h.isPlayer){ levelBurst(h); if(h.level>4 && Math.random()<0.3) heroSay(h,'level'); pendingLv.push(h.level); if(state==='play') setTimeout(()=>{ if(state==='play') openJack(); }, 420); }
@@ -98,11 +101,13 @@ function randomOffers(h){
   const c = [], hk = held(h);
   for(const side of ['pas','act']){ const full = freeSlot(h, side) < 0;
     for(const k in ABIL){ const A = ABIL[k]; if(A.side !== side || hk.includes(k) || !canGet(h,k)) continue;
-      if(!full) c.push({kind:'ab', k, w:2.6});
+      if(!full) c.push({kind:'ab', k, w:1.5});
       else { const list = side==='act' ? h.act : h.pas; let tgt = 0; for(let i=1;i<3;i++) if((h.rank[list[i]]||0) < (h.rank[list[tgt]]||0) || ((h.rank[list[i]]||0) === (h.rank[list[tgt]]||0) && Math.random()<0.5)) tgt = i;
         c.push({kind:'swap', k, slot:tgt, w:0.9}); } } }
-  for(const k of hk) if((h.rank[k]||0) < 5) c.push({kind:'rank', k, w:3.4});
-  for(const s in STATUP) c.push({kind:'stat', k:s, w:0.55});
+  // v0.10 weights (Brent: "a good chance to rank up into those abilities multiple times rather than choosing new ones";
+  // "not everything is a new ability — sometimes stats, buffs"): rank-ups lead, new abilities are rarer, stats show up often
+  for(const k of hk) if((h.rank[k]||0) < RANK_MAX) c.push({kind:'rank', k, w:5.0});
+  for(const s in STATUP) c.push({kind:'stat', k:s, w:h.level > 25 ? 1.6 : 0.8});
   for(const p in PERKS) if(!h.perk[p]) c.push({kind:'perk', k:p, w:0.7});
   const out = []; const nOf = kd => out.filter(o=>o.kind===kd).length;
   while(out.length < 3 && c.length){ const tot = c.reduce((a,b)=>a+b.w,0); let r = Math.random()*tot, i = 0; for(;i<c.length;i++){ r -= c[i].w; if(r<=0) break; }
@@ -172,6 +177,7 @@ function hit(e, amount, h, o={}){
 }
 function knock(e, fx, fz, f){ if(e.kind==='hero' && e.perk && e.perk.thick) f *= 0.3; const dx = e.x-fx, dz = e.z-fz, d = hyp(dx,dz)||1; e.kvx = (e.kvx||0) + dx/d*f*2.2; e.kvz = (e.kvz||0) + dz/d*f*2.2; }
 function areaHit(h, x, z, r, dmg, o={}){
+  popNear(x, z, r, h);   // v0.10: blasts pop balloons
   for(const e of ENEMY[h.team]) if(!e.dead && hyp(e.x-x, e.z-z) < r + (e.r||0.6)) hit(e, dmg, h, Object.assign({fx:x, fz:z}, o));
   for(let i=CIV.length-1;i>=0;i--){ const c = CIV[i]; if(hyp(c.x-x, c.z-z) < r){ c.hp -= dmg; c.panic = 2; if(c.hp <= 0) killCiv(i, h); } }
   if(dmg > 4) for(const P of PROPS) if(!P.broken && P.cost>0){ const cx = (P.x0+P.x1)/2, cz = (P.z0+P.z1)/2; if(hyp(cx-x, cz-z) < r*0.8){ P.dmg += dmg; if(P.dmg > 45) breakProp(P, h, false); } }

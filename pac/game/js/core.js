@@ -88,13 +88,18 @@ function audio(){ if(AC) return; try{
   applyVol(); }catch(e){} }
 function applyVol(){ if(!master) return; master.gain.value = SAVE.set.muted ? 0 : SAVE.set.vol; musicGain.gain.value = SAVE.set.music*0.8; sfxGain.gain.value = 0.9; }
 function env(g, t, a, peak, dec){ g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(0.0002,peak), t+a); g.gain.exponentialRampToValueAtTime(0.0001, t+a+dec); }
+// v0.10: a voice budget — at most 24 sound effects playing at once (a packed club panicking in blue-orb mode could pile up
+// hundreds of oscillators). Music is exempt.
+const VOICES = [];
+function voiceOk(len, dest){ if(dest && dest === musicGain) return true; const now = AC.currentTime; while(VOICES.length && VOICES[0] < now) VOICES.shift(); if(VOICES.length >= 24) return false;
+  const end = now + len; let i = VOICES.length; while(i > 0 && VOICES[i-1] > end) i--; VOICES.splice(i, 0, end); return true; }
 function tone(f, dur=0.08, type='square', vol=0.08, slide=0, dest, when=0, wet=0){
-  if(!AC || SAVE.set.muted) return; const t = AC.currentTime + when, o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+  if(!AC || SAVE.set.muted || !voiceOk(when + dur + 0.05, dest)) return; const t = AC.currentTime + when, o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
   if(slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, f*slide), t+dur);
   env(g, t, 0.004, vol, dur); o.connect(g); g.connect(dest||sfxGain); if(wet) { const w = AC.createGain(); w.gain.value = wet; g.connect(w); w.connect(verb); }
   o.start(t); o.stop(t+dur+0.05); }
 let noiseBuf = null;
-function noise(dur=0.2, vol=0.15, dest, opt={}){ if(!AC || SAVE.set.muted) return; const t = AC.currentTime + (opt.when||0);
+function noise(dur=0.2, vol=0.15, dest, opt={}){ if(!AC || SAVE.set.muted || !voiceOk((opt.when||0) + dur + 0.1, dest)) return; const t = AC.currentTime + (opt.when||0);
   if(!noiseBuf){ noiseBuf = AC.createBuffer(1, AC.sampleRate*2, AC.sampleRate); const d = noiseBuf.getChannelData(0); for(let i=0;i<d.length;i++) d[i] = Math.random()*2-1; }
   const s = AC.createBufferSource(), g = AC.createGain(), f = AC.createBiquadFilter(); s.buffer = noiseBuf; f.type = opt.type||'lowpass'; f.frequency.value = opt.freq||8000; f.Q.value = opt.q||0.7;
   if(opt.sweep) f.frequency.exponentialRampToValueAtTime(opt.sweep, t+dur);

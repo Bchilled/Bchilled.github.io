@@ -24,9 +24,11 @@ function fanGeo(arc){ const k = Math.round(arc*20)/20; let g = FXGEO.fan.get(k);
 function ringFx(x, z, r, color, life=0.45, y=0.25, implode=false){ const m = new THREE.Mesh(FXGEO.ring, new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(1.6), transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, depthWrite:false}));
   m.rotation.x = -Math.PI/2; m.position.set(x,y+floorY(x,z),z); scene.add(m); FX.push({m, mat:m.material, t:0, life, r0:implode?r:0.5, r1:implode?0.3:r}); }
 // ectoplasm: a ragged glowing puddle left where a ghost dies, in its colour
-function splatFx(x, z, color, r=1.2){ if(FXGEO.splat.length < 6){ const n = 18, pts = []; for(let i=0;i<n;i++){ const a = i/n*6.283, rr = 0.6+Math.random()*0.6; pts.push(new THREE.Vector2(Math.cos(a)*rr, Math.sin(a)*rr)); } FXGEO.splat.push(new THREE.ShapeGeometry(new THREE.Shape(pts))); }
+// v0.10: at most 10 splats on the floor at once, smaller and quicker (Vampire Survivors kill rates made the floor a mess)
+let splatN = 0;
+function splatFx(x, z, color, r=1.2){ splatN = FX.filter(f=>f.splat).length; if(splatN >= 10) return; if(FXGEO.splat.length < 6){ const n = 18, pts = []; for(let i=0;i<n;i++){ const a = i/n*6.283, rr = 0.6+Math.random()*0.6; pts.push(new THREE.Vector2(Math.cos(a)*rr, Math.sin(a)*rr)); } FXGEO.splat.push(new THREE.ShapeGeometry(new THREE.Shape(pts))); }
   const m = new THREE.Mesh(pick(FXGEO.splat), new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(1.2), transparent:true, opacity:0.5, blending:THREE.AdditiveBlending, depthWrite:false}));
-  m.rotation.x = -Math.PI/2; m.rotation.z = Math.random()*6.28; m.scale.set(r, r, 1); m.position.set(x, 0.06+floorY(x,z), z); scene.add(m); FX.push({m, mat:m.material, t:0, life:2.6, fan:true, o0:0.45}); }
+  m.rotation.x = -Math.PI/2; m.rotation.z = Math.random()*6.28; m.scale.set(r*0.75, r*0.75, 1); m.position.set(x, 0.06+floorY(x,z), z); scene.add(m); FX.push({m, mat:m.material, t:0, life:1.3, fan:true, o0:0.32, splat:true}); }
 function discFx(x, z, r, color, life=0.3){ const m = new THREE.Mesh(FXGEO.disc, new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(1.3), transparent:true, opacity:0.5, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, depthWrite:false}));
   m.rotation.x = -Math.PI/2; m.position.set(x,0.2+floorY(x,z),z); m.scale.setScalar(r); scene.add(m); FX.push({m, mat:m.material, t:0, life, fan:true, o0:0.5}); }
 // a flat fan (attack cone) on the floor; angle convention: 0 = +z, atan2(x,z)
@@ -53,9 +55,9 @@ function updateDn(rdt){ for(const D of DN){ if(D.life <= 0) continue; D.life -= 
 // ================= HEROES (player + PvP bots) — Blender rigs =================
 let HEROES = []; const player = () => HEROES[0]; let heroId = 0;
 const CHARS = {
-  pac:{name:'Pac', sub:'The Ghost Killer', desc:'A tattooed, broken man who\'s done eating your fruit salad. His jaw unhinges.', hp:110, speed:6.4, r:0.55, move:'warp', loadout:true,
+  pac:{name:'Pac', sub:'The Ghost Killer', desc:'A tattooed, broken man who\'s done eating your fruit salad. His jaw unhinges.', hp:110, speed:8.6, r:0.55, move:'warp', loadout:true,
     ladder:[['pas',['numbertwo','puke','shank']], ['act',['insurance','ragequit','deaddrop']], ['act',['binge','unhinged','glitter']]]},
-  ballboy:{name:'Ball Boy', sub:'The Trainer', desc:'Throws capsule balls. A creature pops out, does one move, and comes back.', hp:95, speed:6.6, r:0.45, move:'peaceout', loadout:false,
+  ballboy:{name:'Ball Boy', sub:'The Trainer', desc:'Throws capsule balls. A creature pops out, does one move, and comes back.', hp:95, speed:8.8, r:0.45, move:'peaceout', loadout:false,
     // v0.9 (Brent: "I started with all the abilities instead of unlocking them like 1 2 3"): a creature at level 2, a passive at 3, the next creatures at 4 and 5
     ladder:[['act',['hottake','splashzone','jolt']], ['pas',['bramble','habit','tilt']], ['act',['hottake','splashzone','jolt']], ['act',['hottake','splashzone','jolt']]]}};
 function makeRig(char, team){ const r = LOOK.character(MODELS, char==='pac'?'pac':'ballboy', team===1 ? {tint:0x7a3a3a, tintMat:char==='pac'?'pac_vest':'jacket'} : {}); return r; }
@@ -133,7 +135,7 @@ function seedCivilians(){ CIV = [];
   const spots = [[0,40,5],[-14,27,3],[14,27,3],[9,6,4],[-10,6,3],
     [0,-20,10],[-9,-28,9],[9,-30,9],[0,-44,8],[-6,-52,7],[6,-60,7],[0,-68,8],[-9,-80,9],[9,-84,9],[0,-89,7],[-23,-30,3],[23,-42,3],[-23,-76,3],[23,-80,3],
     [-14,-128,7],[10,-180,7],[-8,-188,5],[24,-150,3],[0,-138,5],[0,-225,6],[-14,-262,6],[14,-270,6],[-20,-305,3],[20,-330,4],[0,-345,4]];
-  for(const [cx,cz,n] of spots) for(let i=0;i<n;i++){ const x = cx+rnd(-6,6), z = cz+rnd(-6,6); if(blocked(x,z,0.6) || !inLane(x,z)) continue;
+  for(const [cx,cz,n] of spots) for(let i=0;i<n;i++){ const x = cx+rnd(-6,6), z = cz+rnd(-6,6); if(blocked(x,z,0.6) || !inLane(x,z) || (Math.abs(x) < 19 && BOUNDS.x1 < 25)) continue;   // v0.10: not in the play lane
     CIV.push({x, z, hx:x, hz:z, y:0, ph:Math.random()*6, kind:pick(['raver','dancer','bro','raver','dancer']), sp:rnd(3.2,4.4), panic:0, hp:8, face:rnd(0,6.28), tint:rnd(0.85,1.1)}); }
   // the queue outside: two lines behind the ropes along the club front, everyone turned toward the door (a few chatting)
   for(const s of [-1,1]) for(let i=0;i<14;i++){ const x = s*(7.8 + i*1.3 + rnd(-0.15,0.15)), z = 16.4 + rnd(-0.3,0.3), chat = Math.random() < 0.25;
@@ -152,14 +154,17 @@ function renderCrowd(rtNow, onBeat){
 }
 
 // ================= GHOSTS: 7 colours (7 stats), four temperaments, packs =================
+// v0.10 (Brent: "ghosts are completely blended in"): louder colours, a dark shadow under each one, a touch bigger
 const GHOST_TYPES = {
-  red:{stat:'Strength', col:0xc0453f, bonus:'dmg', label:'+25% damage'}, green:{stat:'Agility', col:0x4aa860, bonus:'speed', label:'+30% speed'},
-  blue:{stat:'Spirit', col:0x4a7fd0, bonus:'energy', label:'energy refill'}, purple:{stat:'Intellect', col:0x8a5ac8, bonus:'xp', label:'double XP'},
-  orange:{stat:'Speciality', col:0xd88a3a, bonus:'cd', label:'faster abilities'}, teal:{stat:'Nature', col:0x3aa8a0, bonus:'magnet', label:'big pickup range'},
-  black:{stat:'Vitality', col:0x3a3a44, bonus:'heal', label:'heal'}};
+  red:{stat:'Strength', col:0xff3a3a, bonus:'dmg', label:'+25% damage'}, green:{stat:'Agility', col:0x3dff6a, bonus:'speed', label:'+30% speed'},
+  blue:{stat:'Spirit', col:0x3d8bff, bonus:'energy', label:'energy refill'}, purple:{stat:'Intellect', col:0xb35cff, bonus:'xp', label:'double XP'},
+  orange:{stat:'Speciality', col:0xff9a2e, bonus:'cd', label:'faster abilities'}, teal:{stat:'Nature', col:0x22e8d4, bonus:'magnet', label:'big pickup range'},
+  black:{stat:'Vitality', col:0x55556a, bonus:'heal', label:'heal'}};
+// how each colour moves and how tough it is (see the ghost update in main.js for the hop / stagger / weave / wrench-throw)
+const GHOST_MOVE = {red:1.0, green:1.0, blue:1.0, purple:0.68, orange:0.95, teal:0.9, black:1.45}, GHOST_HP = {purple:2.6, black:0.6, teal:0.8};
 const COLOUR_ORDER = ['red','green','blue','purple','orange','teal','black'], COLOUR_LV = [1,2,3,4,6,8,10];
 const TEMPER = ['chaser','ambusher','flanker','wildcard'];
-const GMAX = 260; let ghostM, ghostO, G = []; const debuted = new Set();
+const GMAX = 260; let ghostM, ghostO, ghostS, G = []; const debuted = new Set();
 const FACEM = {};   // v0.9: a face per colour (Brent's sketch plan), each its own instanced mesh
 function buildGhosts(){ const body = LOOK.rawPiece(MODELS,'ghost','ghost.body'), eyes = LOOK.rawPiece(MODELS,'ghost','ghost.eyes');
   const gb = LOOK.mergeColored(body), ge = LOOK.mergeColored(eyes);
@@ -167,7 +172,8 @@ function buildGhosts(){ const body = LOOK.rawPiece(MODELS,'ghost','ghost.body'),
   ghostM = new THREE.InstancedMesh(gb, LOOK.hatchMat(0xffffff, {vertexColors:true, density:1.1, wave:1, glow:0.9}), GMAX); ghostO = new THREE.InstancedMesh(gb, LOOK.outlineMat(0.04, 1), GMAX);
   for(const t of COLOUR_ORDER){ const f = LOOK.rawPiece(MODELS,'ghost','ghost.face.'+t); FACEM[t] = new THREE.InstancedMesh(f ? LOOK.mergeColored(f) : ge, new THREE.MeshBasicMaterial({vertexColors:true}), GMAX); }
   initColors(ghostM, GMAX);
-  [ghostM, ghostO, ...Object.values(FACEM)].forEach(m=>{ m.frustumCulled = false; m.count = 0; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); });
+  ghostS = new THREE.InstancedMesh(new THREE.CircleGeometry(0.62, 18).rotateX(-Math.PI/2), new THREE.MeshBasicMaterial({color:0x000000, transparent:true, opacity:0.6, depthWrite:false}), GMAX);   // the shadow under each ghost
+  [ghostM, ghostO, ghostS, ...Object.values(FACEM)].forEach(m=>{ m.frustumCulled = false; m.count = 0; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); });
   QUALITY_HOOKS.push(L=>{ ghostO.visible = L>=1; }); }
 // v0.9 personality effects, only near the camera: Z's (purple, nodding off), hiccup bubbles (orange, drunk), rainbow echoes
 // (blue, tripping), sugar sparks (green), steam off the head (red, furious)
@@ -190,12 +196,18 @@ function spawnGhost(type, isBig=false, at2=null, temper){
   if(at2){ x = at2[0]; z = at2[1]; }
   else do { const a = Math.random()*6.283, d = rnd(22, 32); x = P0.x + Math.cos(a)*d; z = P0.z + Math.sin(a)*d*0.85 - 6; n++; } while((!inLane(x,z) || blocked(x,z,0.8) || (MODE==='campaign' && !gateOpen && z < STAGE_Z+2)) && n < 30);
   if(n >= 30) return null;
-  const lv = P0.level, g = {kind:'ghost', id:(spawnGhost.n=(spawnGhost.n||0)+1), x, z, type, big:isBig, scale:isBig?2.3:1, r:isBig?1.3:0.6, hp:ghostHP(isBig), sp:(isBig?1.7:rnd(2.0,2.6))+Math.min(lv,15)*0.05,
-    bob:Math.random()*6, hitT:0, slowT:0, stunT:0, kvx:0, kvz:0, dead:false, temper:temper||pick(TEMPER), mode:'chase', modeT:rnd(4,8), lungeT:0, lungeCd:rnd(2,5), face:0};
+  const lv = P0.level, g = {kind:'ghost', id:(spawnGhost.n=(spawnGhost.n||0)+1), x, z, type, big:isBig, scale:isBig?2.3:(type==='purple'?1.28:1.12), r:isBig?1.3:0.62, hp:ghostHP(isBig)*(isBig?1:(GHOST_HP[type]||1)), sp:(isBig?1.7:rnd(2.0,2.6))+Math.min(lv,15)*0.05,
+    bob:Math.random()*6, hitT:0, slowT:0, stunT:0, kvx:0, kvz:0, dead:false, temper:type==='red' ? 'chaser' : temper||pick(TEMPER), mode:'chase', modeT:rnd(4,8), lungeT:0, lungeCd:rnd(2,5), face:0};
   g.maxhp = g.hp; G.push(g);
   if(isBig){ burst(x,1.5,z,GHOST_TYPES[type].col,40,10); if(MODE!=='pvp') toast('learn:big'+type, `A BIG ${type.toUpperCase()} ghost. Beat it and its colour joins the swarm. Its drop: ${GHOST_TYPES[type].label}.`); }
   return g;
 }
+// v0.10 a RUSH: a crowd of ghosts pours down the lane at you from ahead
+function spawnRush(n, cols){ const P0 = player(); let k = 0; for(let t=0; t<n*4 && k<n; t++){ const x = rnd(BOUNDS.x0+2, BOUNDS.x1-2), z = P0.z - rnd(24, 34); if(!inLane(x,z) || blocked(x,z,0.8) || (MODE==='campaign' && !gateOpen && z < STAGE_Z+2)) continue; spawnGhost(pick(cols), false, [x, z], 'chaser'); k++; } }
+// the engineer's wrench: a spinning projectile you can dodge (uses the boss's shot list, so it hits the player and stops at walls)
+const wrenchGeo = new THREE.BoxGeometry(0.12, 0.12, 0.7);
+function ghostShot(g, tg){ const m = new THREE.Mesh(wrenchGeo, neonMat(0xd8e8f0)); m.add(glowS(0x22e8d4, 1.2, 0.7)); m.position.set(g.x, 1.2 + floorY(g.x, g.z), g.z); scene.add(m);
+  const a = Math.atan2(tg.x + (tg.vx||0)*0.3 - g.x, tg.z + (tg.vz||0)*0.3 - g.z); SHOTS.push({m, vx:Math.sin(a)*11, vz:Math.cos(a)*11, life:1.6, dmg:6}); tone(900, 0.04, 'triangle', 0.015); }
 function spawnPack(n, cols){ const P0 = player(); let cx, cz, tries = 0; // a pack enters together from just off-screen
   do { const a = rnd(0, 6.283), d = rnd(24, 30); cx = P0.x + Math.cos(a)*d; cz = P0.z + Math.sin(a)*d*0.85 - 8; tries++; } while((!inLane(cx,cz) || blocked(cx,cz,1) || (MODE==='campaign' && !gateOpen && cz < STAGE_Z+2)) && tries < 30);
   if(tries >= 30) return; for(let i=0;i<n;i++) spawnGhost(pick(cols), false, [clamp(cx+rnd(-3,3), BOUNDS.x0+2, BOUNDS.x1-2), cz+rnd(-3,3)], TEMPER[i%4]); }
@@ -318,7 +330,7 @@ function updateBoss(dt){
   if(!BOSS.awake) { BOSS.face = Math.atan2(P0.x-BOSS.x, P0.z-BOSS.z); return; }
   const want = 9, dx = P0.x-BOSS.x, dz = P0.z-BOSS.z, s = d > want+2 ? 1 : d < want-2 ? -1 : 0;
   const mx = dx/(d||1)*s + (-dz/(d||1))*0.6*Math.sin(gt*0.7), mz = dz/(d||1)*s + (dx/(d||1))*0.6*Math.sin(gt*0.7);
-  const nx = BOSS.x + mx*4.5*dt, nz = BOSS.z + mz*4.5*dt; if(!blocked(nx, BOSS.z, 1) && Math.abs(nx) < 26) BOSS.x = nx; if(!blocked(BOSS.x, nz, 1) && nz < STAGE_Z-4 && nz > -438) BOSS.z = nz;
+  const nx = BOSS.x + mx*4.5*dt, nz = BOSS.z + mz*4.5*dt; if(!blocked(nx, BOSS.z, 1) && Math.abs(nx) < BOUNDS.x1 - 2) BOSS.x = nx; if(!blocked(BOSS.x, nz, 1) && nz < STAGE_Z-4 && nz > -438) BOSS.z = nz;
   BOSS.walk += hyp(mx,mz)*dt*7; BOSS.face = Math.atan2(dx, dz); BOSS.moving = hyp(mx,mz) > 0.2;
   // v0.9 (Brent: "he's constantly casting balls with no cooldowns between"): a rhythm — a creature, a pause, a volley of three
   // balls, a longer pause, then the next creature. The gaps are your openings.

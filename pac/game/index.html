@@ -6,8 +6,31 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <!--
-  PAC — v0.9.0 (Claude, 2026-10-21) — files: index.html (layout + styles), look.js (ink look + model loader),
+  PAC — v0.10.0 (Claude, 2026-10-21) — files: index.html (layout + styles), look.js (ink look + model loader),
   js/core.js, js/world.js, js/dress.js, js/actors.js, js/abilities.js, js/ui.js, js/intro.js, js/main.js, assets/*.glb (Blender), vendor/ (three r128).
+  CHANGELOG v0.10.0 — from Brent's v0.9 playtest (2026-10-21 13:32-13:39): "fails at satisfaction", "not Vampire Survivors pace",
+  "incredibly slow to move", "blue ball… can't run", "ghosts blend in", "first level a bit chaotic — just bad guys", "lanes and guided paths".
+   + THE SWARM: a Vampire Survivors-style director keeps a minimum number of bad guys alive that rises every minute, topped up
+     twice a second from just off-screen ahead and behind; a RUSH pours down the lane every minute; stragglers come back in
+     from ahead. (js/main.js ~170-180, js/actors.js spawnRush)
+   + BAD GUYS that stand out and fight in character: louder colours, a dark shadow under each, a little bigger; green hops on
+     its spring, orange staggers, blue weaves, teal keeps its distance and throws wrenches, red lunges, purple is slow and
+     tough, black is fast and fragile. (js/actors.js GHOST_TYPES/GHOST_MOVE/GHOST_HP/ghostShot, js/main.js ghost update)
+   + A LANE: 36 m down the middle of every room, edged with rails in each room's style (bollards and chains on the street,
+     velvet ropes, a brass rail in the bar, crowd barriers backstage and at the stage). The dots lead the way. (js/dress.js
+     laneRails, js/main.js LANE_X, js/world.js seedRoom)
+   + Simpler World 1: the clubgoers are scenery around the lane (no panicking, no screaming, nothing to avoid eating); no fire
+     bars; no moving dot puzzles. (js/main.js, js/actors.js seedCivilians, js/world.js)
+   + Faster: Pac 8.6 m/s (was 6.4), Ball Boy 8.8 (was 6.6).
+   + Break stuff: walk into tables, stools, speakers, booths or road cases and they smash (no energy cost); bunches of balloons
+     along the lane pop when you walk through them or blast them. (js/main.js pushProp, js/world.js balloons)
+   + Blue orb: Pac no longer jams in gaps while he's big; the inverted look is lighter and only on High, with a blue vignette on
+     every setting; at most 24 sound effects at once (a panicking crowd could pile up hundreds). (js/main.js, js/core.js)
+   + Levels go past 25 (to 60); an ability has 8 levels (pick + 7 rank-ups); level-ups favour ranking up what you have, with
+     stats more often and new abilities less often. (js/abilities.js)
+   + Gear removed (no helmets, armour or weapons) — the Gear tab, the gear slots and gear bonuses are gone. (js/abilities.js, js/ui.js)
+   + The Poke Bro only gets his own creature moves now, not Pac's. (js/abilities.js canGet)
+   + Calmer kill splats (smaller, quicker, at most 10). (js/actors.js)
   CHANGELOG v0.9.0 — from Brent's v0.8 feedback (2026-10-21) and his "Go" on the plan (lag → aiming → the club → Pac + ghosts):
    SPEED
    + FIXED a v0.8 bug: two colours were swallowed by a code comment, so every frame with a stunned or frozen ghost crashed half-way
@@ -161,6 +184,8 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
 .slot.fire{border-color:var(--gold2);box-shadow:0 0 14px rgba(246,220,149,.55)}
 #mbars{display:none}
 #marks{position:absolute;inset:0;pointer-events:none}
+/* v0.10 blue-orb mode: a blue vignette (cheap — no filter on the canvas) */
+#blueV{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(ellipse at center, rgba(40,90,255,0) 45%, rgba(40,90,255,.28) 75%, rgba(20,40,200,.6) 100%);box-shadow:inset 0 0 80px rgba(80,140,255,.6)}
 /* v0.9: the cooldown arc under Pac's feet — the three actives, dark while they recharge, ringed in their colour when ready */
 #cdArc{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;display:none;z-index:2}
 #cdArc .ca{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;overflow:hidden;background:rgba(10,8,14,.55);border:2px solid color-mix(in srgb, var(--el,#888) 45%, rgba(0,0,0,.4));display:flex;align-items:center;justify-content:center;transition:border-color .15s, box-shadow .15s}
@@ -340,7 +365,7 @@ body.mobile #mmAcct{left:5%;right:auto;bottom:auto;top:96px;font-size:11px}
   <canvas id="gl"></canvas><canvas id="glitch"></canvas>
   <div id="tags"></div><div id="dmg"></div>
   <div id="hud" class="hide">
-   <div id="marks"></div><div id="cdArc"></div>
+   <div id="marks"></div><div id="cdArc"></div><div id="blueV"></div>
    <div id="topL"><div id="wName"></div><div id="obj"></div></div>
    <div id="scoreBox"><div class="lab">SCORE · BEST <span id="bestN">0</span></div><div id="scoreN">0</div></div>
    <div id="scoreDet" class="panel"></div>
