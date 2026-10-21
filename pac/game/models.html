@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PAC Models</title>
+<!-- PAC model sheet (v0.7): every Blender-built model in the game's ink-hatch look, turning slowly under club light.
+     ?only=pac,ballboy limits the line-up; ?slow=1 freezes rotation (for screenshots). -->
+<style>html,body{margin:0;height:100%;background:#07050c;overflow:hidden;font-family:Georgia,serif;color:#d8b46a}
+#t{position:fixed;top:12px;left:0;right:0;text-align:center;letter-spacing:.3em;font-size:14px}
+#labels div{position:fixed;transform:translateX(-50%);font-size:13px;letter-spacing:.15em;color:#f6dc95;text-shadow:0 0 6px #000;white-space:nowrap}</style></head>
+<body><div id="t">PAC · MODEL SHEET</div><div id="labels"></div>
+<script src="vendor/three.min.js"></script><script src="vendor/three-extras-r128.js"></script>
+<script src="look.js"></script>
+<script>
+const Q = new URLSearchParams(location.search), only = (Q.get('only')||'').split(',').filter(Boolean);
+const renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x07050c);
+const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
+function size(){ renderer.setSize(innerWidth, innerHeight); camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); } addEventListener('resize', size); size();
+scene.add(new THREE.HemisphereLight(0x8a7aff, 0x200818, 0.6));
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 30), new THREE.MeshStandardMaterial({color:0x1a1426, roughness:0.35, metalness:0.3})); floor.rotation.x = -Math.PI/2; scene.add(floor);
+for(const [x,c] of [[-12,0xff4fb8],[0,0x41e4ff],[12,0xffb340]]){ const L = new THREE.PointLight(c, 3, 30, 1.5); L.position.set(x, 5, 6); scene.add(L); }
+const ITEMS = [];
+LOOK.loadAll().then(M=>{
+  const list = LOOK.showcase(M).filter(it=>!only.length || only.includes(it.key));
+  const gap = 2.6, x0 = -(list.length-1)*gap/2;
+  list.forEach((it,i)=>{ const o = it.obj; o.position.x = x0 + i*gap; scene.add(o); ITEMS.push({o, label:it.label, h:it.h||2});
+    const d = document.createElement('div'); d.textContent = it.label; $labels.appendChild(d); ITEMS[ITEMS.length-1].el = d; });
+  const W = list.length*gap; camera.position.set(0, 2.6, Math.max(7, W*0.62)); camera.lookAt(0, 1.0, 0);
+  document.title = 'PAC Models'; window.__ready = true;
+}).catch(e=>{ document.getElementById('t').textContent = 'LOAD FAILED: '+e; console.error(e); });
+const $labels = document.getElementById('labels');
+let t = 0, last = performance.now();
+function loop(now){ const dt = Math.min(0.05,(now-last)/1000); last = now; t += dt; LOOK.tick(t);
+  for(const it of ITEMS){ if(!Q.get('slow')) it.o.rotation.y = Math.sin(t*0.5)*0.9; else it.o.rotation.y = +Q.get('slow')||0;
+    const v = new THREE.Vector3(it.o.position.x, -0.25, it.o.position.z).project(camera); if(it.el){ it.el.style.left = ((v.x*0.5+0.5)*innerWidth)+'px'; it.el.style.top = ((-v.y*0.5+0.5)*innerHeight)+'px'; } }
+  renderer.render(scene, camera); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+</script></body></html>

@@ -1,0 +1,307 @@
+// PAC v0.7 — ui.js: input (keyboard, mouse, gamepad, phone overlay), HUD, edge markers, level-up jackpot,
+// menus (main, worlds, characters, endless, PvP, settings), the character sheet (pause + loadout), end-of-run tally.
+"use strict";
+// ================= INPUT =================
+const keys = {}; let mouseAim = null, inspect = false; const ray = new THREE.Raycaster(), mouseV = new THREE.Vector2(), groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+addEventListener('keydown', e=>{ const k = e.key.toLowerCase(); audio();
+  if(state==='intro'){ endIntro(); return; }
+  if(state==='jack' && jackOffers && ['1','2','3'].includes(k)){ const o = jackOffers[+k-1]; if(o) chooseOffer(o); return; }
+  if(k==='escape' || k==='p'){ if(state==='play') openPause(); else if(state==='pause') closePause(); else if(!$('subOv').classList.contains('hide')) closeSub(); else if(state==='menu' && sheetMode==='loadout') closeSheet(); return; }
+  if(k==='m'){ setMute(!SAVE.set.muted); return; }
+  if(e.key==='Tab'){ e.preventDefault(); inspect = true; }
+  if(k===' '){ e.preventDefault(); if(state==='play') useMove(player()); }
+  keys[k] = true; });
+addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; if(e.key==='Tab') inspect = false; });
+cv.addEventListener('contextmenu', e=>e.preventDefault());
+function updateMouse(e){ const r = cv.getBoundingClientRect(); mouseV.set((e.clientX-r.left)/r.width*2-1, -((e.clientY-r.top)/r.height)*2+1); ray.setFromCamera(mouseV, camera); const p = new THREE.Vector3(); if(ray.ray.intersectPlane(groundPlane, p)) mouseAim = p; }
+cv.addEventListener('pointermove', e=>{ if(e.pointerType==='mouse') updateMouse(e); });
+const mouseDown = {0:false, 2:false};
+cv.addEventListener('pointerdown', e=>{ audio(); if(e.pointerType!=='mouse' || state!=='play') return; updateMouse(e); mouseDown[e.button] = true; });
+addEventListener('pointerup', e=>{ if(e.pointerType==='mouse') mouseDown[e.button] = false; });
+let padVec = null;
+function moveInput(){
+  let x = 0, z = 0; if(keys.a||keys.arrowleft) x -= 1; if(keys.d||keys.arrowright) x += 1; if(keys.w||keys.arrowup) z -= 1; if(keys.s||keys.arrowdown) z += 1;
+  const gp = navigator.getGamepads ? [...navigator.getGamepads()].find(g=>g) : null, P0 = player();
+  if(gp && P0){ const ax = gp.axes[0]||0, az = gp.axes[1]||0; if(hyp(ax,az) > 0.2){ x = ax; z = az; }
+    const rx = gp.axes[2]||0, rz = gp.axes[3]||0; if(hyp(rx,rz) > 0.3){ P0.ax = rx/hyp(rx,rz); P0.az = rz/hyp(rx,rz); P0.gpAim = true; } else P0.gpAim = false;
+    const b = i => gp.buttons[i] && gp.buttons[i].pressed;
+    if(b(0) && !moveInput.a) useMove(P0); moveInput.a = b(0); if(b(7)||b(5)) useActive(P0,'off'); if(b(6)||b(4)) useActive(P0,'def'); if(b(9) && !moveInput.st) openPause(); moveInput.st = b(9); }
+  if(padVec){ x = padVec[0]; z = padVec[1]; }
+  const l = hyp(x,z); return l > 0.08 ? [x/Math.max(1,l), z/Math.max(1,l)] : [0,0];
+}
+// phone: a floating stick under the left thumb; A / B / MOVE clustered under the right thumb. Everything sits over the game.
+(()=>{ const zone = $('tLeft'), base = $('stickBase'), knob = $('stickKnob'); let id = null, ox = 0, oy = 0; const R = 48;
+  zone.addEventListener('pointerdown', e=>{ audio(); e.preventDefault(); id = e.pointerId; try{ zone.setPointerCapture(id); }catch(er){} const r = zone.getBoundingClientRect(); ox = e.clientX; oy = e.clientY;
+    base.style.left = (ox - r.left)+'px'; base.style.top = (oy - r.top)+'px'; base.classList.add('on'); knob.style.transform = ''; padVec = [0,0]; });
+  zone.addEventListener('pointermove', e=>{ if(e.pointerId!==id) return; const dx = e.clientX-ox, dy = e.clientY-oy, d = hyp(dx,dy), k = Math.min(1, d/R);
+    padVec = d < 5 ? [0,0] : [dx/d*k, dy/d*k]; const m = Math.min(d, R); knob.style.transform = `translate(${dx/Math.max(d,1)*m}px,${dy/Math.max(d,1)*m}px)`; });
+  const end = e=>{ if(e.pointerId!==id) return; id = null; padVec = null; base.classList.remove('on'); }; zone.addEventListener('pointerup', end); zone.addEventListener('pointercancel', end);
+  const hold = (el, fn)=>{ let tm = null; el.addEventListener('pointerdown', e=>{ audio(); e.preventDefault(); e.stopPropagation(); el.classList.add('on'); fn(); clearInterval(tm); tm = setInterval(fn, 100); });
+    const up = ()=>{ el.classList.remove('on'); clearInterval(tm); }; el.addEventListener('pointerup', up); el.addEventListener('pointerleave', up); el.addEventListener('pointercancel', up); };
+  hold($('bA'), ()=>{ if(state==='play') useActive(player(),'off'); }); hold($('bB'), ()=>{ if(state==='play') useActive(player(),'def'); });
+  $('bM').addEventListener('pointerdown', e=>{ e.preventDefault(); e.stopPropagation(); audio(); if(state==='play') useMove(player()); });
+})();
+function playerAim(P0){
+  if(!isMobile && mouseAim && !P0.gpAim){ const dx = mouseAim.x-P0.x, dz = mouseAim.z-P0.z, d = hyp(dx,dz)||1; P0.ax = dx/d; P0.az = dz/d; P0.aimPx = mouseAim.x; P0.aimPz = mouseAim.z; return; }
+  P0.aimPx = null; P0.aimPz = null; if(P0.gpAim) return;
+  // phone: aim at the most dangerous thing in front of you, else the nearest anywhere, else straight ahead
+  const tg = priority(P0, 14, 1.4) || priority(P0, 10);
+  if(tg){ const dx = tg.x-P0.x, dz = tg.z-P0.z, d = hyp(dx,dz)||1; P0.ax = dx/d; P0.az = dz/d; P0.aimPx = tg.x; P0.aimPz = tg.z; } else { P0.ax = Math.sin(P0.face); P0.az = Math.cos(P0.face); }
+}
+
+// ================= HUD =================
+function slotInfo(h, slot){ if(slot==='move'){ const M = MOVES[CHARS[h.char].move]; return h.moveOk ? {ic:M.ic, nm:M.name, cd:Math.max(0,h.moveCd), cdMax:M.cd} : null; }
+  const k = h.slots[slot]; if(!k) return null; const A = ABIL[k], rk = h.rank[k]||0; return {ic:A.ic, nm:A.name+(rk?' +'+rk:''), cd:Math.max(0,h.cd[k]||0), cdMax:cdOf(h,k)}; }
+const SLOT_DEF = [['passive','AUTO','Lv 2'],['off', isMobile?'A':'L·CLICK','Lv 4'],['def', isMobile?'B':'R·CLICK','Lv 3'],['move', isMobile?'MOVE':'SPACE','Lv 1']];
+function buildSkillHud(){ const P0 = player(); if(!P0) return;
+  $('skills').innerHTML = SLOT_DEF.map(([s,key,lab])=>{ const I = slotInfo(P0, s); return `<div class="slot${I?'':' empty'}" id="sl_${s}"><span class="key">${key}</span><div class="ic">${I?I.ic:'🔒'}</div><div class="nm">${I?I.nm:lab}</div><div class="cdv"></div><div class="cdn"></div></div>`; }).join('');
+  $('microRow').innerHTML = Object.keys(P0.micro).map(k=>`<div class="micro" title="${ABIL[k].name}">${ABIL[k].ic}<b>${P0.micro[k]}</b></div>`).join('');
+  const a = slotInfo(P0,'off'), b = slotInfo(P0,'def'), m = slotInfo(P0,'move');
+  $('bAi').textContent = a ? a.ic : '🔒'; $('bBi').textContent = b ? b.ic : '🔒'; $('bMi').textContent = m ? m.ic : '🔒';
+  $('bA').classList.toggle('locked', !a); $('bB').classList.toggle('locked', !b); $('bM').classList.toggle('locked', !m);
+}
+function flashSlot(s){ const el = $('sl_'+s); if(el){ el.classList.add('fire'); setTimeout(()=>el.classList.remove('fire'), 160); } const pb = {off:'bA', def:'bB', move:'bM'}[s]; if(pb){ $(pb).classList.add('fire'); setTimeout(()=>$(pb).classList.remove('fire'), 160); } }
+function setCd(el, I){ if(!el) return; const f = I && I.cdMax ? clamp(I.cd/I.cdMax,0,1) : 0; el.querySelector('.cdv').style.setProperty('--cd', (f*100).toFixed(0)+'%'); const n = el.querySelector('.cdn'); if(n) n.textContent = I && I.cdMax >= 2 && I.cd > 0.05 ? (I.cd < 1 ? I.cd.toFixed(1) : Math.ceil(I.cd)) : ''; }
+const MARKS = []; function mark(i){ if(!MARKS[i]){ const d = document.createElement('div'); d.className = 'mark'; d.innerHTML = '<i></i><span></span>'; $('marks').appendChild(d); MARKS[i] = d; } return MARKS[i]; }
+function updateHud(){
+  const P0 = player(); if(!P0) return;
+  const hp = clamp(P0.hp/P0.maxhp,0,1), en = clamp(P0.energy/P0.maxEnergy,0,1);
+  $('gHpF').style.height = (hp*100)+'%'; $('gHpT').textContent = Math.max(0,Math.round(P0.hp)); $('gHp').classList.toggle('shield', P0.shieldT>0);
+  $('gEnF').style.height = (en*100)+'%'; $('gEnT').textContent = Math.round(P0.energy);
+  const xpN = XPC[Math.min(25,P0.level+1)], xpP = XPC[P0.level], xf = P0.level>=25 ? 1 : (P0.xp-xpP)/(xpN-xpP);
+  $('xpBar').firstChild.style.width = (clamp(xf,0,1)*100)+'%'; $('lvN').textContent = 'LV '+P0.level;
+  $('mHp').style.width = hp*100+'%'; $('mEn').style.width = en*100+'%'; $('mXp').style.width = clamp(xf,0,1)*100+'%'; $('mLv').textContent = 'LV '+P0.level;
+  for(const [s] of SLOT_DEF) setCd($('sl_'+s), slotInfo(P0, s));
+  setCd($('bA'), slotInfo(P0,'off')); setCd($('bB'), slotInfo(P0,'def')); setCd($('bM'), slotInfo(P0,'move'));
+  const bl = []; if(hyper>0) bl.push(`<span style="color:#ff4fb8">HYPER ×${hyper}</span>`); if(blueT>0) bl.push(`<span style="color:#6ab0ff">EAT MODE ${blueT.toFixed(1)}</span>`);
+  for(const [k,v] of Object.entries(P0.buff)) if(v>0) bl.push(`<span>${{dmg:'DMG+',speed:'SPEED+',xp:'XP×2',cd:'FAST CD',magnet:'MAGNET'}[k]||k} ${v.toFixed(0)}</span>`);
+  $('buffs').innerHTML = bl.join('');
+  $('scoreN').textContent = Math.round(ST.score).toLocaleString();
+  const m = Math.floor(ST.time/60), s = Math.floor(ST.time%60);
+  $('scoreDet').innerHTML = [['Dots eaten',ST.dots],['Patterns cleared',ST.patterns],['Ghosts killed',ST.ghosts],MODE==='campaign'?['Boss',ST.boss?'beaten':'—']:null,['Civilian casualties',ST.civ],['Props smashed',ST.props],['Coins',ST.coins],
+    MODE==='endless'?['Wave',wave]:null, MODE==='pvp'?['Your kills',P0.kills]:null,['Time',`${m}:${String(s).padStart(2,'0')}`],['Difficulty',diff().label+' · '+SAVE.set.speed+'×'],['Best',Math.round(Math.max(SAVE.best[MODE]||0, ST.score)).toLocaleString()]]
+    .filter(Boolean).map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
+  // one short objective line
+  let obj = '';
+  if(MODE==='campaign'){ obj = !P0.moveOk ? 'Eat the dots' : P0.level < 4 ? `Grow — the stage opens at level 4 (${P0.level}/4)` : BOSS && BOSS.alive && !BOSS.intro ? 'Get to the main stage' : BOSS && BOSS.alive ? 'Beat Ball Boy' : ''; }
+  else if(MODE==='endless') obj = `Wave ${wave} · next in ${Math.ceil(waveT)}s`; else obj = `First to ${PVP.target}`;
+  $('obj').textContent = obj;
+  // edge markers: coloured triangles toward things that matter (not every mob)
+  const L = [];
+  if(MODE==='campaign' && BOSS && BOSS.alive){ if(gateOpen && !BOSS.intro) L.push({x:0, z:STAGE_Z, col:'#ffd23f', lab:'STAGE'}); if(BOSS.awake) L.push({x:BOSS.x, z:BOSS.z, col:'#ff4a2a', lab:'BALL BOY'}); }
+  for(const o of ORBS) L.push({x:o.x, z:o.z, col:'#4aa8ff', lab:'ORB'});
+  for(const g of G) if(g.big) L.push({x:g.x, z:g.z, col:'#'+GHOST_TYPES[g.type].col.toString(16).padStart(6,'0'), lab:''});
+  if(blueT > 0) for(const g of G) if(!g.big && hyp(g.x-P0.x,g.z-P0.z) > 14) L.push({x:g.x, z:g.z, col:'#6ab0ff', lab:'', small:true});
+  if(P0.hp < P0.maxhp*0.5){ let bf = null, bd = 60; for(const p of PICKS) if(p.kind==='fruit'){ const d = hyp(p.x-P0.x,p.z-P0.z); if(d < bd){ bd = d; bf = p; } } if(bf) L.push({x:bf.x, z:bf.z, col:'#7cff8a', lab:'FRUIT'}); }
+  if(MODE==='pvp') for(const h of HEROES) if(h.team===1 && !h.dead) L.push({x:h.x, z:h.z, col:'#ff5a5a', lab:''});
+  // markers ride the edge of a frame kept clear of the score (top) and the skill bar / thumbs (bottom)
+  let n = 0; const M2 = 26, T = 76, B = isMobile ? 200 : 132, cx = SW/2, cy = (T + SH - B)/2, hh = Math.max(40, (SH - B - T)/2);
+  for(const t of L.slice(0, 24)){ const [sx, sy, front] = project(t.x, 1, t.z); const on = front && sx>M2 && sx<SW-M2 && sy>T && sy<SH-B; if(on) continue;
+    let dx = sx-cx, dy = sy-cy; if(!front){ dx = -dx; dy = -dy; } const k = Math.min((SW/2-M2)/Math.max(1e-6,Math.abs(dx)), hh/Math.max(1e-6,Math.abs(dy)));
+    const el = mark(n++); el.style.display = 'block'; el.style.left = (cx+dx*k)+'px'; el.style.top = (cy+dy*k)+'px'; el.className = 'mark'+(t.small?' small':'');
+    el.firstChild.style.transform = `translate(-50%,-50%) rotate(${Math.atan2(dy,dx)+Math.PI/2}rad)`; el.firstChild.style.borderBottomColor = t.col; el.lastChild.textContent = t.lab; el.lastChild.style.color = t.col; }
+  for(let i=n;i<MARKS.length;i++) MARKS[i].style.display = 'none';
+  if(MODE==='pvp') $('pvpBox').innerHTML = `<span style="color:#41e4ff">BLUE ${PVP.kills[0]}</span> &nbsp;—&nbsp; <span style="color:#ff5a5a">${PVP.kills[1]} RED</span>`;
+}
+$('scoreBox').onclick = ()=>$('scoreDet').classList.toggle('open');
+const TAGS = new Map();
+function updateTags(){ const live = new Set();
+  for(const h of HEROES){ if(h.isPlayer || h.dead) continue; live.add(h.id); let el = TAGS.get(h.id); if(!el){ el = document.createElement('div'); el.className = 'tag'; el.innerHTML = `<div class="tn"></div><div class="hb"><i></i></div>`; $('tags').appendChild(el); TAGS.set(h.id, el); }
+    const [sx, sy, f] = project(h.x, h.rig.height*h.grow+0.5, h.z); el.style.display = f?'block':'none'; el.style.left = sx+'px'; el.style.top = sy+'px';
+    el.querySelector('.tn').textContent = `${h.name} · ${h.level}`; el.querySelector('.tn').style.color = h.team?'#ff8a8a':'#8ae8ff'; const i = el.querySelector('i'); i.style.width = clamp(h.hp/h.maxhp,0,1)*100+'%'; i.style.background = h.team?'#ff4a4a':'#41e4ff'; }
+  for(const [id, el] of TAGS) if(!live.has(id)){ el.remove(); TAGS.delete(id); } }
+
+// ================= LEVEL-UP JACKPOT =================
+let jackOffers = null, reelTimer = null;
+function offerHtml(o, h, i){
+  let k = '', n = '', d = '', ic = '', cls = '';
+  if(o.kind==='move'){ const M = MOVES[CHARS[h.char].move]; k = 'MOVEMENT · '+(isMobile?'MOVE button':'SPACE'); n = M.name; d = M.d; ic = M.ic; cls = 'r-move'; }
+  else if(o.kind==='ab'){ const A = ABIL[o.k]; k = {passive:'COMMON · PASSIVE · fights by itself', def:'RARE · DEFENCE · '+(isMobile?'B button':'right click'), off:'MYTHIC · ATTACK · '+(isMobile?'A button':'left click')}[A.slot]; n = A.name; d = A.d; ic = A.ic; cls = 'r-'+A.r; }
+  else if(o.kind==='swap'){ const A = ABIL[o.k], old = h.slots[A.slot]; k = `NEW ${A.r.toUpperCase()} · REPLACES ${old?ABIL[old].name.toUpperCase():''}`; n = A.name; d = A.d; ic = A.ic; cls = 'r-'+A.r; }
+  else if(o.kind==='rank'){ const A = ABIL[o.k], r = (h.rank[o.k]||0)+1; k = 'UPGRADE · '+A.r.toUpperCase(); n = `${A.name} +${r}`; d = 'Hits 25% harder, reaches 10% further, recharges faster.'; ic = A.ic; cls = 'r-'+A.r; }
+  else if(o.kind==='micro'){ const A = ABIL[o.k], lv = (h.micro[o.k]||0)+1; k = lv===1?'NEW MICRO PASSIVE':'MICRO PASSIVE · level '+lv; n = A.name; d = A.d; ic = A.ic; cls = 'r-micro'; }
+  else { const S = STATUP[o.k]; k = 'STAT'; n = S.n; d = 'Lasts the whole run.'; ic = S.ic; cls = 'r-stat'; }
+  return `<div class="card" data-i="${i}"><div class="ic">${ic}</div><div class="k ${cls}">${k}</div><div class="n">${n}</div><div class="d">${d}</div><div class="k" style="margin-top:8px">${isMobile?'tap':'press '+(i+1)}</div></div>`;
+}
+function openJack(){
+  if(!pendingLv.length){ state = 'play'; return; } const lv = pendingLv[0], h = player(); state = 'jack'; $('jack').classList.remove('hide'); mouseDown[0] = mouseDown[2] = false;
+  const offers = offersFor(h); jackOffers = null; $('offers').innerHTML = '';
+  $('jackT').textContent = 'LEVEL '+lv; $('jackS').textContent = !h.moveOk ? 'Your movement' : !h.slots.passive ? 'Pick a passive. It fights for you on its own.' : !h.slots.def ? 'Pick your defence' : !h.slots.off ? 'Pick your attack' : 'Pick an upgrade';
+  const syms = ['🍒','👻','⭐','💎','7','🔵','🍕'], reels = [$('r0'),$('r1'),$('r2')]; const stopAt = SAVE.set.fastReels || lv > 4 ? [0.18,0.3,0.42] : [0.55,0.85,1.15]; const t0 = performance.now(); let skip = false;
+  clearInterval(reelTimer);
+  reelTimer = setInterval(()=>{ const el = skip ? 9 : (performance.now()-t0)/1000; reels.forEach((r,i)=>{ if(el < stopAt[i]) r.textContent = pick(syms); else { const o = offers[Math.min(i, offers.length-1)]; r.textContent = o.kind==='move'?MOVES[CHARS[h.char].move].ic : o.kind==='stat'?STATUP[o.k].ic : ABIL[o.k].ic; } });
+    if(el >= stopAt[2]){ clearInterval(reelTimer); jackOffers = offers; $('offers').innerHTML = offers.map((o,i)=>offerHtml(o,h,i)).join(''); $('offers').querySelectorAll('.card').forEach(c=>c.onclick = ()=>chooseOffer(offers[+c.dataset.i])); tone(1320,0.2,'square',0.05); }
+    else tone(500+Math.random()*400, 0.02, 'square', 0.02); }, 55);
+  $('spd').onclick = ()=>{ skip = true; };
+}
+function chooseOffer(o){ if(!jackOffers || !o) return; jackOffers = null; const h = player(); applyChoice(h, o); pendingLv.shift(); $('jack').classList.add('hide');
+  // the pick is sacred: a moment of grace, and the swarm is pushed back, so a choice never costs health
+  h.grace = 1.6; for(const g of G){ const dx = g.x-h.x, dz = g.z-h.z, d = hyp(dx,dz)||1; if(d < 7){ g.kvx += dx/d*10; g.kvz += dz/d*10; } } ringFx(h.x, h.z, 7, 0xffe14d, 0.5);
+  state = 'play'; if(pendingLv.length) setTimeout(()=>{ if(state==='play') openJack(); }, 300); }
+
+// ================= MENUS =================
+function hideAllOverlays(){ ['mainMenu','subOv','sheetOv','jack','tally'].forEach(id=>$(id).classList.add('hide')); sheetMode = null; camera.clearViewOffset(); }
+let menuHero = null;
+function showMenuHero(){ if(menuHero) scene.remove(menuHero.root); menuHero = makeRig(SAVE.char, 0); if(SAVE.char==='pac') equipSet(menuHero, SAVE.pac.gear); menuHero.root.position.set(0,0,-30); scene.add(menuHero.root); }
+function renderMain(){ const C = CHARS[SAVE.char], L = SAVE.lvl[SAVE.char];
+  $('mmCn').textContent = C.name; $('mmCl').textContent = `${C.sub} · Level ${L.level} / 100`;
+  $('mCharS').textContent = SAVE.unlocked.length > 1 ? SAVE.unlocked.map(k=>CHARS[k].name).join(' · ') : 'Beat a world boss to unlock more';
+  $('mLoad').classList.toggle('off', !C.loadout); $('mLoadS').textContent = C.loadout ? 'Gear, stats, abilities, talents' : `${C.name} has no loadout yet`;
+  const beaten = Object.keys(SAVE.beaten).length > 0; $('mEndless').classList.toggle('off', !beaten); $('mEndS').textContent = beaten ? 'Waves forever on worlds you have beaten' : 'Beat World 1 to unlock';
+  $('mmAcct').textContent = `Coins ${SAVE.coins} · Best ${Math.round(SAVE.best.campaign).toLocaleString()}`; }
+function openSub(html, after){ $('subWin').innerHTML = html; $('subOv').classList.remove('hide'); if(after) after($('subWin')); }
+function closeSub(){ $('subOv').classList.add('hide'); }
+$('subOv').addEventListener('pointerdown', e=>{ if(e.target.id==='subOv') closeSub(); });
+const seg = (id, vals, cur, lab) => `<span class="seg" id="${id}">${vals.map(v=>`<button class="btn ${v===cur?'sel':''}" data-v="${v}">${lab?lab(v):v}</button>`).join('')}</span>`;
+function worldSelect(){ const b1 = SAVE.beaten[1];
+  openSub(`<h2>New Game</h2><div class="note">Playing as ${CHARS[SAVE.char].name}. Worlds unlock in order.</div>
+   <div class="row" style="margin:16px 0">
+    <div class="card" id="w1"><div class="ic">🪩</div><div class="k">WORLD 1</div><div class="n">The Club</div><div class="d">Eat your way up the club, room by room, to the main stage. Boss: Ball Boy.${b1?`<br><span style="color:#ffd23f">${'★'.repeat(b1)}${'☆'.repeat(5-b1)}</span>`:''}</div></div>
+    <div class="card lock"><div class="ic">🔒</div><div class="k">WORLD 2</div><div class="n">${b1?'Coming soon':'Locked'}</div><div class="d">${b1?'Ball Boy\'s world is being built.':'Beat World 1 to unlock.'}</div></div>
+   </div>
+   <table style="width:100%"><tr><td class="cz" style="font-size:13px;padding:6px 10px 6px 0;width:1%;white-space:nowrap">Difficulty</td><td>${seg('segD',['easy','normal','hard'],SAVE.set.diff,v=>DIFF[v].label)}</td></tr>
+   <tr><td class="cz" style="font-size:13px;padding:6px 10px 6px 0;white-space:nowrap">Game speed</td><td>${seg('segS',[0.75,1,1.25,1.5],SAVE.set.speed,v=>v+'×')}</td></tr></table>
+   <div class="note" style="margin-top:6px">Harder and faster games score more.</div>
+   <div class="foot"><button class="btn" id="wGo">Start World 1</button><button class="btn" id="wBack">Back</button></div>`, w=>{
+    w.querySelectorAll('#segD .btn').forEach(b=>b.onclick = ()=>{ SAVE.set.diff = b.dataset.v; save(); worldSelect(); });
+    w.querySelectorAll('#segS .btn').forEach(b=>b.onclick = ()=>{ SAVE.set.speed = +b.dataset.v; save(); worldSelect(); });
+    const go = ()=>{ closeSub(); if(!SAVE.seenIntro){ SAVE.seenIntro = true; save(); playIntro(()=>startRun('campaign')); } else startRun('campaign'); };
+    $('w1').onclick = go; $('wGo').onclick = go; $('wBack').onclick = closeSub; }); }
+function charSelect(){ openSub(`<h2>Character Select</h2><div class="note">Beat a world's boss and he becomes playable.</div><div class="row" style="margin:16px 0">${SAVE.unlocked.map(k=>{ const C = CHARS[k], L = SAVE.lvl[k];
+    return `<div class="card ${k===SAVE.char?'sel':''}" data-k="${k}"><div class="k">${C.sub.toUpperCase()}</div><div class="n">${C.name}</div><div class="d">${C.desc}<br><span style="color:#d8b46a">Level ${L.level} / 100</span></div></div>`; }).join('')}</div>
+   <div class="foot"><button class="btn" id="cBack">Done</button></div>`, w=>{ w.querySelectorAll('.card').forEach(c=>c.onclick = ()=>{ SAVE.char = c.dataset.k; save(); showMenuHero(); renderMain(); charSelect(); }); $('cBack').onclick = closeSub; }); }
+function endlessSelect(){ openSub(`<h2>Endless</h2><div class="note">Pick a world you have beaten. Waves never stop. No boss. Play for a high score.</div>
+  <div class="row" style="margin:16px 0"><div class="card" id="e1"><div class="ic">🪩</div><div class="k">WORLD 1</div><div class="n">The Club</div><div class="d">Best: ${Math.round(SAVE.best.endless).toLocaleString()}</div></div></div>
+  <div class="foot"><button class="btn" id="eBack">Back</button></div>`, w=>{ $('e1').onclick = ()=>startRun('endless'); $('eBack').onclick = closeSub; }); }
+const pvpCfg = {a:1, b:1, target:10};
+function pvpSelect(){
+  openSub(`<h2>PvP</h2><div class="note">Bots for now. Uneven teams are allowed (3v1, 2v3...). You fight on the dance floor.</div>
+   <table style="width:100%;margin:14px 0"><tr><td class="cz" style="font-size:13px;padding:8px 12px 8px 0;width:1%;white-space:nowrap">Your team</td><td>${seg('pA',[1,2,3],pvpCfg.a,v=>v===1?'Just you':'You + '+(v-1))}</td></tr>
+   <tr><td class="cz" style="font-size:13px;padding:8px 12px 8px 0;white-space:nowrap">Opponents</td><td>${seg('pB',[1,2,3],pvpCfg.b)}</td></tr>
+   <tr><td class="cz" style="font-size:13px;padding:8px 12px 8px 0;white-space:nowrap">Kills to win</td><td>${seg('pT',[5,10,15],pvpCfg.target)}</td></tr></table>
+   <div class="note">You play ${CHARS[SAVE.char].name}. Bots are picked from your unlocked characters.</div>
+   <div class="foot"><button class="btn" id="pGo">Fight ${pvpCfg.a}v${pvpCfg.b}</button><button class="btn" id="pBack">Back</button></div>`, w=>{
+    w.querySelectorAll('#pA .btn').forEach(b=>b.onclick = ()=>{ pvpCfg.a = +b.dataset.v; pvpSelect(); }); w.querySelectorAll('#pB .btn').forEach(b=>b.onclick = ()=>{ pvpCfg.b = +b.dataset.v; pvpSelect(); });
+    w.querySelectorAll('#pT .btn').forEach(b=>b.onclick = ()=>{ pvpCfg.target = +b.dataset.v; pvpSelect(); });
+    $('pGo').onclick = ()=>startRun('pvp', {size:[pvpCfg.a, pvpCfg.b], target:pvpCfg.target}); $('pBack').onclick = closeSub; }); }
+function settingsHtml(){ const s = SAVE.set;
+  return `<table><tr><td>Difficulty</td><td>${seg('sD',['easy','normal','hard'],s.diff,v=>DIFF[v].label)}<div class="note">Easy 0.75× score · Hard 1.5× score</div></td></tr>
+  <tr><td>Game speed</td><td>${seg('sS',[0.75,1,1.25,1.5],s.speed,v=>v+'×')}<div class="note">Slower for learning, faster for a rush. Faster scores more.</div></td></tr>
+  <tr><td>Volume</td><td><input id="sVol" type="range" min="0" max="1" step="0.05" value="${s.vol}"></td></tr>
+  <tr><td>Music</td><td><input id="sMus" type="range" min="0" max="1" step="0.05" value="${s.music}"></td></tr>
+  <tr><td>Sound</td><td>${seg('sM',['on','muted'],s.muted?'muted':'on')}</td></tr>
+  <tr><td>Spoken lines</td><td>${seg('sV',['off','on'],s.voice?'on':'off')}<div class="note">Uses your browser's voice.</div></td></tr>
+  <tr><td>Glow</td><td>${seg('sG',['on','off'],s.bloom?'on':'off')}<div class="note">Turn off if your phone runs slow.</div></td></tr>
+  <tr><td>Hyper blur</td><td>${seg('sB',['on','off'],s.blur?'on':'off')}</td></tr>
+  <tr><td>Level-up reels</td><td>${seg('sR',['normal','fast'],s.fastReels?'fast':'normal')}</td></tr></table>`; }
+function bindSettings(root, rerender){ const s = SAVE.set; const on = (id, f)=>root.querySelectorAll('#'+id+' .btn').forEach(b=>b.onclick = ()=>{ f(b.dataset.v); save(); rerender(); });
+  on('sD', v=>s.diff = v); on('sS', v=>s.speed = +v); on('sM', v=>setMute(v==='muted')); on('sV', v=>s.voice = v==='on'); on('sB', v=>s.blur = v==='on'); on('sR', v=>s.fastReels = v==='fast'); on('sG', v=>{ s.bloom = v==='on'; bloom.enabled = s.bloom; });
+  const vol = root.querySelector('#sVol'); if(vol) vol.oninput = ()=>{ s.vol = +vol.value; applyVol(); save(); }; const mus = root.querySelector('#sMus'); if(mus) mus.oninput = ()=>{ s.music = +mus.value; applyVol(); save(); }; }
+function settingsMenu(){ openSub(`<h2>Settings</h2><div class="pane" style="margin-top:10px">${settingsHtml()}</div><div class="foot"><button class="btn" id="sBack">Done</button></div>`, w=>{ bindSettings(w, settingsMenu); $('sBack').onclick = closeSub; }); }
+$('mNew').onclick = ()=>{ audio(); worldSelect(); }; $('mChar').onclick = charSelect; $('mLoad').onclick = ()=>openSheet('loadout'); $('mEndless').onclick = endlessSelect; $('mPvp').onclick = pvpSelect; $('mSet').onclick = settingsMenu;
+$('mIntro').onclick = ()=>playIntro(toMenu); $('mQuit').onclick = ()=>{ try{ window.close(); }catch(e){} toast(null, 'A browser tab can only be closed by you.', 3000); };
+
+// ================= CHARACTER SHEET (pause + loadout): live close-up in the frame, gear slots around it =================
+let sheetMode = null, sheetTab = 'stats';
+const GEAR_SLOTS = [['Headpiece',50,8],['Neck',80,16],['Chest',86,36],['Weapon 1',10,40],['Weapon 2',90,56],['Gloves',10,62],['Ring 1',84,74],['Ring 2',68,90],['Legs',18,84],['Boots',40,92],['Banner',18,16]];
+const GEAR_HAS = {Headpiece:1, Gloves:1, 'Weapon 1':1, Boots:1};
+function openSheet(mode){ sheetMode = mode; sheetTab = 'stats'; $('sheetOv').classList.remove('hide'); if(mode==='loadout') $('mainMenu').classList.add('hide'); renderSheet(); }
+function closeSheet(){ const was = sheetMode; $('sheetOv').classList.add('hide'); camera.clearViewOffset(); sheetMode = null; if(was==='loadout'){ $('mainMenu').classList.remove('hide'); showMenuHero(); renderMain(); } }
+function renderSheet(){
+  const ch = sheetMode==='pause' ? player().char : SAVE.char, C = CHARS[ch], L = SAVE.lvl[ch], gear = ch==='pac' ? SAVE.pac.gear : null;
+  $('dollT').textContent = C.name;
+  $('dollSlots').innerHTML = GEAR_SLOTS.map(([n,x,y])=>{ const has = gear && GEAR_HAS[n]; return `<div class="gslot ${has?'has '+gear:''}" style="left:calc(${x}% - 29px);top:calc(${y}% - 29px)">${n}${has?`<span style="font-size:9px">${gear}</span>`:''}</div>`; }).join('');
+  $('sheetT').textContent = sheetMode==='pause' ? 'Paused' : 'Loadout';
+  $('sheetSub').textContent = `${C.name} · ${C.sub} · Character level ${L.level} / 100 · Coins ${SAVE.coins}`;
+  const tabs = sheetMode==='pause' ? [['stats','Stats'],['abil','Abilities'],['rules','Rules'],['set','Settings']] : C.loadout ? [['stats','Stats'],['gear','Gear'],['abil','Abilities'],['tal','Talents']] : [['stats','Stats']];
+  if(!tabs.some(t=>t[0]===sheetTab)) sheetTab = tabs[0][0];
+  $('sheetTabs').innerHTML = tabs.map(([k,l])=>`<button class="btn ${k===sheetTab?'sel':''}" data-t="${k}">${l}</button>`).join('');
+  $('sheetTabs').querySelectorAll('.btn').forEach(b=>b.onclick = ()=>{ sheetTab = b.dataset.t; renderSheet(); });
+  let h = '';
+  if(sheetMode==='pause'){ const P0 = player();
+    if(sheetTab==='stats') h = `<table><tr><td>Run level</td><td>${P0.level} / 25</td></tr><tr><td>Health</td><td>${Math.round(P0.hp)} / ${P0.maxhp}</td></tr><tr><td>Energy</td><td>${Math.round(P0.energy)} / ${P0.maxEnergy}</td></tr>
+      <tr><td>Damage</td><td>×${P0.mods.dmg.toFixed(2)}</td></tr><tr><td>Area</td><td>×${P0.mods.area.toFixed(2)}</td></tr><tr><td>Cooldowns</td><td>×${P0.mods.cdr.toFixed(2)}</td></tr><tr><td>Speed</td><td>×${P0.mods.speed.toFixed(2)}</td></tr>
+      <tr><td>Crit</td><td>${Math.round(P0.mods.crit*100)}%</td></tr><tr><td>Damage taken</td><td>-${Math.round(P0.mods.armor*100)}%</td></tr><tr><td>Score</td><td>${Math.round(ST.score).toLocaleString()}</td></tr></table>`;
+    if(sheetTab==='abil'){ const row = (lab, I, d)=>`<tr><td>${lab}</td><td>${I?`<b>${I.ic} ${I.nm}</b><br><span class="note">${d}</span>`:'<span class="note">not learned yet</span>'}</td></tr>`;
+      const ab = s => P0.slots[s] ? ABIL[P0.slots[s]].d : '';
+      h = `<table>${row('Passive', slotInfo(P0,'passive'), ab('passive'))}${row(isMobile?'Attack (A)':'Attack (L-click)', slotInfo(P0,'off'), ab('off'))}${row(isMobile?'Defend (B)':'Defend (R-click)', slotInfo(P0,'def'), ab('def'))}${row('Move', slotInfo(P0,'move'), MOVES[CHARS[P0.char].move].d)}
+        ${Object.keys(P0.micro).map(k=>`<tr><td>Micro</td><td><b>${ABIL[k].ic} ${ABIL[k].name}</b> level ${P0.micro[k]}<br><span class="note">${ABIL[k].d}</span></td></tr>`).join('')}</table>`; }
+    if(sheetTab==='rules') h = `<table><tr><td>Dots</td><td>Eat them to grow. Finish a whole moving pattern and its last dot explodes for a bonus and stacks HYPER.</td></tr>
+      <tr><td>Levels</td><td>Level 1 gives your move. Levels 2, 3 and 4 give a passive, a defence and an attack. After that, every level is an upgrade — sometimes a new ability that replaces one you have.</td></tr>
+      <tr><td>Ghosts</td><td>Seven colours, one per stat. Each colour drops its own bonus. A new colour first shows up as one BIG ghost.</td></tr>
+      <tr><td>Blue orb</td><td>The ghosts scatter and you can eat them for a few seconds.</td></tr><tr><td>Fruit</td><td>Heals you.</td></tr><tr><td>Coins</td><td>Kept after the run. Spend them in Loadout.</td></tr>
+      <tr><td>Clubgoers</td><td>They run from you. Eating one costs energy and scores nothing.</td></tr><tr><td>Furniture</td><td>Walk into it to tear through (costs energy), or blow it up.</td></tr>
+      <tr><td>Main stage</td><td>Opens at level 4. Ball Boy can't go down until you've faced all three of his creatures.</td></tr></table>`;
+    if(sheetTab==='set') h = settingsHtml();
+    $('sheetFoot').innerHTML = `<button class="btn" id="fRes">Resume</button><button class="btn" id="fMenu">Quit to Menu</button><button class="btn" id="fQuit">Quit Game</button>`;
+    $('fRes').onclick = closePause; $('fMenu').onclick = ()=>{ $('sheetOv').classList.add('hide'); toMenu(); }; $('fQuit').onclick = ()=>{ try{ window.close(); }catch(e){} toast(null,'A browser tab can only be closed by you.',3000); }; }
+  else {
+    if(!C.loadout) h = `<p>${C.name} has no loadout options yet. Gear, stats and talents for him come later.</p><p class="note">He plays with his starting kit: ${['passive','def','off'].map(s=>ABIL[C.start[s]].name).join(', ')}.</p>`;
+    else if(sheetTab==='stats'){ const pts = L.level - 1, used = WHEEL.reduce((a,k)=>a+(SAVE.pac.stats[k]||0),0), eff = {Strength:'+2% damage',Vitality:'+6 health',Spirit:'+6% energy regen',Intellect:'-2% cooldowns',Agility:'+1.5% speed',Speciality:'+2% area',Nature:'+5% pickup range'};
+      h = `<div class="note">1 point per character level. Points left: <b style="color:#f6dc95">${pts-used}</b></div><table style="margin-top:8px">${WHEEL.map(k=>`<tr><td style="color:${STAT_COL[k]}">${k}</td><td><button class="btn pm" data-s="${k}" data-d="-1">−</button> <b style="display:inline-block;min-width:26px;text-align:center">${SAVE.pac.stats[k]||0}</b> <button class="btn pm" data-s="${k}" data-d="1">+</button> <span class="note">${eff[k]} per point</span></td></tr>`).join('')}</table>`; }
+    else if(sheetTab==='gear') h = `<div class="note">Test sets until items and crafting are built. The same pieces fit every character.</div><div class="seg" style="margin:10px 0">${['none','crude','quality','epic'].map(t=>`<button class="btn ${(gear||'none')===t?'sel':''}" data-g="${t}">${t}</button>`).join('')}</div>
+      <table><tr><td>Crude</td><td>Matte. +3% damage, +10 health.</td></tr><tr><td>Quality</td><td>Glossy. +7% damage, +20 health.</td></tr><tr><td>Epic</td><td>Radiates. +12% damage, +35 health.</td></tr></table>`;
+    else if(sheetTab==='abil'){ const base = `<tr><td>Starting pool</td><td>${['passive','def','off'].map(s=>C.pools[s].map(k=>ABIL[k].ic+' '+ABIL[k].name).join(', ')).join('<br>')}<br>${BASE_MICRO.map(k=>ABIL[k].ic+' '+ABIL[k].name).join(', ')} (micro)</td></tr>`;
+      const extras = Object.keys(ABIL).filter(k=>ABIL[k].extra==='pac').map(k=>ABIL[k].ic+' '+ABIL[k].name).join(', ');
+      h = `<div class="note">Buy extra micro abilities so they can show up in your games. Better ones unlock at higher character levels.</div><table style="margin-top:8px">${base}<tr><td>Can show up later</td><td>${extras}</td></tr>${Object.keys(ABIL).filter(k=>ABIL[k].req).map(k=>{ const A = ABIL[k], owned = SAVE.pac.bought.includes(k), lock = L.level < A.req;
+        return `<tr><td>${A.ic} ${A.name}</td><td>${A.d}<br>${owned?'<b style="color:#7cff8a">Owned</b>':lock?`<span class="note">Unlocks at level ${A.req}</span>`:`<button class="btn" data-buy="${k}" ${SAVE.coins<A.cost?'disabled style="opacity:.4"':''}>Buy · ${A.cost} coins</button>`}</td></tr>`; }).join('')}</table>`; }
+    else if(sheetTab==='tal'){ const pts = Math.floor(L.level/2), used = Object.keys(SAVE.pac.talents).length;
+      h = `<div class="note">1 talent point every 2 character levels. Points left: <b style="color:#f6dc95">${pts-used}</b>. Trees are drafts.</div><table style="margin-top:8px">${Object.entries(TALENTS).map(([tree, nodes])=>`<tr><td>${tree}</td><td>${nodes.map((n,i)=>{ const key = tree+i, has = SAVE.pac.talents[key], req = 2+i*4, lock = L.level < req;
+        return `<button class="btn ${has?'sel':''}" data-tal="${key}" ${lock||(!has&&pts-used<=0)?'disabled style="opacity:.35;margin:2px;font-size:11px;padding:5px 8px"':'style="margin:2px;font-size:11px;padding:5px 8px"'}>${n}${lock?' · Lv '+req:''}</button>`; }).join('')}</td></tr>`).join('')}</table>`; }
+    $('sheetFoot').innerHTML = `<button class="btn" id="fDone">Done</button>`; $('fDone').onclick = closeSheet;
+  }
+  $('sheetPane').innerHTML = h;
+  const P = $('sheetPane');
+  P.querySelectorAll('[data-s]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.s, d = +b.dataset.d, pts = L.level-1, used = WHEEL.reduce((a,x)=>a+(SAVE.pac.stats[x]||0),0); if(d>0 && used>=pts) return; SAVE.pac.stats[k] = Math.max(0,(SAVE.pac.stats[k]||0)+d); save(); renderSheet(); });
+  P.querySelectorAll('[data-g]').forEach(b=>b.onclick = ()=>{ SAVE.pac.gear = b.dataset.g==='none'?null:b.dataset.g; save(); if(menuHero) equipSet(menuHero, SAVE.pac.gear); renderSheet(); });
+  P.querySelectorAll('[data-buy]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.buy, A = ABIL[k]; if(SAVE.coins < A.cost) return; SAVE.coins -= A.cost; SAVE.pac.bought.push(k); save(); SFX.coin(); renderSheet(); });
+  P.querySelectorAll('[data-tal]').forEach(b=>b.onclick = ()=>{ const k = b.dataset.tal; if(SAVE.pac.talents[k]) delete SAVE.pac.talents[k]; else SAVE.pac.talents[k] = 1; save(); renderSheet(); });
+  if(sheetMode==='pause' && sheetTab==='set') bindSettings(P, renderSheet);
+}
+function openPause(){ if(state!=='play') return; state = 'pause'; mouseDown[0] = mouseDown[2] = false; $('hud').classList.add('hide'); $('tags').style.display = 'none'; $('touch').classList.add('hide'); openSheet('pause'); }
+function closePause(){ $('sheetOv').classList.add('hide'); camera.clearViewOffset(); sheetMode = null; state = 'play'; $('hud').classList.remove('hide'); $('tags').style.display = ''; $('touch').classList.remove('hide'); buildSkillHud(); }
+$('menuB').onclick = ()=>{ if(state==='play') openPause(); else if(state==='pause') closePause(); };
+$('muteB').onclick = ()=>{ audio(); setMute(!SAVE.set.muted); };
+
+// ================= END OF RUN: vacuum, lottery tally, stars, unlocks =================
+let vacT = 0, vacItems = [];
+function startVacuum(){ state = 'vacuum'; vacT = 0; const P0 = player(); vacItems = [];
+  for(const P of PATS) for(let i=0;i<P.n;i++) if(P.alive[i]){ const [x,z] = dotPos(P,i); vacItems.push({x, z, sx:x, sz:z, kind:'dot'}); P.alive[i] = false; }
+  for(const g of GEMS) vacItems.push({x:g.x, z:g.z, sx:g.x, sz:g.z, kind:'gem', col:GHOST_TYPES[g.type].col}); GEMS.length = 0;
+  for(const p of PICKS) if(p.kind==='coin'){ vacItems.push({x:p.x, z:p.z, sx:p.x, sz:p.z, kind:'coin'}); scene.remove(p.g); } for(let i=PICKS.length-1;i>=0;i--) if(PICKS[i].kind==='coin') PICKS.splice(i,1);
+  ORBS.forEach(o=>{ vacItems.push({x:o.x, z:o.z, sx:o.x, sz:o.z, kind:'orb'}); scene.remove(o.g); }); ORBS.length = 0;
+  big('JACKPOT!', 1500); }
+function updateVacuum(dt){ vacT += dt; const P0 = player(), f = Math.min(1, vacT/1.9), e = f*f;
+  for(const v of vacItems){ v.x = v.sx + (P0.x - v.sx)*e; v.z = v.sz + (P0.z - v.sz)*e; }
+  if(Math.random() < 0.7) tone(400 + f*1600, 0.035, 'square', 0.025);
+  if(f >= 1){ const dots = vacItems.filter(v=>v.kind==='dot').length, coins = vacItems.filter(v=>v.kind==='coin').length, gems = vacItems.length - dots - coins; ST.dots += dots; ST.coins += coins; addScore(dots*10 + gems*60 + coins*50); vacItems = []; burst(P0.x,1,P0.z,0xffe14d,140,15); openTally(true); } }
+function openTally(win){
+  if(state==='tally' || state==='menu') return; state = 'tally'; cv.style.filter = ''; $('jack').classList.add('hide'); clearInterval(reelTimer); $('touch').classList.add('hide');
+  const P0 = player(), mode = MODE, m = Math.floor(ST.time/60), s = Math.floor(ST.time%60);
+  const finalScore = Math.round(ST.score), newBest = finalScore > (SAVE.best[mode]||0); SAVE.best[mode] = Math.max(SAVE.best[mode]||0, finalScore);
+  const par = mode==='campaign' ? 40000 : mode==='endless' ? 50000 : 20000;
+  const stars = (win || mode==='endless') ? clamp(Math.round(finalScore/par*5 - ST.civ*0.15), 1, 5) : 0;
+  if(mode==='campaign' && win) SAVE.beaten[1] = Math.max(SAVE.beaten[1]||0, stars);
+  let unlocked = null; if(mode==='campaign' && win && !SAVE.unlocked.includes('ballboy')){ SAVE.unlocked.push('ballboy'); unlocked = 'ballboy'; }
+  const ch = P0.char, L = SAVE.lvl[ch], cxp = Math.floor(finalScore/40), coins = ST.coins + Math.floor(finalScore/200); L.xp += cxp; SAVE.coins += coins; let ups = 0;
+  while(L.level < 100 && L.xp >= charNeed(L.level)){ L.xp -= charNeed(L.level); L.level++; ups++; } save();
+  if(!win && mode!=='pvp') heroSay(P0, 'death', true);
+  $('tT').textContent = mode==='pvp' ? (win?'VICTORY':'DEFEAT') : mode==='endless' ? `ENDLESS · WAVE ${wave}` : win ? 'WORLD 1 COMPLETE' : `${CHARS[ch].name.toUpperCase()} WENT DOWN`;
+  const rows = [['Dots eaten', ST.dots], ['Patterns cleared', ST.patterns], ['Ghosts killed', ST.ghosts], ['Coins', ST.coins], ['Props smashed', ST.props], ['Civilian casualties', ST.civ], ['Time', `${m}:${String(s).padStart(2,'0')}`], ['Difficulty', `${diff().label} · ${SAVE.set.speed}×`], ['SCORE', finalScore]];
+  if(mode==='pvp') rows.splice(3, 0, ['Your kills', P0.kills], ['Team score', `${PVP.kills[0]} – ${PVP.kills[1]}`]);
+  $('tRows').innerHTML = rows.map(([a,b],i)=>`<div><span>${a}</span><b data-v="${typeof b==='number'?b:''}" id="tr${i}">${typeof b==='number'?0:b}</b></div>`).join('');
+  $('stars').innerHTML = mode==='pvp' ? '' : [0,1,2,3,4].map(i=>`<span id="st${i}">★</span>`).join('');
+  $('tAcct').innerHTML = `${CHARS[ch].name} +${cxp} character XP${ups?` · <b style="color:#f6dc95">LEVEL UP → ${L.level}</b>`:''} · +${coins} coins${newBest?' · <b style="color:#ffd23f">NEW HIGH SCORE</b>':''}`;
+  $('unlockCard').classList.add('hide'); $('tally').classList.remove('hide'); $('hud').classList.add('hide');
+  let i = 0; const nums = rows.map((r,j)=>typeof r[1]==='number'?j:-1).filter(j=>j>=0);
+  const starStep = n => { if(n >= stars){ [1046,1318,1568,2093].forEach((f,k)=>tone(f, 0.25, 'square', 0.05, 0, null, k*0.1, 0.4));
+      if(unlocked){ const C = CHARS[unlocked]; $('unlockCard').innerHTML = `<div class="cz" style="font-size:12px;letter-spacing:.3em">NEW CHARACTER UNLOCKED</div><div class="cz" style="font-size:28px;color:#f6dc95;margin:6px 0">${C.name}</div><div>${C.desc}</div>`; $('unlockCard').classList.remove('hide'); noise(0.5,0.1); }
+      return; }
+    const el = $('st'+n); if(el) el.classList.add('on'); tone(880+n*180, 0.22, 'triangle', 0.08, 0, null, 0, 0.4); setTimeout(()=>starStep(n+1), 320); };
+  const countNext = ()=>{ if(state!=='tally') return; if(i >= nums.length){ starStep(0); return; } const j = nums[i++], el = $('tr'+j), target = +el.dataset.v; let k = 0; const steps = 16, t0 = performance.now();
+    const tm = setInterval(()=>{ k = Math.min(steps, Math.floor((performance.now()-t0)/30)+1); el.textContent = Math.round(target*k/steps).toLocaleString(); tone(500+k*60+i*40, 0.03, 'square', 0.03); if(k >= steps){ clearInterval(tm); setTimeout(countNext, 80); } }, 30); };
+  setTimeout(countNext, 300);
+  $('tCont').textContent = mode==='campaign' && win ? 'Continue' : 'Play Again';
+  $('tCont').onclick = ()=>{ if(mode==='campaign' && win){ toMenu(); worldSelect(); } else if(mode==='pvp') startRun('pvp', {size:PVP.size, target:PVP.target}); else startRun(mode); };
+  $('tMenu').onclick = toMenu;
+}
