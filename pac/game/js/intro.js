@@ -210,7 +210,7 @@ function overlay(b, t, f){
 // ---------------- play / stop ----------------
 function playIntro(done){ introDone = done; state = 'intro'; hideAllOverlays(); $('hud').classList.add('hide'); $('touch').classList.add('hide');
   buildIntro(); IO.eaten = 0; IO.lastShot = 0; IO.rows.forEach(r=>{ r.userData.gone = false; r.userData.eat = 0; r.scale.set(1,1,1); }); IO.moon.scale.setScalar(1); IP.length = 0;
-  ic.classList.remove('hide'); $('skip').classList.remove('hide'); introT = 0; introFired = {}; let lastI = performance.now(); audio(); setTrack('menu');
+  ic.classList.remove('hide'); $('skip').textContent = isMobile ? 'tap to skip' : 'click or any key to skip'; $('skip').classList.remove('hide'); introT = 0; introFired = {}; let lastI = performance.now(); audio(); setTrack('menu');
   renderPass.scene = IS; renderPass.camera = IC; afterimage.enabled = false; gradePass.enabled = false;
   const step = now=>{ const dt = Math.max(0, Math.min(0.05, (now-lastI)/1000)); lastI = now; introT += dt;
     try{ let b = 0; while(b < BEATS.length-1 && introT >= BEAT_AT[b+1]) b++; const t = introT - BEAT_AT[b], f = t/BEATS[b].d;

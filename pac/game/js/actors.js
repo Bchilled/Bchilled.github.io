@@ -57,7 +57,7 @@ let HEROES = []; const player = () => HEROES[0]; let heroId = 0;
 const CHARS = {
   pac:{name:'Pac', sub:'The Ghost Killer', desc:'A tattooed, broken man who\'s done eating your fruit salad. His jaw unhinges.', hp:110, speed:8.6, r:0.55, move:'warp', loadout:true,
     ladder:[['pas',['numbertwo','puke','shank']], ['act',['insurance','ragequit','deaddrop']], ['act',['binge','unhinged','glitter']]]},
-  ballboy:{name:'Ball Boy', sub:'The Trainer', desc:'Throws capsule balls. A creature pops out, does one move, and comes back.', hp:95, speed:8.8, r:0.45, move:'peaceout', loadout:false,
+  ballboy:{name:'Pokey Bro', sub:'The Trainer', desc:'Throws capsule balls. A creature pops out, does one move, and comes back.', hp:95, speed:8.8, r:0.45, move:'peaceout', loadout:false,
     // v0.9 (Brent: "I started with all the abilities instead of unlocking them like 1 2 3"): a creature at level 2, a passive at 3, the next creatures at 4 and 5
     ladder:[['act',['hottake','splashzone','jolt']], ['pas',['bramble','habit','tilt']], ['act',['hottake','splashzone','jolt']], ['act',['hottake','splashzone','jolt']]]}};
 function makeRig(char, team){ const r = LOOK.character(MODELS, char==='pac'?'pac':'ballboy', team===1 ? {tint:0x7a3a3a, tintMat:char==='pac'?'pac_vest':'jacket'} : {}); return r; }
@@ -118,7 +118,7 @@ const CIV_KINDS = ['raver','dancer','bouncer','bro'], CIVMAX = 70; const CIVM = 
 function buildCrowd(){ for(const k of CIV_KINDS){ const src = LOOK.rawPiece(MODELS, 'crowd', 'crowd.'+k); if(!src) continue; const g = LOOK.mergeColored(src);
   const body = new THREE.InstancedMesh(g, LOOK.hatchMat(0xffffff, {vertexColors:true}), CIVMAX), out = new THREE.InstancedMesh(g, LOOK.outlineMat(0.022), CIVMAX);
   initColors(body, CIVMAX); [body, out].forEach(m=>{ m.frustumCulled = false; m.count = 0; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); }); CIVM[k] = {body, out}; }
-  QUALITY_HOOKS.push(L=>{ for(const k in CIVM) CIVM[k].out.visible = L===2; }); }   // crowd outlines only on the high setting
+  QUALITY_HOOKS.push(L=>{ for(const k in CIVM) CIVM[k].out.visible = false; }); }   // v0.11 clean look: no crowd outlines (ghosts keep one silhouette line so they stand out)
 // v0.9: the club is PACKED, room by room — a queue outside behind the ropes, door staff, coat check and tickets, a pit full of
 // dancers, people leaning on the bar, bartenders, crew backstage, a band on the stage. Performers stay put and move on the spot.
 const PERFORMERS = [ // [kind, x, z, y, face] (face 0 = toward the camera)
@@ -252,8 +252,10 @@ function eatOrb(i, h){ const o = ORBS[i]; scene.remove(o.g); ORBS.splice(i,1); b
 // Cindercub FIRE breathes a cone · Splashpup WATER blasts a shove wave · Voltmoth SHOCK stuns a crowd · Bramblebud NATURE roots + thorns.
 // Each one: a capsule ball arcs out, POP, the creature calls its name (sound + label), shows a clear warning, does its move, beams home.
 const CRE = [];
-const CRE_INFO = {cindercub:{model:'cre.cindercub', el:'fire', name:'CINDERCUB', col:0xff7a20}, splashpup:{model:'cre.splashpup', el:'frost', name:'SPLASHPUP', col:0x5ad8ff},
-  voltmoth:{model:'cre.voltmoth', el:'shock', name:'VOLTMOTH', col:0xffd040}, bramblebud:{model:'cre.bramblebud', el:'nature', name:'BRAMBLEBUD', col:0x6fe08a}};
+// v0.11 (Brent: Pokey Bro's balls are "little funny versions" of the water / fire / grass starters plus an electric one): the boss's
+// team is the same four critters the player gets — the internal keys stay, the models and names change
+const CRE_INFO = {cindercub:{model:'cre.dragon', el:'fire', name:'DRAGON', col:0xff7a20}, splashpup:{model:'cre.frog', el:'frost', name:'FROG', col:0x5ad8ff},
+  voltmoth:{model:'cre.fluff', el:'shock', name:'FLUFFBALL', col:0xffd040}, bramblebud:{model:'cre.turnip', el:'nature', name:'TURNIP', col:0x6fe08a}};
 const CRE_STATS = {cindercub:{range:9, arc:1.1, dps:60, dur:2.2}, splashpup:{range:9, arc:1.4, dmg:16, knock:11}, voltmoth:{rad:5.5, stun:1.4, dmg:14}, bramblebud:{rad:5, dmg:10, root:2.2}};
 const LABELS = {};
 function labelSprite(text, col){ if(!LABELS[text]){ const c = document.createElement('canvas'); c.width = 512; c.height = 128; const g = c.getContext('2d'); g.font = '900 72px Cinzel, Georgia'; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -311,7 +313,7 @@ function updateCreatures(dt){
           else areaHit(o, c.x, c.z, R, dmgOf(o,'bramble',A.dmg*3), {slow:A.root, stun:0.6, el:'nature'}); }
         if(c.did && !c.isBoss && c.t < 0.6 + A.root) for(const e of foes) if(!e.dead && hyp(e.x-c.x, e.z-c.z) < R) hit(e, dmgOf(o,'bramble',A.dmg)*dt, o, {slow:0.3});
         if(c.t > 1.3){ c.state = 'back'; c.t = 0; } }
-      if(c.state==='back' && c.isBoss && BOSS){ BOSS.faced++; if(BOSS.faced===3) toast(null,'You\'ve seen enough of his team. Ball Boy can go down now.'); } }
+      if(c.state==='back' && c.isBoss && BOSS){ BOSS.faced++; if(BOSS.faced===3) toast(null,'You\'ve seen enough of his team. Pokey Bro can go down now.'); } }
     if(c.state==='back'){ if(!c.beamed){ c.beamed = true; zapLine(c.x, c.z, c.owner.x, c.owner.z, 0xff4a4a, 1); } c.model.scale.setScalar(Math.max(0.01, creBig(c)*(1 - c.t*4)));
       if(c.t > 0.25){ scene.remove(c.model); CRE.splice(i,1); } } }
 }
@@ -353,4 +355,4 @@ function bossBall(P0, n){ const m = LOOK.piece(MODELS,'creatures','cre.ball',{ou
 function bossDie(){ BOSS.alive = false; ST.boss = 1; addScore(6000); say('boss','die',true); burst(BOSS.x, 3, BOSS.z, 0xffffff, 220, 20); burst(BOSS.x, 2, BOSS.z, 0x41e4ff, 120, 14); SFX.boom(1.4); addShake(1);
   scene.remove(BOSS.rig.root); $('bossBar').classList.add('hide'); CRE.forEach(c=>{ scene.remove(c.ball); if(c.model) scene.remove(c.model); }); CRE.length = 0;
   for(const g of G) if(!g.dead) killGhost(g, player(), false); setTrack('club');
-  big('BALL BOY DOWN', 1600); slowmo = 1.4; setTimeout(()=>{ heroSay(player(),'bossKill',true); }, 600); setTimeout(()=>{ if(state==='play') startVacuum(); }, 1600); }
+  big('POKEY BRO DOWN', 1600); slowmo = 1.4; setTimeout(()=>{ heroSay(player(),'bossKill',true); }, 600); setTimeout(()=>{ if(state==='play') startVacuum(); }, 1600); }

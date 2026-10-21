@@ -1,6 +1,6 @@
-// PAC — look.js (v0.7). The shared art pipeline for the game and the model sheet.
-// Blender-built models (assets/*.glb) are loaded, and every material is swapped for the ink-hatch shader:
-// muted, matte, sketched strokes that are never filled solid; uGloss = shine of better gear, uEmit = epic glow.
+// PAC — look.js (v0.7; v0.11 clean look). The shared art pipeline for the game and the model sheet.
+// Blender-built models (assets/*.glb) are loaded, and every material is swapped for one shared shader — since v0.11 clean cel
+// shading (it was ink hatching before; Brent found it dirty); uGloss = shine of better gear, uEmit = epic glow.
 // Characters are rigid parts parented in Blender exactly like the game rig (hips → legs → feet, body → arms → hands),
 // so the node names ARE the bones. Crowds (clubgoers, ghosts) are merged into one coloured geometry for instancing.
 (function(){
@@ -21,25 +21,17 @@ const HATCH_VS = `varying vec3 vN; varying vec3 vW; varying vec3 vC; uniform flo
       vC *= instanceColor;
     #endif
     vec4 w = modelMatrix * p; vW = w.xyz; vN = normalize(mat3(modelMatrix) * n); gl_Position = projectionMatrix * viewMatrix * w; }`;
+// v0.11 (Brent: "the sketch look doesn't look too good ... it makes it look dirty ... everything is a different object, nothing's fluid"):
+// the hatch strokes are gone. Clean cel shading: a lit side and a soft shade side with a smooth edge (never black), a faint rim of
+// light round the silhouette, and no ink outlines round every part — so a body reads as one smooth shape in clean colour.
 const HATCH_FS = `uniform vec3 uTint; uniform vec3 uInk; uniform vec3 uLight; uniform float uTime; uniform float uGloss; uniform vec3 uEmit; uniform float uDensity; uniform float uFlash; uniform vec3 uRim; uniform float uGlow;
   varying vec3 vN; varying vec3 vW; varying vec3 vC;
-  float h(float n){ return fract(sin(n)*43758.5453); }
-  float strokes(vec2 p, float ang, float gap, float seed){ vec2 d = vec2(cos(ang), sin(ang)), q = vec2(-d.y, d.x);
-    float t = dot(p,d) + sin(dot(p,q)*0.045 + seed*7.0)*2.2 + sin(dot(p,q)*0.17 + seed)*0.7;
-    float f = abs(fract(t/gap) - 0.5)*gap; float br = step(0.2, h(floor(dot(p,q)/9.0) + floor(t/gap)*3.1 + seed));
-    return (1.0 - smoothstep(0.5, 1.3, f))*br; }
-  void main(){ vec3 n = normalize(vN); float ndl = clamp(dot(n, normalize(uLight)), 0.0, 1.0);
-    vec3 V = normalize(cameraPosition - vW); float rim = pow(1.0 - clamp(dot(n,V),0.0,1.0), 2.0);
-    float tone = ndl*0.7 + 0.3 - rim*0.22; float s8 = floor(uTime*8.0);
-    vec2 p = gl_FragCoord.xy + vec2(h(s8)*3.0, h(s8+1.7)*3.0); float g = 3.4*uDensity, ink = 0.0;
-    if(tone < 0.84) ink = max(ink, strokes(p, 0.78, g, 1.0+s8*0.13)*0.75);
-    if(tone < 0.6) ink = max(ink, strokes(p, -0.70, g, 2.0+s8*0.11));
-    if(tone < 0.4) ink = max(ink, strokes(p, 0.10, g*0.9, 3.0+s8*0.07));
-    if(tone < 0.22) ink = max(ink, strokes(p, 1.45, g*0.8, 4.0+s8*0.05));
-    vec3 base = uTint*vC;
-    vec3 col = mix(base*(0.78 + 0.42*tone), uInk, ink*0.78);
-    vec3 H = normalize(normalize(uLight) + V);
-    col += vec3(1.0)*pow(clamp(dot(n,H),0.0,1.0), 36.0)*uGloss*1.2 + rim*uGloss*0.35 + uEmit*(0.6+0.4*rim) + vec3(uFlash) + uRim*rim*0.9 + vC*uTint*rim*uGlow*1.6;
+  void main(){ vec3 n = normalize(vN); vec3 L = normalize(uLight); float ndl = dot(n, L);
+    vec3 V = normalize(cameraPosition - vW); float rim = pow(1.0 - clamp(dot(n,V),0.0,1.0), 3.0);
+    float band = smoothstep(-0.1, 0.3, ndl); float tone = mix(0.6, 1.0, band) + 0.1*clamp(ndl, 0.0, 1.0);
+    vec3 base = uTint*vC; vec3 col = base*tone;
+    vec3 H = normalize(L + V); float spec = pow(clamp(dot(n,H),0.0,1.0), 40.0);
+    col += vec3(1.0)*spec*(0.05 + uGloss*1.2) + rim*(base*0.35 + vec3(uGloss*0.35)) + uEmit*(0.6+0.4*rim) + vec3(uFlash) + uRim*rim*0.9 + vC*uTint*rim*uGlow*1.6;
     gl_FragColor = vec4(col, 1.0); }`;
 function hatchMat(tint, o={}){ const m = new THREE.ShaderMaterial({uniforms:Object.assign({uTint:{value:new THREE.Color(tint)}, uInk:{value:new THREE.Color(o.ink||0x15110d)},
   uGloss:{value:o.gloss||0}, uEmit:{value:new THREE.Color(o.emit||0)}, uDensity:{value:o.density||1}, uFlash:{value:0}, uRim:{value:new THREE.Color(o.rim||0x000000)}, uWave:{value:o.wave||0}, uGlow:{value:o.glow||0}}, hatchU),
@@ -51,16 +43,17 @@ const OUT_VS = `uniform float uTime; uniform float uW; uniform float uWave; floa
         p.x += sin(uTime*6.0 + p.z*9.0 + ip.x*1.7)*0.07*w*uWave; p.z += cos(uTime*5.0 + p.x*9.0 + ip.z*1.3)*0.07*w*uWave; p.y += sin(uTime*7.0 + atan(p.z,p.x)*6.0 + ip.x)*0.05*w*uWave; }
       p = (instanceMatrix * vec4(p,1.0)).xyz; n = mat3(instanceMatrix) * n;
     #endif
-    float s = floor(uTime*8.0); float j = 0.75 + 0.5*h(dot(position, vec3(12.9,78.2,37.7)) + s);
+    float j = 1.0;   // v0.11: steady line (the 8-fps boil was part of the sketchy look)
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(p + normalize(n)*uW*j, 1.0); }`;
 const outMats = {};
 function outlineMat(w=0.03, wave=0){ const k = w.toFixed(3)+'/'+wave; if(!outMats[k]) outMats[k] = new THREE.ShaderMaterial({uniforms:{uTime:hatchU.uTime, uW:{value:w}, uWave:{value:wave}}, vertexShader:OUT_VS,
   fragmentShader:`void main(){ gl_FragColor = vec4(0.045,0.038,0.03,1.0); }`, side:THREE.BackSide}); return outMats[k]; }
-function inked(geo, mat, w=0.03){ const g = new THREE.Group(); g.add(new THREE.Mesh(geo, outlineMat(w)), new THREE.Mesh(geo, mat)); return g; }
+const CLEAN = true;   // v0.11: no ink outlines (Brent: parts looked like separate objects)
+function inked(geo, mat, w=0.03){ const g = new THREE.Group(); if(!CLEAN) g.add(new THREE.Mesh(geo, outlineMat(w))); g.add(new THREE.Mesh(geo, mat)); return g; }
 
 // --- swap every GLB material for ink: same colour; "glow"/"neon" materials become flat emissive light
 function inkify(root, opt={}){
-  const mats = [], w = opt.outline ?? 0.022;
+  const mats = [], w = CLEAN ? 0 : (opt.outline ?? 0.022);
   const meshes = []; root.traverse(o=>{ if(o.isMesh) meshes.push(o); });
   for(const m of meshes){
     const src = m.material, name = (src.name||'').toLowerCase(), col = src.color ? src.color.clone() : new THREE.Color(1,1,1);
@@ -114,13 +107,13 @@ function showcase(M){
   const out = [];
   const add = (key, label, obj, h) => { if(obj) out.push({key, label, obj, h}); };
   const pac = character(M, 'pac'); if(pac) add('pac', 'PAC', pac.root);
-  const bb = character(M, 'ballboy'); if(bb) add('ballboy', 'BALL BOY', bb.root);
+  const bb = character(M, 'ballboy'); if(bb) add('ballboy', 'POKEY BRO', bb.root);
   for(const [n,l] of [['crowd.raver','RAVER'],['crowd.dancer','DANCER'],['crowd.bouncer','BOUNCER'],['crowd.bro','BRO']]){ const o = piece(M,'crowd',n); add(n.split('.')[1], l, o); }
   // v0.9: the seven ghost faces, each on a body in its colour
   for(const [t,c] of [['red',0xc0453f],['green',0x4aa860],['blue',0x4a7fd0],['purple',0x8a5ac8],['orange',0xd88a3a],['teal',0x3aa8a0],['black',0x3a3a44]]){ const g = piece(M,'ghost','ghost.body'); if(!g) continue;
     g.traverse(o=>{ if(o.isMesh && o.material.uniforms && o.material.userData.base && o.material.userData.base.r>0.9) o.material.uniforms.uTint.value.set(c); });
     const f = piece(M,'ghost','ghost.face.'+t, {outline:0.012}); if(f) g.add(f); add('ghost_'+t, t.toUpperCase(), g); }
-  for(const [n,l] of [['cre.cindercub','CINDERCUB'],['cre.splashpup','SPLASHPUP'],['cre.voltmoth','VOLTMOTH'],['cre.bramblebud','BRAMBLEBUD']]) add(n.split('.')[1], l, piece(M,'creatures',n));
+  for(const [n,l] of [['cre.frog','FROG'],['cre.dragon','DRAGON'],['cre.turnip','TURNIP'],['cre.fluff','FLUFFBALL'],['cre.cindercub','CINDERCUB'],['cre.splashpup','SPLASHPUP'],['cre.voltmoth','VOLTMOTH'],['cre.bramblebud','BRAMBLEBUD']]) add(n.split('.')[1], l, piece(M,'creatures',n));
   for(const [n,l] of [['story.emperor','THE EMPEROR'],['story.baron','BARON KABOOM'],['story.chrome','CHROME GUY'],['story.qwing','Q-WING'],['story.moon','QUARTER MOON'],['story.arcade','ARCADE PLANET']]) add(n.split('.')[1], l, piece(M,'story',n));
   return out;
 }

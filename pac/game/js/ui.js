@@ -109,7 +109,8 @@ const hexc = c => '#'+c.toString(16).padStart(6,'0');
 function buildSkillHud(){ const P0 = player(); if(!P0) return;
   $('skills').innerHTML = SLOT_DEF.map(([s,key,lab,small],i)=>{ const I = slotInfo(P0, s); const col = I && I.el ? hexc(EL[I.el].col) : '#6d5734';
     return (i===3?'<div class="sdiv"></div>':'')+`<div class="slot${small?' small':''}${I?'':' empty'}" id="sl_${s}" style="--el:${col}"><span class="key">${key}</span><div class="ic">${I?I.ic:'·'}</div><div class="nm">${I?I.nm:lab}</div><div class="cdv"></div><div class="cdn"></div></div>`; }).join('');
-  $('microRow').innerHTML = Object.keys(P0.perk).map(k=>`<div class="micro" title="${PERKS[k].n}">${PERKS[k].ic}</div>`).join('');
+  $('microRow').innerHTML = Object.keys(P0.perk).map(k=>`<div class="micro" title="${PERKS[k].n}">${PERKS[k].ic}</div>`).join('')
+    + (P0.bufl||[]).map(k=>`<div class="micro" title="${ABIL[k].name}">${ABIL[k].ic}<b>${(P0.rank[k]||0)+1}</b></div>`).join('');   // v0.11: the shared boosts and their level
   [['bA','bAi','a0'],['bB','bBi','a1'],['bC','bCi','a2']].forEach(([b,ic,s])=>{ const I = slotInfo(P0, s); $(ic).textContent = I ? I.ic : '🔒'; $(b).classList.toggle('locked', !I); $(b).style.setProperty('--el', I ? hexc(EL[I.el].col) : '#888'); });
   const m = slotInfo(P0,'move'); $('swipeHint').classList.toggle('locked', !m); $('swI').textContent = m ? m.ic : '🔒';
   $('pasRow').innerHTML = P0.pas.map(k=>k ? `<span style="--el:${hexc(EL[ABIL[k].el].col)}">${ABIL[k].ic}</span>` : '<span class="e">·</span>').join('');
@@ -140,13 +141,13 @@ function updateHud(){
     .filter(Boolean).map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join(''));
   // one short objective line
   let obj = '';
-  if(MODE==='campaign'){ obj = !P0.moveOk ? 'Eat the dots' : P0.level < 4 ? `Grow — the stage opens at level 4 (${P0.level}/4)` : BOSS && BOSS.alive && !BOSS.intro ? 'Get to the main stage' : BOSS && BOSS.alive ? 'Beat Ball Boy' : ''; }
+  if(MODE==='campaign'){ obj = !P0.moveOk ? 'Eat the dots' : P0.level < 4 ? `Grow — the stage opens at level 4 (${P0.level}/4)` : BOSS && BOSS.alive && !BOSS.intro ? 'Get to the main stage' : BOSS && BOSS.alive ? 'Beat Pokey Bro' : ''; }
   else if(MODE==='endless') obj = `Wave ${wave} · next in ${Math.ceil(waveT)}s`; else obj = `First to ${PVP.target}`;
   setTxt($('obj'), obj);
   // edge markers: coloured triangles toward things that matter (not every mob)
   const L = [];
   for(const b of BUFFS) L.push({x:b.x, z:b.z, col:hexc(BUFF_TYPES[b.type].col), lab:'', small:true});
-  if(MODE==='campaign' && BOSS && BOSS.alive){ if(gateOpen && !BOSS.intro) L.push({x:0, z:STAGE_Z, col:'#ffd23f', lab:'STAGE'}); if(BOSS.awake) L.push({x:BOSS.x, z:BOSS.z, col:'#ff4a2a', lab:'BALL BOY'}); }
+  if(MODE==='campaign' && BOSS && BOSS.alive){ if(gateOpen && !BOSS.intro) L.push({x:0, z:STAGE_Z, col:'#ffd23f', lab:'STAGE'}); if(BOSS.awake) L.push({x:BOSS.x, z:BOSS.z, col:'#ff4a2a', lab:'POKEY BRO'}); }
   for(const o of ORBS) L.push({x:o.x, z:o.z, col:'#4aa8ff', lab:'ORB'});
   for(const g of G) if(g.big) L.push({x:g.x, z:g.z, col:'#'+GHOST_TYPES[g.type].col.toString(16).padStart(6,'0'), lab:''});
   if(blueT > 0){ let c = 0; for(const g of G) if(!g.big && hyp(g.x-P0.x,g.z-P0.z) > 14 && c++ < 6) L.push({x:g.x, z:g.z, col:'#6ab0ff', lab:'', small:true}); }
@@ -185,6 +186,7 @@ function screenFlash(col='#fff3c0', o=0.65){ const f = $('flash'); f.style.backg
 function levelBurst(h){ SFX.level(); big('LEVEL '+h.level, 1000, 'lvl'); slowmo = Math.max(slowmo, 0.45); screenFlash('#fff1b0', 0.55); confetti(90);
   ringFx(h.x, h.z, 7, 0xffe14d, 0.6); ringFx(h.x, h.z, 4, 0xffffff, 0.4); burst(h.x, 1.5, h.z, 0xffe14d, 80, 14); burst(h.x, 1.5, h.z, 0xffffff, 30, 8); addShake(0.2); }
 function offerInfo(o, h){
+  const SI = skOfferInfo(o, h); if(SI) return SI;   // v0.11: the VS set's cards (levels, boosts, evolutions, stones)
   if(o.kind==='move'){ const M = MOVES[CHARS[h.char].move]; return {k:'MOVEMENT · '+(isMobile?'swipe':'SPACE'), n:M.name, d:M.d, ic:M.ic, el:'void', badge:'NEW'}; }
   if(o.kind==='ab'){ const A = ABIL[o.k], slot = (A.side==='act'?h.act:h.pas).indexOf(null); return {k:A.side==='pas' ? 'PASSIVE · fights by itself' : 'ACTIVE · '+(isMobile?'button ':'')+KEYLAB[slot], n:A.name, d:A.d, ic:A.ic, el:A.el, badge:'NEW'}; }
   if(o.kind==='swap'){ const A = ABIL[o.k], old = (A.side==='act'?h.act:h.pas)[o.slot], r = h.rank[old]||0; return {k:`REPLACES ${old?ABIL[old].name.toUpperCase():''}${r?' (+'+r+' LOST)':''}`, n:A.name, d:A.d, ic:A.ic, el:A.el, badge:'SWAP'}; }
@@ -229,8 +231,8 @@ const seg = (id, vals, cur, lab) => `<span class="seg" id="${id}">${vals.map(v=>
 function worldSelect(){ const b1 = SAVE.beaten[1];
   openSub(`<h2>New Game</h2><div class="note">Playing as ${CHARS[SAVE.char].name}. Worlds unlock in order.</div>
    <div class="row" style="margin:16px 0">
-    <div class="card" id="w1"><div class="ic">🪩</div><div class="k">WORLD 1</div><div class="n">The Club</div><div class="d">Eat your way up the club, room by room, to the main stage. Boss: Ball Boy.${b1?`<br><span style="color:#ffd23f">${'★'.repeat(b1)}${'☆'.repeat(5-b1)}</span>`:''}</div></div>
-    <div class="card lock"><div class="ic">🔒</div><div class="k">WORLD 2</div><div class="n">${b1?'Coming soon':'Locked'}</div><div class="d">${b1?'Ball Boy\'s world is being built.':'Beat World 1 to unlock.'}</div></div>
+    <div class="card" id="w1"><div class="ic">🪩</div><div class="k">WORLD 1</div><div class="n">The Club</div><div class="d">Eat your way up the club, room by room, to the main stage. Boss: Pokey Bro.${b1?`<br><span style="color:#ffd23f">${'★'.repeat(b1)}${'☆'.repeat(5-b1)}</span>`:''}</div></div>
+    <div class="card lock"><div class="ic">🔒</div><div class="k">WORLD 2</div><div class="n">${b1?'Coming soon':'Locked'}</div><div class="d">${b1?'Pokey Bro\'s world is being built.':'Beat World 1 to unlock.'}</div></div>
    </div>
    <table style="width:100%"><tr><td class="cz" style="font-size:13px;padding:6px 10px 6px 0;width:1%;white-space:nowrap">Difficulty</td><td>${seg('segD',['easy','normal','hard'],SAVE.set.diff,v=>DIFF[v].label)}</td></tr>
    <tr><td class="cz" style="font-size:13px;padding:6px 10px 6px 0;white-space:nowrap">Game speed</td><td>${seg('segS',[0.75,1,1.25,1.5],SAVE.set.speed,v=>v+'×')}</td></tr></table>
@@ -304,13 +306,13 @@ function renderSheet(){
         <div class="note" style="margin-top:8px">A run holds 3 actives and 3 passives. Once a side is full, a new one only comes as a swap — and the swapped slot loses its upgrades.</div>`; }
     if(sheetTab==='rules') h = `<table><tr><td>Dots</td><td>Eat them to grow. Finish a whole moving pattern and its last dot explodes for a bonus and stacks HYPER.</td></tr>
       <tr><td>Levels</td><td>Level 1 gives your move. Level 2 a passive, levels 3 and 4 your first two actives. After that each level is a random mix: new abilities while you have room (3 actives, 3 passives), upgrades, stats, perks — and swaps once a side is full (the swapped slot loses its upgrades).</td></tr>
-      <tr><td>Actives</td><td>With Auto-cast on (Settings) they fire by themselves at the best target when ready — Ball Boy first. Press one to fire it early. On a phone, drag a button to aim it; hold a button and slide it onto another to swap them. On a computer, swap keys on the Abilities tab here.</td></tr>
+      <tr><td>Actives</td><td>With Auto-cast on (Settings) they fire by themselves at the best target when ready — Pokey Bro first. Press one to fire it early. On a phone, drag a button to aim it; hold a button and slide it onto another to swap them. On a computer, swap keys on the Abilities tab here.</td></tr>
       <tr><td>Colours</td><td>Every ability is one of the 7 colours: fire, toxic, frost, void, shock, nature, shadow. Its effects look and sound like it.</td></tr>
       <tr><td>Power-ups</td><td>Glowing capsules show up now and then: rage, speed, magnet, rapid fire, a shield, double XP. Ten seconds each.</td></tr>
       <tr><td>Ghosts</td><td>Seven colours, one per stat. Each colour drops its own bonus. A new colour first shows up as one BIG ghost.</td></tr>
       <tr><td>Blue orb</td><td>The ghosts scatter and you can eat them for a few seconds.</td></tr><tr><td>Fruit</td><td>Heals you.</td></tr><tr><td>Coins</td><td>Kept after the run. Spend them in Loadout.</td></tr>
       <tr><td>Clubgoers</td><td>They run from you. Eating one costs energy and scores nothing.</td></tr><tr><td>Furniture</td><td>Walk into it to tear through (costs energy), or blow it up.</td></tr>
-      <tr><td>Main stage</td><td>Opens at level 4. Ball Boy throws four creatures — fire, water, shock, plant. He can't go down until you've faced three of them.</td></tr></table>`;
+      <tr><td>Main stage</td><td>Opens at level 4. Pokey Bro throws four creatures — fire, water, shock, plant. He can't go down until you've faced three of them.</td></tr></table>`;
     if(sheetTab==='set') h = settingsHtml();
     setTimeout(wireSwapRows, 0);
     $('sheetFoot').innerHTML = `<button class="btn" id="fRes">Resume</button><button class="btn" id="fMenu">Quit to Menu</button><button class="btn" id="fQuit">Quit Game</button>`;

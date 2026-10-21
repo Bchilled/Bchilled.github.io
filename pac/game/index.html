@@ -6,8 +6,30 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <!--
-  PAC — v0.10.0 (Claude, 2026-10-21) — files: index.html (layout + styles), look.js (ink look + model loader),
-  js/core.js, js/world.js, js/dress.js, js/actors.js, js/abilities.js, js/ui.js, js/intro.js, js/main.js, assets/*.glb (Blender), vendor/ (three r128).
+  PAC — v0.11.0 (Claude, 2026-10-21) — files: index.html (layout + styles), look.js (clean look + model loader),
+  js/core.js, js/world.js, js/dress.js, js/actors.js, js/abilities.js, js/skilldata.js (generated), js/skills.js, js/ui.js, js/intro.js,
+  js/main.js, assets/*.glb (Blender), vendor/ (three r128). tools/build_skilldata.py rebuilds js/skilldata.js from design/abilities.json.
+  CHANGELOG v0.11.0 — from Brent (2026-10-21 14:59-15:04): "the first three abilities are dog shit … you haven't taken anything from
+  vampire survivor, I'm asking you to change it"; "the sketch look … makes it look dirty … nothing's fluid"; "where's my game intro";
+  "loading the club … you're in the game menu"; Pokey Bro: "Squirtle, Charmander and Bulbasaur … something like Pikachu … funny versions".
+   + THE VAMPIRE SURVIVORS MOVE SETS replace the old abilities (no toggle). Carlon's conversion (design/abilities.json) is loaded as data
+     and every ability does exactly what its card says: Pac — Homing Pellet (Magic Wand), Orbit Dots (King Bible), Bad Breath (Garlic),
+     Chomp (Whip), Fruit Lob (Santa Water), Crumb Trail (Shadow Pinion), rares Ghost Drop (Lightning Ring) and Pellet Flash (Pentagram).
+     Levels 2-8 are the VS weapon's own level table; the card says what the next level changes. (js/skills.js, js/skilldata.js)
+   + Shared boosts (more damage, faster cooldowns, bigger area, faster shots, longer effects, one more) take no slot and level to 5.
+     They replace the damage / cooldown / area stat cards. (js/skills.js skOffers, js/abilities.js randomOffers)
+   + EVOLUTIONS: an ability at level 8 + its partner boost offers its MYTHIC on the next level-up (first card); a mythic then gets
+     offered one of the seven STONES (fire burns, frost chills, shock arcs, toxic puddles, void pulls, nature heals, shadow crits —
+     working effects until Brent rules). (js/skills.js skEvos/skEvolve/skStoneOffer/skHit)
+   + POKEY BRO (was Ball Boy): his pick at level 2 is a starter — a goggled frog that spits a knockback jet (water), a baby dragon
+     with a birthday candle that burps fireballs (fire), an angry turnip that lashes vines (grass); then a static fluffball that
+     calls lightning (electric), the ball throw and the frog belly-flop; each pops out of its ball, does its move, goes back in,
+     and evolves at level 8. The boss throws the same four. (game/tools/build_skilldata.py, models/blender/creatures.py, js/actors.js)
+   + CLEAN LOOK: the hatch strokes and the ink outline round every part are gone — smooth cel shading in clean colour; ghosts keep
+     one steady outline so they stand out. Faster too. (look.js, js/actors.js)
+   + THE INTRO plays first: once loaded, one tap or key starts it (browsers need a tap for sound), then the menu; a tap or key skips.
+     The loading line no longer says "the club". (js/main.js boot, js/intro.js, index.html)
+   + Shots fly over furniture and stop at real walls; fast homing shots turn tight enough to land. (js/skills.js skOut)
   CHANGELOG v0.10.0 — from Brent's v0.9 playtest (2026-10-21 13:32-13:39): "fails at satisfaction", "not Vampire Survivors pace",
   "incredibly slow to move", "blue ball… can't run", "ghosts blend in", "first level a bit chaotic — just bad guys", "lanes and guided paths".
    + THE SWARM: a Vampire Survivors-style director keeps a minimum number of bad guys alive that rises every minute, topped up
@@ -262,6 +284,7 @@ body:not(.mobile) #touch{display:none}
 .row{display:flex;gap:12px;flex-wrap:wrap}
 #loading{position:absolute;inset:0;z-index:50;background:#05030a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;font-family:Cinzel;color:var(--dim);letter-spacing:.2em;font-size:13px;text-align:center;padding:20px}
 #loading b{font-size:64px;color:var(--gold2);letter-spacing:.08em;text-shadow:0 0 30px rgba(255,79,184,.45)}
+#loading.ready{cursor:pointer} #loading.ready span{animation:blinkS 1.4s ease-in-out infinite} @keyframes blinkS{50%{opacity:.35}}
 #mainMenu{background:linear-gradient(90deg,rgba(0,0,0,.9) 0%,rgba(0,0,0,.66) 32%,rgba(0,0,0,0) 58%);justify-content:flex-start}
 #mmLeft{position:absolute;left:6%;top:6%;bottom:6%;display:flex;flex-direction:column;gap:8px;width:min(330px,86%)}
 #logo{font-family:Cinzel;font-weight:900;font-size:92px;line-height:.9;color:var(--gold2);text-shadow:0 0 34px rgba(255,79,184,.5),0 4px 0 #5b3f12}
@@ -370,7 +393,7 @@ body.mobile #mmAcct{left:5%;right:auto;bottom:auto;top:96px;font-size:11px}
    <div id="scoreBox"><div class="lab">SCORE · BEST <span id="bestN">0</span></div><div id="scoreN">0</div></div>
    <div id="scoreDet" class="panel"></div>
    <div id="pvpBox" class="panel hide"></div>
-   <div id="bossBar" class="hide"><div class="bn">BALL BOY</div><div class="bb"><i id="bossHp"></i></div><div id="bossNote"></div></div>
+   <div id="bossBar" class="hide"><div class="bn">POKEY BRO</div><div class="bb"><i id="bossHp"></i></div><div id="bossNote"></div></div>
    <div id="gHp" class="globe hp"><div class="fill" id="gHpF"></div><div class="glass"></div><span id="gHpT"></span></div>
    <div id="gEn" class="globe mp"><div class="fill" id="gEnF"></div><div class="glass"></div><span id="gEnT"></span></div>
    <div id="buffs"></div>
@@ -429,7 +452,7 @@ body.mobile #mmAcct{left:5%;right:auto;bottom:auto;top:96px;font-size:11px}
    <div class="row" style="justify-content:center;margin-top:14px"><button class="btn" id="tCont">Continue</button><button class="btn" id="tMenu">Main Menu</button></div>
   </div></div>
   <canvas id="introC" class="hide"></canvas><div id="skip" class="hide">click or any key to skip</div>
-  <div id="loading"><b>PAC</b><span>Loading the club…</span></div>
+  <div id="loading"><b>PAC</b><span>Loading…</span></div>
  </div>
 </div>
 <script src="vendor/three.min.js"></script>
@@ -440,6 +463,8 @@ body.mobile #mmAcct{left:5%;right:auto;bottom:auto;top:96px;font-size:11px}
 <script src="js/dress.js"></script>
 <script src="js/actors.js"></script>
 <script src="js/abilities.js"></script>
+<script src="js/skilldata.js"></script>
+<script src="js/skills.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/intro.js"></script>
 <script src="js/main.js"></script>

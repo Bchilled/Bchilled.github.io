@@ -37,7 +37,7 @@ const ABIL = {
   // ---------- ACTIVES ----------
   insurance:{side:'act', who:'pac', el:'void',  ic:'🫧', name:'Life Insurance', d:'A bubble soaks hits for 5 s, then the policy pays out: most of it back as health.', cd:9, absorb:70, dur:5},
   ragequit: {side:'act', who:'pac', el:'shock', ic:'💢', name:'Rage Quit', d:'Flips the table. A lightning blast all around him shoves everything back.', cd:5, dmg:36, rad:10, knock:8},
-  deaddrop: {side:'act', who:'pac', el:'shadow',ic:'🪦', name:'Dead Drop', d:'Leaps onto Ball Boy or the thickest crowd (or where you aim) — untouchable in the air — and lands like a coffin lid.', cd:5.5, dmg:42, rad:5.5, dist:11},
+  deaddrop: {side:'act', who:'pac', el:'shadow',ic:'🪦', name:'Dead Drop', d:'Leaps onto Pokey Bro or the thickest crowd (or where you aim) — untouchable in the air — and lands like a coffin lid.', cd:5.5, dmg:42, rad:5.5, dist:11},
   binge:    {side:'act', who:'pac', el:'fire',  ic:'🔴', name:'Power Pellet Binge', d:'Swallows a power pellet whole. Goes huge for 6 s, sucks ghosts in and eats everything he touches.', cd:16, dur:6, dps:90},
   unhinged: {side:'act', who:'pac', el:'shadow',ic:'🦷', name:'Unhinged', d:'His jaw comes off the hinge. Lunges at the nearest threat and swallows the whole cone in front of him.', cd:3.2, dmg:78, range:12, arc:2.1},
   glitter:  {side:'act', who:'pac', el:'toxic', ic:'✨', name:'Toxic Glitter', d:'6 s of top speed, trailing a glitter cloud that eats through the swarm.', cd:12, dur:6, dps:34},
@@ -51,7 +51,7 @@ const ABIL = {
   // Ball Boy unlocks these one at a time (v0.9): each throws a creature that does one move and comes back
   hottake:  {side:'act', who:'ballboy', el:'fire',  ic:'🔥', name:'Hot Take', d:'Cindercub lands by the nearest threat (or where you aim) and breathes fire on it.', cd:4.5},
   splashzone:{side:'act',who:'ballboy', el:'frost', ic:'💧', name:'Splash Zone', d:'Splashpup lands where you aim and blasts a wave that shoves everything back.', cd:6},
-  jolt:     {side:'act', who:'ballboy', el:'shock', ic:'⚡', name:'Jolt', d:'Voltmoth flutters to Ball Boy or the biggest crowd and zaps it stiff.', cd:6.5}};
+  jolt:     {side:'act', who:'ballboy', el:'shock', ic:'⚡', name:'Jolt', d:'Voltmoth flutters to Pokey Bro or the biggest crowd and zaps it stiff.', cd:6.5}};
 const MOVES = {warp:{name:'Warp Tunnel', ic:'🌀', d:'Blink a few metres — through ghosts, crowds and anything thin.', cost:20, cd:2, dist:8},
                peaceout:{name:'Peace Out', ic:'👟', d:'A quick dash. Untouchable while you dash.', cost:15, cd:2.2, dist:7}};
 const STATUP = {hp:{n:'+20 Max Health', ic:'❤️'}, spd:{n:'+6% Move Speed', ic:'👟'}, dmg:{n:'+10% Damage', ic:'🗡️'}, cdr:{n:'-8% Cooldowns', ic:'⏱️'}, area:{n:'+12% Area', ic:'⭕'},
@@ -65,7 +65,11 @@ const RUN_CAP = 60, RANK_MAX = 7;   // an ability has 8 levels like a Vampire Su
 const XPC = [0]; for(let L=1; L<=RUN_CAP; L++){ const inc = L===1?25 : L===2?45 : L===3?70 : L===4?95 : L<=25 ? 85 + (L-5)*20 : 485 + (L-25)*30; XPC.push(XPC[L-1]+inc); }
 const shopList = () => Object.keys(ABIL).filter(k=>ABIL[k].req);
 // which abilities can show up for this hero (bought shop abilities only for the player's Pac)
-function canGet(h, k){ const A = ABIL[k]; if(A.who !== 'all' && A.who !== h.char) return false;
+function canGet(h, k){ const A = ABIL[k];
+  // v0.11: the Vampire Survivors set (skills.js) replaces the old abilities for every character that has one (Brent: "I'm asking you to change it")
+  if(skHas(h.char) !== !!A.sk) return false;
+  if(A.sk) return A.sk.tier !== 'mythic' && A.side !== 'buff' && (A.who === 'all' || A.who === h.char);
+  if(A.who !== 'all' && A.who !== h.char) return false;
   // v0.10: the Poke Bro only gets his own creature moves (his full set to 25 is being written)
   if(h.char==='ballboy' && A.who==='all') return false; if(A.req && h.isPlayer && h.char==='pac' && !SAVE.pac.bought.includes(k)) return false; if(A.req && h.isPlayer && h.char!=='pac') return false; return true; }
 
@@ -89,10 +93,10 @@ const freeSlot = (h, side) => (side==='act' ? h.act : h.pas).indexOf(null);
 function offersFor(h){
   if(!h.moveOk) return [{kind:'move'}];
   // the fixed ladder (Brent's picks): the 1st passive, then the 1st and 2nd actives, come from set lists of three
-  const C = CHARS[h.char], nPas = h.pas.filter(Boolean).length, nAct = h.act.filter(Boolean).length;
-  if(C.ladder){ let pSeen = 0, aSeen = 0;
-    for(const [side, list] of C.ladder){ const have = side==='pas' ? nPas : nAct, idx = side==='pas' ? pSeen++ : aSeen++;
-      const left = list.filter(k=>!held(h).includes(k));   // v0.9: Ball Boy's ladder offers the same three creatures until he has them all
+  const C = CHARS[h.char], nPas = h.pas.filter(Boolean).length, nAct = h.act.filter(Boolean).length, ladder = skHas(h.char) ? skLadder(h.char) : C.ladder;   // v0.11: the VS set's commons
+  if(ladder){ let pSeen = 0, aSeen = 0;
+    for(const [side, list] of ladder){ const have = side==='pas' ? nPas : nAct, idx = side==='pas' ? pSeen++ : aSeen++;
+      const left = list.filter(k=>!held(h).includes(k));   // v0.9: Pokey Bro's ladder offers the same three creatures until he has them all
       if(have === idx && freeSlot(h, side) >= 0 && left.length) return left.map(k=>({kind:'ab', k})); } }
   return randomOffers(h);
 }
@@ -101,22 +105,27 @@ function randomOffers(h){
   const c = [], hk = held(h);
   for(const side of ['pas','act']){ const full = freeSlot(h, side) < 0;
     for(const k in ABIL){ const A = ABIL[k]; if(A.side !== side || hk.includes(k) || !canGet(h,k)) continue;
-      if(!full) c.push({kind:'ab', k, w:1.5});
+      if(!full) c.push({kind:'ab', k, w:A.sk && A.sk.tier==='rare' ? 0.8 : 1.5});
       else { const list = side==='act' ? h.act : h.pas; let tgt = 0; for(let i=1;i<3;i++) if((h.rank[list[i]]||0) < (h.rank[list[tgt]]||0) || ((h.rank[list[i]]||0) === (h.rank[list[tgt]]||0) && Math.random()<0.5)) tgt = i;
         c.push({kind:'swap', k, slot:tgt, w:0.9}); } } }
   // v0.10 weights (Brent: "a good chance to rank up into those abilities multiple times rather than choosing new ones";
   // "not everything is a new ability — sometimes stats, buffs"): rank-ups lead, new abilities are rarer, stats show up often
-  for(const k of hk) if((h.rank[k]||0) < RANK_MAX) c.push({kind:'rank', k, w:5.0});
-  for(const s in STATUP) c.push({kind:'stat', k:s, w:h.level > 25 ? 1.6 : 0.8});
+  const vs = skHas(h.char);
+  for(const k of [...hk, ...(h.bufl||[])]) if((h.rank[k]||0) < rankMax(k)) c.push({kind:'rank', k, w:5.0});
+  // v0.11: damage / cooldown / area level-ups are replaced by the shared boosts (they need no slot)
+  for(const s in STATUP) if(!(vs && SK_STAT_SKIP.has(s))) c.push({kind:'stat', k:s, w:h.level > 25 ? 1.6 : 0.8});
+  if(vs) skOffers(h, c);
   for(const p in PERKS) if(!h.perk[p]) c.push({kind:'perk', k:p, w:0.7});
   const out = []; const nOf = kd => out.filter(o=>o.kind===kd).length;
   while(out.length < 3 && c.length){ const tot = c.reduce((a,b)=>a+b.w,0); let r = Math.random()*tot, i = 0; for(;i<c.length;i++){ r -= c[i].w; if(r<=0) break; }
     const o = c.splice(Math.min(i,c.length-1),1)[0];
-    if((o.kind==='swap' && nOf('swap')) || (o.kind==='stat' && nOf('stat')) || (o.kind==='perk' && nOf('perk')) || (o.kind==='ab' && nOf('ab') >= 2)) continue;   // variety: never three of a kind
+    if((o.kind==='swap' && nOf('swap')) || (o.kind==='stat' && nOf('stat')) || (o.kind==='perk' && nOf('perk')) || (o.kind==='ab' && nOf('ab') >= 2) || (o.kind==='buff' && nOf('buff'))) continue;   // variety: never three of a kind
     out.push(o); }
+  // v0.11: an evolution that's ready always takes the first card; a mythic without a stone offers one on the second
+  if(vs){ const ev = skEvos(h); if(ev.length){ out.unshift(ev[0]); if(out.length > 3) out.pop(); } const so = skStoneOffer(h); if(so){ out.splice(Math.min(1, out.length), 0, so); if(out.length > 3) out.pop(); } }
   return out;
 }
-function clearSlotFx(h, k){ if(k==='coldturkey' && h.fx.cold){ scene.remove(h.fx.cold); h.fx.cold = null; } if(k==='pepper' && h.fx.orb){ h.fx.orb.forEach(o=>scene.remove(o)); h.fx.orb = []; }
+function clearSlotFx(h, k){ if(ABIL[k] && ABIL[k].sk) skClear(h, k); if(k==='coldturkey' && h.fx.cold){ scene.remove(h.fx.cold); h.fx.cold = null; } if(k==='pepper' && h.fx.orb){ h.fx.orb.forEach(o=>scene.remove(o)); h.fx.orb = []; }
   if(k==='exwife') for(let i=ALLIES.length-1;i>=0;i--) if(ALLIES[i].owner===h && !ALLIES[i].temp){ scene.remove(ALLIES[i].g); ALLIES.splice(i,1); } }
 const KEYS = () => isMobile ? ['A','B','C'] : ['left click','right click','E'];
 function applyChoice(h, o){
@@ -126,12 +135,16 @@ function applyChoice(h, o){
   else if(o.kind==='swap'){ const A = ABIL[o.k], list = A.side==='act' ? h.act : h.pas, old = list[o.slot]; if(old){ clearSlotFx(h, old); delete h.rank[old]; } list[o.slot] = o.k; delete h.rank[o.k];
     if(h.isPlayer) toast(null, `${A.name} replaced ${old?ABIL[old].name:'it'}${A.side==='act'?' on '+KEYS()[o.slot]:''}. Its upgrades are gone.`, 3600); }
   else if(o.kind==='rank'){ h.rank[o.k] = (h.rank[o.k]||0)+1; }
+  // v0.11 VS set: a shared boost (no slot), an evolution into a mythic, a stone set into a mythic
+  else if(o.kind==='buff'){ (h.bufl = h.bufl || []).push(o.k); h.rank[o.k] = 0; }
+  else if(o.kind==='evo'){ skEvolve(h, o); }
+  else if(o.kind==='stone'){ (h.stone = h.stone || {})[o.k] = o.el; if(h.isPlayer) toast(null, `${SK_STONE_N[o.el]} set into ${ABIL[o.k].name}. ${SK_STONE[o.el]}`, 4000); }
   else if(o.kind==='perk'){ h.perk[o.k] = 1; if(o.k==='thick') h.mods.armor = Math.min(0.6, h.mods.armor+0.1); }
   else if(o.kind==='stat'){ const m = h.mods; ({hp:()=>{ h.maxhp += 20; h.hp += 20; }, spd:()=>m.speed*=1.06, dmg:()=>m.dmg*=1.1, cdr:()=>m.cdr*=0.92, area:()=>m.area*=1.12, pick:()=>m.pickup*=1.3,
     regen:()=>m.regen*=1.5, armor:()=>m.armor=Math.min(0.6, m.armor+0.06), crit:()=>m.crit+=0.05, heal:()=>m.hpRegen+=1})[o.k](); }
   if(h.isPlayer) buildSkillHud();
 }
-const cdOf = (h,k) => (ABIL[k].cd||1) * h.mods.cdr * Math.pow(0.92, h.rank[k]||0) / (h.buff.cd>0?1.4:1);
+const cdOf = (h,k) => ABIL[k].sk ? skCd(h,k) : (ABIL[k].cd||1) * h.mods.cdr * Math.pow(0.92, h.rank[k]||0) / (h.buff.cd>0?1.4:1);
 const dmgOf = (h,k,base) => base * h.mods.dmg * (1 + 0.25*(h.rank[k]||0)) * (h.buff.dmg>0?1.25:1);
 const areaOf = (h,k,base) => base * h.mods.area * (1 + 0.1*(h.rank[k]||0));
 const shots = (h, n) => n + (h.perk.multishot ? 1 : 0);
@@ -225,6 +238,7 @@ function skullMesh(){ if(!skullProto){ const b = LOOK.rawPiece(MODELS,'ghost','g
 
 // ---------------- per-hero runtime: passives fire themselves, actives keep running ----------------
 function runPassive(h, k, dt){
+  if(ABIL[k].sk){ skRunPassive(h, k, dt); return; }   // v0.11: the VS set runs in skills.js
   const A = ABIL[k]; if(h.cd[k]==null) h.cd[k] = 0.6; const E = EL[A.el];
   if(k==='pepper'){ h.fx.orb = h.fx.orb || []; const n = 2 + Math.floor((h.rank[k]||0)/2); while(h.fx.orb.length < n){ const g = new THREE.Group(); g.add(new THREE.Mesh(new THREE.ConeGeometry(0.22,0.7,10), neonMat(0xff3a10)), glow(0xff7a20,2.6,0.8)); g.children[0].rotation.z = Math.PI/2; scene.add(g); h.fx.orb.push(g); }
     const R = 3.2*h.mods.area; h.fx.orb.forEach((o,i)=>{ const a = gt*3 + i/h.fx.orb.length*6.283; o.position.set(h.x+Math.cos(a)*R, 1, h.z+Math.sin(a)*R); o.rotation.y = -a; if(Math.random()<0.25) burst(o.position.x, 1, o.position.z, 0xff9a30, 1, 2, -2, 0.4);
@@ -260,6 +274,7 @@ function runHero(h, dt){
   for(const k in h.cd) h.cd[k] -= dt;
   for(const k in h.buff) h.buff[k] = Math.max(0, h.buff[k]-dt);
   for(const k of h.pas) if(k) runPassive(h, k, dt);
+  for(const k of h.act) if(k && ABIL[k].sk) skTickActive(h, k, dt);   // v0.11: actives with lasting parts (crumbs, a charge) keep running between presses
   if(h.fx.spikeT > 0){ h.fx.spikeT -= dt; const len = areaOf(h,'shank',ABIL.shank.len), k = Math.sin(clamp(h.fx.spikeT/0.22,0,1)*Math.PI);
     h.spikes.forEach((s,i)=>{ const a = h.face + (i?1:-1)*Math.PI/2; s.visible = true; s.scale.set(1.3, 1.3, Math.max(0.01, len*k)); s.position.set(h.x+Math.sin(a)*(0.6+len*k/2), 0.95, h.z+Math.cos(a)*(0.6+len*k/2)); s.rotation.set(0, a, 0); }); }
   else h.spikes.forEach(s=>s.visible = false);
@@ -301,7 +316,10 @@ function lockedMsg(h, idx){ if(!h.isPlayer || h.lockMsgT) return; h.lockMsgT = 1
 function useActive(h, idx){
   const k = h.act[idx]; if(!k){ lockedMsg(h, idx); return false; }
   if(h.dead || h.stunT > 0 || (h.cd[k]||0) > 0 || h.hopT > 0) return false;
-  const A = ABIL[k]; h.cd[k] = cdOf(h,k); if(h.isPlayer){ flashSlot('a'+idx); SFX.el(A.el); }
+  const A = ABIL[k];
+  // v0.11 VS set: fire it (auto-cast or your press); nothing to hit = no cooldown spent
+  if(A.sk){ if(!skFire(h, k, h.autoNow ? 'auto' : 'press')) return false; h.cd[k] = cdOf(h,k); if(h.isPlayer){ flashSlot('a'+idx); SFX.el(A.el); } return true; }
+  h.cd[k] = cdOf(h,k); if(h.isPlayer){ flashSlot('a'+idx); SFX.el(A.el); }
   const aimX = h.ax, aimZ = h.az, ang = Math.atan2(aimX, aimZ);
   if(k==='insurance'){ h.shieldT = A.dur; h.shieldHP = A.absorb*(1+0.25*(h.rank[k]||0)); h.absorbed = 0; SFX.shield(); elRing('void', h.x, h.z, 3, 0.5, true); elBurst('void', h.x, 1, h.z, 30, 6); }
   else if(k==='ragequit'){ const R = areaOf(h,k,A.rad); areaHit(h, h.x, h.z, R, dmgOf(h,k,A.dmg), {knock:A.knock, el:'shock', stun:0.3}); elRing('shock', h.x, h.z, R, 0.5); ringFx(h.x, h.z, R*0.6, 0xffffff, 0.3); discFx(h.x, h.z, R, 0xffb020, 0.25);
@@ -352,7 +370,7 @@ const AUTO = {
 function aimAt(h, t){ const dx = t.x-h.x, dz = t.z-h.z, d = hyp(dx,dz)||1; h.ax = dx/d; h.az = dz/d; h.aimPx = t.x; h.aimPz = t.z; }
 function autoCast(h, dt){ h.autoT = (h.autoT||0) - dt; if(h.autoT > 0 || h.dead || h.stunT > 0 || h.hopT > 0) return; h.autoT = 0.15;
   for(let i=0;i<3;i++){ const k = h.act[i]; if(!k || (h.cd[k]||0) > 0 || h.aimHold === i) continue; const plan = AUTO[k] && AUTO[k](h); if(!plan) continue;
-    if(plan.t) aimAt(h, plan.t); if(useActive(h, i)) return; } }
+    if(plan.t) aimAt(h, plan.t); h.autoNow = true; const ok = useActive(h, i); h.autoNow = false; if(ok) return; } }
 
 // movement: Space / a swipe on the phone. dir = optional [dx, dz] (the swipe direction)
 function useMove(h, dir){

@@ -11,6 +11,7 @@ const LANE_X = 18;
 const addScore = n => { ST.score += n*scoreMult(); };
 
 function clearWorld(){
+  skClearAll();   // v0.11: the VS set's lasting pieces go first, while the heroes still exist
   HEROES.forEach(h=>{ scene.remove(h.rig.root); h.spikes.forEach(s=>scene.remove(s)); (h.fx.orb||[]).forEach(o=>scene.remove(o)); if(h.fx.cold) scene.remove(h.fx.cold); }); HEROES = []; clearBuffs();
   if(BOSS){ scene.remove(BOSS.rig.root); BOSS = null; } $('bossBar').classList.add('hide');
   for(const arr of [BOMBS, BOLTS, LOBS, TRAILS, SHOTS, ALLIES, PINBALLS]){ arr.forEach(o=>scene.remove(o.m||o.g)); arr.length = 0; }
@@ -58,7 +59,7 @@ function heroDie(h, src){
 function respawn(h){ h.dead = false; h.hp = h.maxhp; h.energy = h.maxEnergy; h.x = h.spawn[0]; h.z = h.spawn[1]; h.rig.root.visible = true; (h.fx.orb||[]).forEach(o=>o.visible = true); h.iframes = 2; burst(h.x,1,h.z,0xffffff,40,8); }
 function openGate(){ if(gateOpen) return; gateOpen = true; setGate(true); big('THE MAIN STAGE IS OPEN', 1800);
   for(const [x,z] of [[-14,-392],[14,-392],[-14,-426],[14,-426]]) addPick('fruit', x, z);   // the boss room has heals, and nothing else to chase
-  toast(null,'Ball Boy is waiting on the main stage at the top of the club. Follow the gold arrow — and keep growing on the way.', 6000);
+  toast(null,'Pokey Bro is waiting on the main stage at the top of the club. Follow the gold arrow — and keep growing on the way.', 6000);
   seededRooms.delete(4); seedRoom(4, true); }
 function breakProp(P, h, byWalk){ if(P.broken) return; P.broken = true; setPropVisible(P, false); const i = WALLS.indexOf(P); if(i>=0) WALLS.splice(i,1);
   const cx = (P.x0+P.x1)/2, cz = (P.z0+P.z1)/2; burst(cx,1,cz,P.color,34,9); burst(cx,1,cz,0x9a90a8,24,7); SFX.boom(0.5); if(h && h.isPlayer){ ST.props++; addScore(25); }
@@ -93,12 +94,12 @@ function startShowdown(){ state = 'showdown'; sd = {t:0, popped:false}; const P0
 function updateShowdown(dt){ sd.t += dt; const P0 = player();
   if(sd.t > 2.6 && !sd.lit){ sd.lit = true; sd.pool.position.set(P0.x, 0.08, P0.z); sd.beam.position.set(P0.x, 8, P0.z); SFX.boom(0.4); }
   if(sd.t > 4.3 && !sd.both){ sd.both = true; sd.pool.scale.setScalar(2.4); sd.pool.position.set((P0.x+BOSS.x)/2, 0.08, (P0.z+BOSS.z)/2); sd.beam.visible = false; }
-  if(sd.t > 0.4 && !sd.spot){ sd.spot = true; say('boss','intro',true); bigCard('BALL BOY', 'THE TRAINER'); SFX.boom(0.6); }
+  if(sd.t > 0.4 && !sd.spot){ sd.spot = true; say('boss','intro',true); bigCard('POKEY BRO', 'THE TRAINER'); SFX.boom(0.6); }
   if(sd.t > 1.2 && !sd.popped){ sd.popped = true; BOSS_TEAM.forEach((k,i)=>{ const a = -1.2 + i*0.8; const m = LOOK.piece(MODELS,'creatures',CRE_INFO[k].model,{outline:0.025}); m.scale.setScalar(1.2); m.position.set(BOSS.x + Math.sin(a)*3.6, 0, BOSS.z + Math.cos(a)*3.6); setTimeout(()=>SFX.cry(k), i*300); m.rotation.y = Math.atan2(P0.x-m.position.x, P0.z-m.position.z); scene.add(m); sd['m'+i] = m; burst(m.position.x, 1, m.position.z, 0xffffff, 20, 7); }); SFX.pop(); }
   if(sd.t > 2.6 && !sd.pac){ sd.pac = true; for(let i=0;i<4;i++){ const m = sd['m'+i]; if(m){ zapLine(m.position.x, m.position.z, BOSS.x, BOSS.z, 0xff4a4a, 1); scene.remove(m); } } heroSay(P0,'bossIn',true); bigCard(CHARS[P0.char].name.toUpperCase(), 'THE CHALLENGER'); }
   if(sd.t > 4.3 && !sd.vs){ sd.vs = true; big('SHOWDOWN!', 1200); SFX.boom(1); addShake(0.5); }
   if(sd.t > 5.6){ scene.remove(sd.pool); scene.remove(sd.beam); document.body.classList.remove('cine'); state = 'play'; BOSS.awake = true; $('bossBar').classList.remove('hide'); $('hud').classList.remove('hide'); $('touch').classList.remove('hide'); P0.grace = 1.5; sd = null;
-    toast('learn:boss','Ball Boy throws one creature at a time. Red on the floor = get out. He can only go down after you\'ve faced all three.', 6500); }
+    toast('learn:boss','Pokey Bro throws one creature at a time. Red on the floor = get out. He can only go down after you\'ve faced all three.', 6500); }
 }
 function bigCard(title, sub){ const el = $('card'); el.innerHTML = `<div class="ct">${title}</div><div class="cs">${sub}</div>`; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); }
 
@@ -207,7 +208,7 @@ function update(dt){
   for(let i=GEMS.length-1;i>=0;i--){ const g = GEMS[i]; g.t += dt; let tk = false; for(const h of HEROES){ if(h.dead) continue; const dx = h.x-g.x, dz = h.z-g.z, d = hyp(dx,dz), R = (2.2 + (h.buff.magnet>0?5:0))*h.mods.pickup;
       if(d < R+2.5 && d > 0.01){ g.x += dx/d*Math.min(d, 15*dt); g.z += dz/d*Math.min(d,15*dt); } if(d < 1){ takeGem(i, h); tk = true; break; } } if(!tk && g.t > 45) GEMS.splice(i,1); }
   // ---- boss, creatures, projectiles ----
-  updateBoss(dt); if(state!=='play') return; updateCreatures(dt); updateJaws(dt);
+  updateBoss(dt); if(state!=='play') return; updateCreatures(dt); updateJaws(dt); skUpdate(dt);   // v0.11: the VS set's shots, zones, critters
   for(let i=SHOTS.length-1;i>=0;i--){ const s = SHOTS[i]; s.m.position.x += s.vx*dt; s.m.position.z += s.vz*dt; s.m.position.y = Math.max(0.9, s.m.position.y - dt*1.2); s.life -= dt; s.m.rotation.x += dt*10;
     if(!P0.dead && hyp(s.m.position.x-P0.x, s.m.position.z-P0.z) < 0.9*P0.grow){ hurtHero(P0, s.dmg, null); s.life = 0; burst(s.m.position.x,1,s.m.position.z,0x41e4ff,12,5); }
     if(s.life <= 0 || blocked(s.m.position.x, s.m.position.z, 0.1)){ scene.remove(s.m); SHOTS.splice(i,1); } }
@@ -345,7 +346,11 @@ function loop(now){
 function boot(){
   initQuality(); requestAnimationFrame(loop);
   LOOK.loadAll().then(M=>{ MODELS = M; buildWorld(M); buildBalloons(); buildDots(); buildPickups(); buildFx(); buildDn(); buildCrowd(); buildGhosts(); buildGems(); QUALITY_HOOKS.forEach(f=>f(Q.level));
-    $('loading').classList.add('hide'); toMenu();
+    // v0.11 (Brent: "where's my game intro"; INTRO.md: "this is the first thing that loads"): once everything is loaded, one tap or key
+    // starts the intro (browsers only allow sound after a tap), and the intro hands over to the menu; a tap or key skips it
+    const ld = $('loading'); ld.innerHTML = '<b>PAC</b><span>'+(isMobile ? 'Tap' : 'Click or press any key')+' to start</span>'; ld.classList.add('ready');
+    const go = ()=>{ if(!ld.classList.contains('ready')) return; ld.classList.remove('ready'); ld.classList.add('hide'); window.removeEventListener('keyup', go); toMenu(); playIntro(toMenu); };
+    ld.addEventListener('click', go); window.addEventListener('keyup', go);
     window.__pac = {get state(){ return state; }, get P(){ return player(); }, ST, get BOSS(){ return BOSS; }, start:(m,o)=>startRun(m||'campaign',o), give:n=>gainXP(player(), n),
       choose:i=>{ if(jackOffers) chooseOffer(jackOffers[i]); }, get offers(){ return jackOffers; }, SAVE, toMenu, openPause, closePause, openSheet, get HEROES(){ return HEROES; }, get G(){ return G; }, get PATS(){ return PATS; }, playIntro};
   }).catch(e=>{ $('loading').textContent = 'Could not load the models: '+e; console.error(e); });
