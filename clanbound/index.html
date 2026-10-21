@@ -1,0 +1,1742 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>Clanbound</title>
+    <style>
+      :root {
+        --page-bg: #e8e6da;
+        --ink: #20301c;
+        --panel: #f4f2e6;
+        --line: #b9bfa4;
+        --btn-bg: #306230;
+        --btn-ink: #eef5d8;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --page-bg: #10160e;
+          --ink: #d7e2c4;
+          --panel: #1a2416;
+          --line: #3c4c33;
+          --btn-bg: #8bac0f;
+          --btn-ink: #0f380f;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--page-bg);
+        color: var(--ink);
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px 12px 28px;
+      }
+      .cabinet {
+        background: #0f380f;
+        padding: 14px 14px 18px;
+        border-radius: 18px 18px 42px 18px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 2px 0 rgba(255,255,255,.12);
+        width: min(96vw, 520px);
+      }
+      .screen-bezel {
+        background: #20290f;
+        border-radius: 10px;
+        padding: 10px;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        background: #9bbc0f;
+        border-radius: 2px;
+        touch-action: none;
+      }
+      .cabinet .brand {
+        color: #9bbc0f;
+        font-family: "Courier New", monospace;
+        font-weight: bold;
+        letter-spacing: 3px;
+        text-align: center;
+        margin-top: 12px;
+        font-size: 15px;
+      }
+      .cabinet .brand span { color: #e8f0c0; }
+      .help {
+        width: min(96vw, 520px);
+        margin-top: 14px;
+        font-size: 13.5px;
+        line-height: 1.55;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 14px;
+      }
+      .help b { font-family: "Courier New", monospace; }
+      /* Touch controls */
+      .touch {
+        display: none;
+        width: min(96vw, 520px);
+        margin-top: 16px;
+        justify-content: space-between;
+        align-items: center;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      @media (pointer: coarse), (max-width: 760px) {
+        .touch { display: flex; }
+      }
+      .dpad {
+        display: grid;
+        grid-template-columns: repeat(3, 52px);
+        grid-template-rows: repeat(3, 52px);
+        gap: 4px;
+      }
+      .dpad button, .ab button {
+        background: var(--btn-bg);
+        color: var(--btn-ink);
+        border: none;
+        border-radius: 10px;
+        font-size: 19px;
+        font-family: "Courier New", monospace;
+        font-weight: bold;
+        box-shadow: 0 3px 0 rgba(0,0,0,.35);
+        touch-action: none;
+      }
+      .dpad button:active, .ab button:active { transform: translateY(2px); box-shadow: none; }
+      .dpad .blank { background: transparent; box-shadow: none; }
+      .ab { display: flex; gap: 14px; align-items: center; }
+      .ab button { width: 62px; height: 62px; border-radius: 50%; font-size: 21px; }
+      .ab .blab { text-align: center; font-size: 11px; margin-top: 4px; font-family: "Courier New", monospace; }
+    </style>
+  </head>
+  <body>
+    <div class="cabinet">
+      <div class="screen-bezel">
+        <canvas id="game" width="160" height="144"></canvas>
+      </div>
+      <div class="brand">CLAN<span>BOUND</span></div>
+    </div>
+
+    <div class="touch" id="touch">
+      <div class="dpad">
+        <span class="blank"></span>
+        <button data-dir="up" aria-label="Up">▲</button>
+        <span class="blank"></span>
+        <button data-dir="left" aria-label="Left">◀</button>
+        <span class="blank"></span>
+        <button data-dir="right" aria-label="Right">▶</button>
+        <span class="blank"></span>
+        <button data-dir="down" aria-label="Down">▼</button>
+        <span class="blank"></span>
+      </div>
+      <div class="ab">
+        <div>
+          <button id="btnB" aria-label="B button">B</button>
+          <div class="blab">BACK</div>
+        </div>
+        <div>
+          <button id="btnA" aria-label="A button">A</button>
+          <div class="blab">TALK / OK</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="help">
+      <b>Move</b> — arrow keys / WASD &nbsp;·&nbsp; <b>Z</b> or <b>Enter</b> — talk / confirm &nbsp;·&nbsp; <b>X</b> — back<br />
+      Walk north up the route to Emberwick. The clan elder waits in the hall at the top of town —
+      choose your first beast at the standing stones, then head back to the tall grass to battle and bind wild beasts.
+      Weaken a beast first, then throw a <b>Binding Stone</b> (the BIND command) to bring it into the clan.
+      The mender's hut, southwest in town, heals your party for free.
+    </div>
+
+<script>
+'use strict';
+/* ============================================================
+   CLANBOUND — a small beast-binding tale in the Game Boy style.
+   Systems mirror a certain 1996 monster RPG: tile movement,
+   tall-grass encounters, Gen-1 stat & damage formulas, XP,
+   level-ups, and HP-based capture odds. All names, sprites,
+   maps and text are original.
+   ============================================================ */
+
+var cv = document.getElementById('game');
+var ctx = cv.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+var C = { d:'#0f380f', m:'#306230', l:'#8bac0f', p:'#9bbc0f' };
+var TILE = 16, VW = 10, VH = 9;
+
+/* ---------------- Sprites (16x16, drawn from pixel maps) ----------------
+   chars: 0 dark, 1 mid, 2 light, 3 pale, . transparent */
+function spr(rows, flip, outline) {
+  var c = document.createElement('canvas'); c.width = 16; c.height = 16;
+  var g = c.getContext('2d');
+  var pal = { '0':C.d, '1':C.m, '2':C.l, '3':C.p };
+  for (var y = 0; y < rows.length && y < 16; y++) {
+    var row = rows[y];
+    for (var x = 0; x < row.length && x < 16; x++) {
+      var ch = row[flip ? row.length - 1 - x : x];
+      if (pal[ch]) { g.fillStyle = pal[ch]; g.fillRect(x, y, 1, 1); }
+    }
+  }
+  if (outline) {
+    var img = g.getImageData(0, 0, 16, 16), d = img.data;
+    function opaque(x, y) {
+      if (x < 0 || y < 0 || x > 15 || y > 15) return false;
+      return d[(y * 16 + x) * 4 + 3] > 0;
+    }
+    g.fillStyle = C.d;
+    for (var oy = 0; oy < 16; oy++) for (var ox = 0; ox < 16; ox++) {
+      if (!opaque(ox, oy) && (opaque(ox+1, oy) || opaque(ox-1, oy) || opaque(ox, oy+1) || opaque(ox, oy-1))) {
+        g.fillRect(ox, oy, 1, 1);
+      }
+    }
+  }
+  return c;
+}
+function sprB(rows) { return spr(rows, false, true); }
+
+var SPR = {};
+SPR.cindercub = sprB([
+"................",
+"..00........00..",
+"..020......020..",
+"..0220....0220..",
+"...0222222220...",
+"...2222222222...",
+"...2022222202...",
+"...2223333222...",
+"....2233322.....",
+"...222222222....",
+"..22222222222...",
+"..2.2222222.2...",
+"..2..2.22.2..1..",
+".....2.22...111.",
+"............1.1.",
+"................"]);
+SPR.rillkit = sprB([
+"................",
+"...00......00...",
+"...010....010...",
+"...0110..0110...",
+"....01111110....",
+"...1111111111...",
+"...1011111101...",
+"...1113333111...",
+"....1133311.....",
+"...111111111....",
+"..11111111111...",
+"..1.1111111.1...",
+"..1..1.11.1.....",
+".....1.11....11.",
+"............1...",
+"................"]);
+SPR.fernawn = sprB([
+"................",
+".....1....1.....",
+"....121..121....",
+".....12221......",
+"....2222222.....",
+"...222222222....",
+"...202222202....",
+"...222333222....",
+"....223322......",
+"...22222222.1...",
+"..222222222121..",
+"..2.2222222.....",
+"..2..2..2.......",
+".....2..2.......",
+"................",
+"................"]);
+SPR.bristlerat = sprB([
+"................",
+"...00......00...",
+"...020....020...",
+"...0220..0220...",
+"....02222220....",
+"...2222222222...",
+"...2022222202...",
+"...2223333222...",
+"....2233222.....",
+"..22222222222...",
+"..2222222222.2..",
+"...2222222...22.",
+"...2.222.2......",
+"...2.....2......",
+"................",
+"................"]);
+SPR.dartfinch = sprB([
+"................",
+".......00.......",
+"......0330......",
+".....033330..1..",
+"....0322230.121.",
+"...22222222121..",
+"...20222222.1...",
+"...22222222.....",
+"....222222......",
+".....2222....1..",
+"....22..22..121.",
+"....2....2......",
+"...00....00.....",
+"................",
+"................",
+"................"]);
+SPR.grublet = sprB([
+"................",
+"....0......0....",
+".....0....0.....",
+"....22222222....",
+"...2222222222...",
+"...2022222202...",
+"...2222222222...",
+"....22222222....",
+"...2222222222...",
+"....22222222....",
+"...2222222222...",
+"....22222222....",
+"...2.2..2.2.2...",
+"................",
+"................",
+"................"]);
+SPR.thornhog = sprB([
+"................",
+"...1..1..1..1...",
+"....1.1.1.1.....",
+"...111111111....",
+"..12222222221...",
+"..12022220221...",
+"..12223322221...",
+"...222222222....",
+"..12222222221...",
+"...222222222....",
+"...2.2222.2.....",
+"...2..22..2.....",
+"................",
+"................",
+"................",
+"................"]);
+
+/* People (overworld) */
+SPR.playerDown = spr([
+"......0000......",
+".....011110.....",
+".....133310.....",
+".....130310.....",
+".....133310.....",
+"......1110......",
+"....1111111.....",
+"...101111101....",
+"...10.11.101....",
+"....111111......",
+"....11..11......",
+"....11..11......",
+"....1....1......",
+"...00....00.....",
+"................",
+"................"]);
+SPR.playerUp = spr([
+"......0000......",
+".....011110.....",
+".....011110.....",
+".....011110.....",
+".....011110.....",
+"......1110......",
+"....1111111.....",
+"...101111101....",
+"...10.11.101....",
+"....111111......",
+"....11..11......",
+"....11..11......",
+"....1....1......",
+"...00....00.....",
+"................",
+"................"]);
+SPR.playerSide = spr([
+"......0000......",
+".....011110.....",
+".....133100.....",
+".....130100.....",
+".....133100.....",
+"......1110......",
+"....111111......",
+"....10111.......",
+"....1011........",
+"....1111........",
+"....11.1........",
+"....11..1.......",
+"....1...1.......",
+"...00...00......",
+"................",
+"................"]);
+SPR.elder = spr([
+"......3333......",
+".....333333.....",
+".....322230.....",
+".....320230.....",
+".....322230.....",
+"......3330......",
+"....1111111..0..",
+"...101111101.0..",
+"...10.11.100.0..",
+"....111111...0..",
+"....11..11......",
+"....11..11......",
+"....1....1......",
+"...00....00.....",
+"................",
+"................"]);
+SPR.mender = spr([
+"......2222......",
+".....233320.....",
+".....233320.....",
+".....230320.....",
+".....233320.....",
+"......2220......",
+"....1111111.....",
+"...101111101....",
+"...10.33.101....",
+"....133331......",
+"....11..11......",
+"....11..11......",
+"....1....1......",
+"...00....00.....",
+"................",
+"................"]);
+SPR.lass = spr([
+"......0000......",
+".....000000.....",
+".....133310.....",
+".....130310.....",
+".....133310.....",
+"......0000......",
+"....1111111.....",
+"...101111101....",
+"...10.11.101....",
+"....111111......",
+"....11..11......",
+"....11..11......",
+"....1....1......",
+"...00....00.....",
+"................",
+"................"]);
+SPR.oldman = spr([
+"......3333......",
+".....333333.....",
+".....333330.....",
+".....330330.....",
+".....333330.....",
+"......3330......",
+"....1111111.....",
+"...101111101....",
+"...10.11.101....",
+"....111111......",
+"....11..11......",
+"....11..11......",
+"....1....1......",
+"...00....00.....",
+"................",
+"................"]);
+SPR.scout = spr([
+"......0000......",
+".....000000.....",
+".....133310.....",
+".....130310.....",
+".....133310.....",
+"......1110......",
+"....1111111.....",
+"...101111101....",
+"...10.11.101....",
+"....111111......",
+"....11..11......",
+"....11..11......",
+"....1....1......",
+"...00....00.....",
+"................",
+"................"]);
+
+/* ---------------- Moves ----------------
+   Gen-1 rule: a move's type decides physical (uses Atk/Def)
+   or special (uses Spc/Spc). */
+var PHYSICAL = { Normal:1, Flying:1, Bug:1, Ground:1 };
+var MOVES = {
+  ram:   { name:'Ram',        type:'Normal', power:40, acc:100, pp:35 },
+  swipe: { name:'Swipe',      type:'Normal', power:45, acc:100, pp:30 },
+  quick: { name:'Quick Jab',  type:'Normal', power:40, acc:100, pp:30, priority:1 },
+  chomp: { name:'Chomp',      type:'Normal', power:60, acc:90,  pp:20 },
+  peck:  { name:'Peck',       type:'Flying', power:35, acc:100, pp:35 },
+  sting: { name:'Sting',      type:'Bug',    power:40, acc:100, pp:30 },
+  cinder:{ name:'Cinder Nip', type:'Fire',   power:40, acc:100, pp:25 },
+  spout: { name:'Spout Jet',  type:'Water',  power:40, acc:100, pp:25 },
+  thorn: { name:'Thorn Lash', type:'Grass',  power:45, acc:100, pp:25 },
+  yip:   { name:'Yip',        type:'Normal', power:0,  acc:100, pp:30, fx:{ stat:'atk', amt:-1 } },
+  dust:  { name:'Dust Kick',  type:'Ground', power:0,  acc:100, pp:20, fx:{ stat:'acc', amt:-1 } },
+  brace: { name:'Brace',      type:'Normal', power:0,  acc:0,   pp:30, fx:{ stat:'def', amt:1, self:true } }
+};
+var CHART = {
+  Fire:  { Grass:2, Bug:2, Fire:0.5, Water:0.5 },
+  Water: { Fire:2, Ground:2, Water:0.5, Grass:0.5 },
+  Grass: { Water:2, Ground:2, Fire:0.5, Grass:0.5, Flying:0.5, Bug:0.5 },
+  Flying:{ Grass:2, Bug:2 },
+  Bug:   { Grass:2, Fire:0.5, Flying:0.5 },
+  Ground:{ Fire:2, Bug:0.5, Grass:0.5, Flying:0 },
+  Normal:{}
+};
+function effectiveness(moveType, defTypes) {
+  var e = 1, row = CHART[moveType] || {};
+  for (var i = 0; i < defTypes.length; i++) {
+    if (row[defTypes[i]] !== undefined) e *= row[defTypes[i]];
+  }
+  return e;
+}
+
+/* ---------------- Species ---------------- */
+var SPECIES = {
+  cindercub:  { name:'CINDERCUB',  types:['Fire'],          base:{hp:44,atk:53,def:43,spc:50,spd:65}, catchRate:45,  exp:64,
+                learn:[[1,'swipe'],[1,'yip'],[8,'cinder'],[12,'quick']] },
+  rillkit:    { name:'RILLKIT',    types:['Water'],         base:{hp:50,atk:48,def:53,spc:48,spd:43}, catchRate:45,  exp:64,
+                learn:[[1,'ram'],[1,'brace'],[8,'spout'],[12,'chomp']] },
+  fernfawn:   { name:'FERNFAWN',   types:['Grass'],         base:{hp:48,atk:50,def:50,spc:56,spd:40}, catchRate:45,  exp:64,
+                learn:[[1,'swipe'],[1,'yip'],[8,'thorn'],[12,'chomp']] },
+  bristlerat: { name:'BRISTLERAT',types:['Normal'],        base:{hp:40,atk:53,def:35,spc:30,spd:62}, catchRate:255, exp:40,
+                learn:[[1,'swipe'],[1,'dust'],[7,'chomp']] },
+  dartfinch:  { name:'DARTFINCH',  types:['Normal','Flying'],base:{hp:38,atk:47,def:40,spc:38,spd:56}, catchRate:255, exp:44,
+                learn:[[1,'peck'],[1,'dust'],[8,'quick']] },
+  grublet:    { name:'GRUBLET',    types:['Bug'],           base:{hp:45,atk:35,def:48,spc:30,spd:30}, catchRate:255, exp:48,
+                learn:[[1,'sting'],[1,'brace']] },
+  thornhog:   { name:'THORNHOG',   types:['Grass'],         base:{hp:56,atk:49,def:56,spc:36,spd:26}, catchRate:120, exp:90,
+                learn:[[1,'ram'],[1,'thorn']] }
+};
+
+/* Gen-1 stat formula (Stat Exp omitted, DV 0-15 per beast). */
+function calcStats(b) {
+  var s = SPECIES[b.sp].base, L = b.level, out = {};
+  out.hp  = Math.floor((s.hp  + b.dv.hp ) * 2 * L / 100) + L + 10;
+  out.atk = Math.floor((s.atk + b.dv.atk) * 2 * L / 100) + 5;
+  out.def = Math.floor((s.def + b.dv.def) * 2 * L / 100) + 5;
+  out.spc = Math.floor((s.spc + b.dv.spc) * 2 * L / 100) + 5;
+  out.spd = Math.floor((s.spd + b.dv.spd) * 2 * L / 100) + 5;
+  return out;
+}
+function makeBeast(sp, level) {
+  function dv() { return Math.floor(Math.random() * 16); }
+  var b = { sp:sp, level:level, exp: level * level * level,
+            dv:{ hp:dv(), atk:dv(), def:dv(), spc:dv(), spd:dv() },
+            moves:[], stages:{ atk:0, def:0, acc:0 } };
+  b.stats = calcStats(b);
+  b.hp = b.stats.hp;
+  var learn = SPECIES[sp].learn;
+  for (var i = 0; i < learn.length; i++) {
+    if (learn[i][0] <= level) {
+      b.moves.push({ id:learn[i][1], pp:MOVES[learn[i][1]].pp });
+      if (b.moves.length > 4) b.moves.shift();
+    }
+  }
+  return b;
+}
+function stageMult(stage, kind) {
+  if (kind === 'acc') {
+    return stage >= 0 ? (3 + stage) / 3 : 3 / (3 - stage);
+  }
+  return stage >= 0 ? (2 + stage) / 2 : 2 / (2 - stage);
+}
+function effStat(b, stat) {
+  return Math.max(1, Math.floor(b.stats[stat] * stageMult(b.stages[stat] || 0, stat)));
+}
+function typeName(b) { return SPECIES[b.sp].name; }
+
+/* ---------------- Maps ----------------
+   T tree · g tall grass · p path · f flowers · # fence · W water/wall
+   r roof · w building wall · D door (warp) · S sign · k pedestal
+   t table · b bed · M exit mat · . ground */
+var SOLID = { T:1, '#':1, W:1, r:1, w:1, S:1, k:1, t:1, b:1 };
+
+var MAPS = {
+  route: {
+    indoor:false,
+    tiles:[
+      "TTTTTTTTppTTTTTT",
+      "T.......pp.....T",
+      "T.gggg..pp..ff.T",
+      "T.gggg..pp.....T",
+      "T.gggg..pp.T...T",
+      "T.......pp.....T",
+      "T..ff...pp..gg.T",
+      "T.......pp..gg.T",
+      "T.gggg..pp.....T",
+      "T.gggg..pp.ggg.T",
+      "T.gggg..pp.ggg.T",
+      "T.......pp.....T",
+      "T....T..pp.....T",
+      "T.......pp..ff.T",
+      "T..gggg.pp.ggg.T",
+      "T..gggg.pp.ggg.T",
+      "T.......pp.....T",
+      "T..f....pp..S..T",
+      "T.......pp.....T",
+      "TTTTTTTTTTTTTTTT"
+    ],
+    warps: { "8,0":{ map:'town', x:9, y:14, dir:'up' }, "9,0":{ map:'town', x:10, y:14, dir:'up' } },
+    signs: { "12,17":["ROUTE OF FIRST STEPS","Emberwick lies north.","Wild beasts rustle in","the tall grass."] },
+    npcs: [
+      { id:'scout', x:6, y:17, sprite:'scout', talk:'scout' }
+    ],
+    encounters: [ ['bristlerat',45], ['dartfinch',30], ['grublet',15], ['thornhog',10] ]
+  },
+  town: {
+    indoor:false,
+    tiles:[
+      "TTTTTTTTTTTTTTTTTTTT",
+      "T.....rrrrrrrr.....T",
+      "T.....rrrrrrrr.....T",
+      "T.rrrrwwwwwwwwrrrr.T",
+      "T.wDwwwwwwDwwwwDww.T",
+      "T....f...pp...f....T",
+      "T........pp........T",
+      "T..f.....pp.....f..T",
+      "T........pp...WW...T",
+      "T........pp...WW...T",
+      "T.rrrr...pp........T",
+      "T.wDww...pp....S...T",
+      "T........pp........T",
+      "T..f.....ppS....f..T",
+      "T........pp........T",
+      "TTTTTTTTTppTTTTTTTTT"
+    ],
+    warps: {
+      "10,4":{ map:'hall', x:5, y:6, dir:'up' },
+      "3,4":{ map:'house1', x:4, y:3, dir:'up' },
+      "15,4":{ map:'house2', x:4, y:3, dir:'up' },
+      "3,11":{ map:'mender', x:4, y:4, dir:'up' },
+      "9,15":{ map:'route', x:8, y:1, dir:'down' },
+      "10,15":{ map:'route', x:9, y:1, dir:'down' }
+    },
+    signs: {
+      "15,11":["MENDER'S HUT","Rest and healing for","weary beasts. Free,","as clan law demands."],
+      "11,13":["EMBERWICK","A small clan town.","The Hall stands at","the north end."]
+    },
+    npcs: [
+      { id:'lass', x:7, y:7, sprite:'lass', talk:'lass' },
+      { id:'oldman', x:12, y:6, sprite:'oldman', talk:'oldman' }
+    ],
+    encounters: null
+  },
+  hall: {
+    indoor:true,
+    tiles:[
+      "WWWWWWWWWWWW",
+      "W..........W",
+      "W..k..k..k.W",
+      "W..........W",
+      "W....tt....W",
+      "W..........W",
+      "W..........W",
+      "W....MM....W",
+      "WWWWWWWWWWWW"
+    ],
+    warps: { "5,7":{ map:'town', x:9, y:5, dir:'down' }, "6,7":{ map:'town', x:9, y:5, dir:'down' } },
+    signs: {},
+    npcs: [ { id:'elder', x:5, y:3, sprite:'elder', talk:'elder' } ],
+    encounters: null
+  },
+  mender: {
+    indoor:true,
+    tiles:[
+      "WWWWWWWWW",
+      "W.......W",
+      "W..b....W",
+      "W.......W",
+      "W.......W",
+      "W...MM..W",
+      "WWWWWWWWW"
+    ],
+    warps: { "4,5":{ map:'town', x:3, y:12, dir:'down' }, "5,5":{ map:'town', x:3, y:12, dir:'down' } },
+    signs: {},
+    npcs: [ { id:'mender', x:5, y:2, sprite:'mender', talk:'mender' } ],
+    encounters: null
+  },
+  house1: {
+    indoor:true,
+    tiles:[
+      "WWWWWWWW",
+      "W......W",
+      "W..t...W",
+      "W......W",
+      "W...M..W",
+      "WWWWWWWW"
+    ],
+    warps: { "4,4":{ map:'town', x:3, y:5, dir:'down' } },
+    signs: {},
+    npcs: [ { id:'mother', x:2, y:2, sprite:'lass', talk:'mother' } ],
+    encounters: null
+  },
+  house2: {
+    indoor:true,
+    tiles:[
+      "WWWWWWWW",
+      "W......W",
+      "W..t...W",
+      "W......W",
+      "W...M..W",
+      "WWWWWWWW"
+    ],
+    warps: { "4,4":{ map:'town', x:15, y:5, dir:'down' } },
+    signs: {},
+    npcs: [ { id:'kid', x:5, y:1, sprite:'scout', talk:'kid' } ],
+    encounters: null
+  }
+};
+function mapW(m) { return m.tiles[0].length; }
+function mapH(m) { return m.tiles.length; }
+function tileAt(mapId, x, y) {
+  var m = MAPS[mapId];
+  if (x < 0 || y < 0 || x >= mapW(m) || y >= mapH(m)) return 'T';
+  return m.tiles[y].charAt(x);
+}
+
+/* ---------------- Game state ---------------- */
+var G = {
+  state:'title',           // title | world | dialog | battle
+  map:'route', x:8, y:18, px:8*16, py:18*16, dir:'up',
+  moving:false, moveStep:0, fromX:0, fromY:0,
+  party:[], stones:0,
+  flags:{}, frame:0, fade:0, flash:0
+};
+var DIRS = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
+
+function npcAt(mapId, x, y) {
+  var npcs = MAPS[mapId].npcs || [];
+  for (var i = 0; i < npcs.length; i++) if (npcs[i].x === x && npcs[i].y === y) return npcs[i];
+  return null;
+}
+function walkable(mapId, x, y) {
+  if (SOLID[tileAt(mapId, x, y)]) return false;
+  if (npcAt(mapId, x, y)) return false;
+  return true;
+}
+
+/* ---------------- Dialogue ---------------- */
+var DLG = null; // { items:[], idx, shown, onDone, choiceCb, sel }
+function startDialog(items, onDone) {
+  DLG = { items:items, idx:0, shown:0, onDone:onDone || null, sel:0 };
+  G.state = 'dialog';
+}
+function dlgCurrent() { return DLG ? DLG.items[DLG.idx] : null; }
+function dlgAdvance() {
+  if (!DLG) return;
+  var cur = dlgCurrent();
+  if (typeof cur === 'string') {
+    if (DLG.shown < cur.length) { DLG.shown = cur.length; return; }
+    DLG.idx++; DLG.shown = 0; DLG.sel = 0;
+    if (DLG.idx >= DLG.items.length) {
+      var cb = DLG.onDone; DLG = null; G.state = 'world';
+      if (cb) cb();
+    }
+  }
+}
+function dlgChoose(dir) {
+  var cur = dlgCurrent();
+  if (cur && cur.choice) {
+    DLG.sel = (DLG.sel + dir + cur.choice.length) % cur.choice.length;
+  }
+}
+function dlgConfirm() {
+  var cur = dlgCurrent();
+  if (cur && cur.choice) {
+    var pick = DLG.sel, cb = cur.cb;
+    DLG = null; G.state = 'world';
+    if (cb) cb(pick);
+  } else {
+    dlgAdvance();
+  }
+}
+
+/* Dialogue content — all original text. */
+function healParty() { for (var i = 0; i < G.party.length; i++) { G.party[i].hp = G.party[i].stats.hp;
+  for (var j = 0; j < G.party[i].moves.length; j++) G.party[i].moves[j].pp = MOVES[G.party[i].moves[j].id].pp; } }
+
+var TALKS = {
+  elder: function() {
+    if (!G.flags.starter) {
+      startDialog([
+        "Ah — a young clansman,",
+        "come of age at last.",
+        "In Emberwick we do not",
+        "break beasts with whips.",
+        "We BIND them. Heart to",
+        "heart, clan to kin.",
+        "Three beasts sleep upon",
+        "the standing stones",
+        "behind me. Choose the",
+        "one that calls to you.",
+        "Grass, fire, water —",
+        "each watches the others,",
+        "as the old tales teach."
+      ]);
+    } else {
+      var lines = [
+        "How does your beast",
+        "fare, young clansman?",
+        "Weaken a wild beast in",
+        "the grass, then throw a",
+        "BINDING STONE to bind",
+        "it to the clan."
+      ];
+      if (G.stones === 0) {
+        lines.push("No stones left? Here —");
+        lines.push("take three more. The");
+        lines.push("clan provides.");
+        startDialog(lines, function(){ G.stones += 3; });
+        return;
+      }
+      lines.push("And that is where this");
+      lines.push("little demo's tale ends.");
+      lines.push("The route is yours now —");
+      lines.push("roam it, battle, and");
+      lines.push("bind to your heart's");
+      lines.push("content.");
+      startDialog(lines);
+    }
+  },
+  mender: function() {
+    startDialog([
+      "Welcome to the mender's",
+      "hut, clansman.",
+      "Your beasts look weary.",
+      "Rest them a moment…",
+      "…",
+      "There — hale and whole",
+      "again. Off you go."
+    ], function(){ healParty(); });
+  },
+  lass: function() {
+    startDialog([
+      "I heard rustling in the",
+      "route grass this morning!",
+      "Wild beasts only leap",
+      "out at clansfolk who",
+      "walk with a beast of",
+      "their own. Funny, that."
+    ]);
+  },
+  oldman: function() {
+    startDialog([
+      "A bound beast fights for",
+      "the clan because the",
+      "clan fights for it.",
+      "Remember that, young",
+      "one, and you'll do fine."
+    ]);
+  },
+  mother: function() {
+    startDialog([
+      "Supper's soon. If you",
+      "see my boy out on the",
+      "route, send him home.",
+      "He thinks the tall grass",
+      "is a playground!"
+    ]);
+  },
+  kid: function() {
+    startDialog([
+      "When I come of age I'm",
+      "binding a THORNHOG!",
+      "Nobody messes with a",
+      "hog covered in thorns."
+    ]);
+  },
+  scout: function() {
+    if (!G.flags.scoutGift) {
+      G.flags.scoutGift = true;
+      startDialog([
+        "Ho, clansman! No beast",
+        "at your side yet? The",
+        "elder waits in the hall,",
+        "north end of Emberwick.",
+        "Take these three BINDING",
+        "STONES from me — you'll",
+        "want them soon enough."
+      ], function(){ G.stones += 3; });
+    } else {
+      startDialog([
+        "Weaken a beast till its",
+        "health runs low — then",
+        "the stone's grip holds",
+        "strongest.",
+        "Grass fears fire, fire",
+        "fears water, water fears",
+        "grass. The old circle."
+      ]);
+    }
+  }
+};
+
+/* Standing stones in the hall: pedestal x -> starter species */
+var STONES = { '3,2':'fernfawn', '6,2':'cindercub', '9,2':'rillkit' };
+var STONE_TEXT = {
+  fernfawn: ["FERNFAWN, the grass fawn.","Its lash is a living vine."],
+  cindercub:["CINDERCUB, the fire cub.","Its bite carries","hearth-sparks."],
+  rillkit:  ["RILLKIT, the water kit.","Its jet can crack","river-stone."]
+};
+function interactPedestal(x, y) {
+  var sp = STONES[x + ',' + y];
+  if (!sp) return;
+  if (G.flags.starter) {
+    startDialog(["The other beasts rest.","One bond is enough","for today."]);
+    return;
+  }
+  var lines = ["A beast sleeps within","the stone's glow…"].concat(STONE_TEXT[sp]);
+  lines.push({ choice:['BIND IT','NOT YET'], cb:function(pick){
+    if (pick === 0) {
+      G.flags.starter = sp;
+      G.party.push(makeBeast(sp, 5));
+      G.stones += 5;
+      startDialog([
+        "You bound " + SPECIES[sp].name,
+        "to the clan!",
+        "The elder also presses",
+        "5 BINDING STONES into",
+        "your hand.",
+        "Now — the route grass",
+        "will stir for you."
+      ]);
+    }
+  }});
+  startDialog(lines);
+}
+
+/* ---------------- Overworld update ---------------- */
+var held = {};
+var tapDir = null; // a quick tap still counts as one step
+function tryInteract() {
+  var d = DIRS[G.dir];
+  var fx = G.x + d[0], fy = G.y + d[1];
+  var npc = npcAt(G.map, fx, fy);
+  if (npc) { TALKS[npc.talk](); return; }
+  var t = tileAt(G.map, fx, fy);
+  if (t === 'S') {
+    var s = MAPS[G.map].signs[fx + ',' + fy];
+    if (s) startDialog(s.slice());
+    return;
+  }
+  if (t === 'k' && G.map === 'hall') { interactPedestal(fx, fy); return; }
+}
+function onStep() {
+  var m = MAPS[G.map];
+  var w = m.warps[G.x + ',' + G.y];
+  if (w) {
+    G.map = w.map; G.x = w.x; G.y = w.y; G.dir = w.dir;
+    G.px = G.x * 16; G.py = G.y * 16;
+    G.fade = 6;
+    return;
+  }
+  var t = tileAt(G.map, G.x, G.y);
+  if (t === 'g' && G.party.length > 0 && m.encounters) {
+    if (Math.random() < 0.12) startBattle();
+  }
+}
+function updateWorld() {
+  if (G.moving) {
+    G.moveStep++;
+    var d = DIRS[G.dir];
+    var total = 8; // frames per tile (GB-ish walking pace)
+    G.px = (G.fromX + d[0] * G.moveStep / total) * 16;
+    G.py = (G.fromY + d[1] * G.moveStep / total) * 16;
+    if (G.moveStep >= total) {
+      G.moving = false;
+      G.x = G.fromX + d[0]; G.y = G.fromY + d[1];
+      G.px = G.x * 16; G.py = G.y * 16;
+      onStep();
+    }
+    return;
+  }
+  var order = ['up','down','left','right'], dir = null;
+  for (var i = 0; i < 4; i++) if (held[order[i]]) { dir = order[i]; break; }
+  if (!dir && tapDir) dir = tapDir;
+  tapDir = null;
+  if (!dir) return;
+  G.dir = dir;
+  var d = DIRS[dir], nx = G.x + d[0], ny = G.y + d[1];
+  if (walkable(G.map, nx, ny)) {
+    G.moving = true; G.moveStep = 0; G.fromX = G.x; G.fromY = G.y;
+  }
+}
+
+/* ---------------- Battle ---------------- */
+var B = null;
+function pickWild() {
+  var table = MAPS.route.encounters, total = 0, i;
+  for (i = 0; i < table.length; i++) total += table[i][1];
+  var r = Math.random() * total;
+  for (i = 0; i < table.length; i++) { r -= table[i][1]; if (r <= 0) return table[i][0]; }
+  return table[0][0];
+}
+function firstAlive() {
+  for (var i = 0; i < G.party.length; i++) if (G.party[i].hp > 0) return i;
+  return -1;
+}
+function startBattle() {
+  var sp = pickWild();
+  var lvl = sp === 'thornhog' ? 3 + Math.floor(Math.random() * 3) : 2 + Math.floor(Math.random() * 3);
+  var foe = makeBeast(sp, lvl);
+  var ai = firstAlive();
+  B = {
+    foe: foe, active: ai, participants: {}, runTries: 0,
+    mode:'msg', msg:'', shown:0, next:null, autoAt:0,
+    menu:0, moveSel:0, switchSel:0, mustSwitch:false,
+    foeDisp: foe.hp, myDisp: G.party[ai].hp,
+    anim:null, over:false
+  };
+  B.participants[ai] = true;
+  G.state = 'battle';
+  G.flash = 8;
+  bSay('A wild ' + typeName(foe) + ' appeared!', function(){
+    bSay('Go! ' + typeName(G.party[B.active]) + '!', function(){ B.mode = 'menu'; }, 500);
+  }, 700);
+}
+function bSay(text, next, autoMs) {
+  B.msg = text; B.shown = 0; B.mode = 'msg';
+  B.next = next || null;
+  B.autoAt = autoMs ? G.frame + 30 + autoMs / 16 : 0;
+}
+function myBeast() { return G.party[B.active]; }
+
+function doAttack(user, target, moveId, isFoe, done) {
+  var mv = MOVES[moveId];
+  var slot = null;
+  for (var i = 0; i < user.moves.length; i++) if (user.moves[i].id === moveId) slot = user.moves[i];
+  if (slot) slot.pp = Math.max(0, slot.pp - 1);
+  bSay((isFoe ? 'Enemy ' : '') + typeName(user) + ' used ' + mv.name + '!', function(){
+    // Accuracy (Gen-1 style: move acc x attacker's accuracy stage)
+    if (mv.acc > 0) {
+      var chance = mv.acc / 100 * stageMult(user.stages.acc, 'acc');
+      if (Math.random() > chance) {
+        bSay('But it missed!', done, 600);
+        return;
+      }
+    }
+    if (mv.fx) {
+      var who = mv.fx.self ? user : target;
+      var st = mv.fx.stat;
+      var cur = who.stages[st] || 0;
+      var nv = Math.max(-6, Math.min(6, cur + mv.fx.amt));
+      who.stages[st] = nv;
+      var label = st === 'atk' ? 'ATTACK' : st === 'def' ? 'DEFENSE' : 'ACCURACY';
+      if (nv === cur) {
+        bSay('Nothing happened!', done, 500);
+      } else {
+        bSay((who === user && !isFoe ? '' : (who === target && isFoe ? '' : '')) +
+             typeName(who) + "'s " + label + (mv.fx.amt > 0 ? ' rose!' : ' fell!'), done, 600);
+      }
+      return;
+    }
+    // Damage — the Gen-1 formula
+    var crit = Math.random() < SPECIES[user.sp].base.spd / 512;
+    var phys = !!PHYSICAL[mv.type];
+    var A = phys ? effStat(user, 'atk') : effStat(user, 'spc');
+    var D = phys ? effStat(target, 'def') : effStat(target, 'spc');
+    var Lv = crit ? user.level * 2 : user.level;
+    var dmg = Math.floor(Math.floor(Math.floor(2 * Lv / 5 + 2) * mv.power * A / D) / 50) + 2;
+    var eff = effectiveness(mv.type, SPECIES[target.sp].types);
+    if (SPECIES[user.sp].types.indexOf(mv.type) >= 0) dmg = Math.floor(dmg * 1.5); // STAB
+    dmg = Math.floor(dmg * eff);
+    dmg = Math.floor(dmg * (217 + Math.floor(Math.random() * 39)) / 255);
+    if (eff > 0 && dmg < 1) dmg = 1;
+    target.hp = Math.max(0, target.hp - dmg);
+    if (target === B.foe) B.anim = { kind:'hit', who:'foe', t:0 };
+    else B.anim = { kind:'hit', who:'me', t:0 };
+    var after = function(){
+      if (eff === 0) { bSay("It doesn't affect " + typeName(target) + '…', done, 600); return; }
+      var seq = [];
+      if (crit) seq.push("Critical hit!");
+      if (eff > 1) seq.push("It's super effective!");
+      if (eff < 1) seq.push("It's not very effective…");
+      chainSay(seq, done);
+    };
+    if (eff === 0) { after(); return; }
+    bWait(350, after);
+  }, 350);
+}
+function bWait(ms, next) { B.msg = B.msg; B.shown = B.msg.length; B.mode = 'msg'; B.next = next; B.autoAt = G.frame + ms / 16; }
+function chainSay(list, done) {
+  if (!list.length) { done(); return; }
+  bSay(list[0], function(){ chainSay(list.slice(1), done); }, 550);
+}
+function foePickMove() {
+  var usable = B.foe.moves.filter(function(m){ return m.pp > 0; });
+  if (!usable.length) return 'ram';
+  return usable[Math.floor(Math.random() * usable.length)].id;
+}
+function executeTurn(myMoveId) {
+  var me = myBeast(), foe = B.foe;
+  var myMv = MOVES[myMoveId], foeMoveId = foePickMove(), foeMv = MOVES[foeMoveId];
+  var myPri = myMv.priority || 0, foePri = foeMv.priority || 0;
+  var meFirst;
+  if (myPri !== foePri) meFirst = myPri > foePri;
+  else if (effStat(me, 'spd') !== effStat(foe, 'spd')) meFirst = effStat(me, 'spd') > effStat(foe, 'spd');
+  else meFirst = Math.random() < 0.5;
+  var first = meFirst ? { u:me, t:foe, m:myMoveId, foe:false } : { u:foe, t:me, m:foeMoveId, foe:true };
+  var second = meFirst ? { u:foe, t:me, m:foeMoveId, foe:true } : { u:me, t:foe, m:myMoveId, foe:false };
+  doAttack(first.u, first.t, first.m, first.foe, function(){
+    if (checkFaints(function(){ executeTurnDone(); })) return;
+    if (second.u.hp <= 0) { executeTurnDone(); return; }
+    doAttack(second.u, second.t, second.m, second.foe, function(){
+      if (checkFaints(function(){ executeTurnDone(); })) return;
+      executeTurnDone();
+    });
+  });
+}
+function executeTurnDone() {
+  if (B.over) return;
+  if (myBeast().hp <= 0) { handleMyFaint(); return; }
+  B.mode = 'menu';
+}
+function checkFaints(after) {
+  if (B.foe.hp <= 0) {
+    bSay('Wild ' + typeName(B.foe) + ' fainted!', function(){ awardXP(after); }, 600);
+    return true;
+  }
+  return false;
+}
+function awardXP(after) {
+  var ids = Object.keys(B.participants);
+  var total = Math.floor(SPECIES[B.foe.sp].exp * B.foe.level / 7);
+  var share = Math.max(1, Math.floor(total / ids.length));
+  var msgs = [];
+  ids.forEach(function(idStr) {
+    var b = G.party[+idStr];
+    if (!b || b.hp <= 0 && +idStr !== B.active) { /* still gains in Gen 1 if participated; keep simple: alive only */ }
+    if (!b || b.hp <= 0) return;
+    b.exp += share;
+    msgs.push(typeName(b) + ' gained ' + share + ' EXP!');
+    while (b.level < 100 && b.exp >= (b.level + 1) * (b.level + 1) * (b.level + 1)) {
+      var oldMax = b.stats.hp;
+      b.level++;
+      b.stats = calcStats(b);
+      b.hp += (b.stats.hp - oldMax);
+      msgs.push(typeName(b) + ' grew to Lv' + b.level + '!');
+      var learn = SPECIES[b.sp].learn;
+      for (var i = 0; i < learn.length; i++) {
+        if (learn[i][0] === b.level) {
+          var known = b.moves.some(function(m){ return m.id === learn[i][1]; });
+          if (!known) {
+            if (b.moves.length < 4) { b.moves.push({ id:learn[i][1], pp:MOVES[learn[i][1]].pp }); msgs.push(typeName(b) + ' learned ' + MOVES[learn[i][1]].name + '!'); }
+            else msgs.push(typeName(b) + ' could learn ' + MOVES[learn[i][1]].name + ', but four moves is the limit.');
+          }
+        }
+      }
+    }
+  });
+  chainSay(msgs, function(){ endBattle(); });
+}
+function handleMyFaint() {
+  bSay(typeName(myBeast()) + ' fainted!', function(){
+    var nxt = firstAlive();
+    if (nxt < 0) { whiteOut(); return; }
+    B.mustSwitch = true;
+    B.switchSel = nxt;
+    B.mode = 'switch';
+  }, 600);
+}
+function whiteOut() {
+  bSay('You have no beasts left able to fight!', function(){
+    bSay('You hurry back to Emberwick, cradling your beasts…', function(){
+      G.map = 'town'; G.x = 3; G.y = 12; G.dir = 'down';
+      G.px = 48; G.py = 12 * 16;
+      healParty();
+      B = null; G.state = 'world';
+      startDialog(['The mender sets them','right, as always.','"Careful in that grass,','clansman."']);
+    }, 900);
+  }, 900);
+}
+function endBattle() {
+  B = null;
+  G.state = 'world';
+  G.fade = 6;
+}
+function tryRun() {
+  B.runTries++;
+  var me = myBeast(), foe = B.foe;
+  var p;
+  if (effStat(me, 'spd') >= effStat(foe, 'spd')) p = 1;
+  else p = Math.min(0.95, 0.45 + (effStat(me, 'spd') - effStat(foe, 'spd')) * 0.01 + 0.15 * B.runTries);
+  if (Math.random() < p) {
+    bSay('Got away safely!', function(){ endBattle(); }, 600);
+  } else {
+    bSay("Can't escape!", function(){
+      doAttack(foe, me, foePickMove(), true, function(){
+        if (me.hp <= 0) { handleMyFaint(); return; }
+        B.mode = 'menu';
+      });
+    }, 600);
+  }
+}
+function tryCapture() {
+  if (G.stones <= 0) {
+    bSay('You have no BINDING STONES left!', function(){ B.mode = 'menu'; }, 500);
+    return;
+  }
+  G.stones--;
+  var foe = B.foe;
+  B.mode = 'anim';
+  B.anim = { kind:'stone', t:0, shakes:0 };
+  var hpFrac = foe.hp / foe.stats.hp;
+  var p = (SPECIES[foe.sp].catchRate / 255) * (1.35 - hpFrac);
+  p = Math.max(0.04, Math.min(0.96, p));
+  B.anim.shakes = 0;
+  B.capSuccess = Math.random() < p;
+  var per = Math.pow(1 - p, 0.25);
+  var s = 0;
+  while (s < 3 && Math.random() > per) s++;
+  B.anim.shakeTarget = B.capSuccess ? 3 : s;
+  bSayQuiet('You threw a BINDING STONE!');
+}
+function bSayQuiet(text) { B.msg = text; B.shown = text.length; }
+function finishCapture() {
+  var foe = B.foe;
+  if (B.capSuccess) {
+    if (G.party.length < 6) {
+      G.party.push(foe);
+      bSay('Got it! ' + typeName(foe) + ' was bound to the clan!', function(){ endBattle(); }, 800);
+    } else {
+      bSay(typeName(foe) + ' was bound, but your party is full! It was sent to the clan stores.', function(){ endBattle(); }, 800);
+    }
+  } else {
+    bSay('Oh no! The ' + typeName(foe) + ' broke free!', function(){
+      doAttack(B.foe, myBeast(), foePickMove(), true, function(){
+        if (myBeast().hp <= 0) { handleMyFaint(); return; }
+        B.mode = 'menu';
+      });
+    }, 700);
+  }
+}
+function doSwitch(newIdx) {
+  var old = myBeast();
+  B.active = newIdx;
+  B.participants[newIdx] = true;
+  var nb = myBeast();
+  nb.stages = { atk:0, def:0, acc:0 };
+  old.stages = { atk:0, def:0, acc:0 };
+  B.myDisp = nb.hp;
+  B.mustSwitch = false;
+  bSay('Go! ' + typeName(nb) + '!', function(){
+    if (B.mode === 'switch' || B.wasForced) { B.mode = 'menu'; B.wasForced = false; return; }
+    doAttack(B.foe, nb, foePickMove(), true, function(){
+      if (nb.hp <= 0) { handleMyFaint(); return; }
+      B.mode = 'menu';
+    });
+  }, 500);
+}
+function updateBattle() {
+  if (!B) return;
+  // Typewriter
+  if (B.mode === 'msg' && B.shown < B.msg.length) B.shown++;
+  // Auto-advance
+  if (B.mode === 'msg' && B.autoAt && G.frame >= B.autoAt && B.shown >= B.msg.length) {
+    var n = B.next; B.autoAt = 0; B.next = null;
+    if (n) n();
+  }
+  // Animations
+  if (B.anim) {
+    B.anim.t++;
+    if (B.anim.kind === 'hit' && B.anim.t > 14) B.anim = null;
+    if (B.anim && B.anim.kind === 'stone') {
+      if (B.anim.t % 32 === 0 && B.anim.t <= 32 * 4) {
+        var shakeNo = B.anim.t / 32 - 1;
+        if (shakeNo >= B.anim.shakeTarget) {
+          B.anim = null; B.mode = 'msg';
+          finishCapture();
+        }
+      }
+      if (B.anim && B.anim.t > 32 * 5) { B.anim = null; B.mode = 'msg'; finishCapture(); }
+    }
+  }
+  // HP bar easing
+  if (B.foeDisp !== B.foe.hp) B.foeDisp += Math.sign(B.foe.hp - B.foeDisp) * Math.max(1, Math.abs(B.foe.hp - B.foeDisp) / 6);
+  var mb = myBeast();
+  if (mb && B.myDisp !== mb.hp) B.myDisp += Math.sign(mb.hp - B.myDisp) * Math.max(1, Math.abs(mb.hp - B.myDisp) / 6);
+}
+function battleConfirm() {
+  if (!B) return;
+  if (B.anim) return;
+  if (B.mode === 'msg') {
+    if (B.shown < B.msg.length) { B.shown = B.msg.length; return; }
+    var n = B.next; B.next = null; B.autoAt = 0;
+    if (n) n();
+    return;
+  }
+  if (B.mode === 'menu') {
+    var sel = B.menu;
+    if (sel === 0) { B.mode = 'fight'; B.moveSel = 0; }
+    else if (sel === 1) { B.mode = 'switch'; B.switchSel = B.active; }
+    else if (sel === 2) { tryCapture(); }
+    else if (sel === 3) { tryRun(); }
+    return;
+  }
+  if (B.mode === 'fight') {
+    var slot = myBeast().moves[B.moveSel];
+    if (!slot) return;
+    if (slot.pp <= 0) { bSay('No PP left for that move!', function(){ B.mode = 'fight'; }, 400); return; }
+    B.mode = 'msg';
+    executeTurn(slot.id);
+    return;
+  }
+  if (B.mode === 'switch') {
+    var idx = B.switchSel;
+    if (idx === B.active || G.party[idx].hp <= 0) return;
+    B.mode = 'msg';
+    if (B.mustSwitch) B.wasForced = true;
+    doSwitch(idx);
+    return;
+  }
+}
+function battleCancel() {
+  if (!B) return;
+  if (B.mode === 'fight') B.mode = 'menu';
+  else if (B.mode === 'switch' && !B.mustSwitch) B.mode = 'menu';
+}
+function battleDir(dir) {
+  if (!B) return;
+  if (B.mode === 'menu') {
+    if (dir === 'right') B.menu = B.menu % 2 === 0 ? B.menu + 1 : B.menu;
+    if (dir === 'left') B.menu = B.menu % 2 === 1 ? B.menu - 1 : B.menu;
+    if (dir === 'down') B.menu = B.menu < 2 ? B.menu + 2 : B.menu;
+    if (dir === 'up') B.menu = B.menu >= 2 ? B.menu - 2 : B.menu;
+  } else if (B.mode === 'fight') {
+    var n = myBeast().moves.length;
+    if (dir === 'right' && B.moveSel % 2 === 0 && B.moveSel + 1 < n) B.moveSel++;
+    if (dir === 'left' && B.moveSel % 2 === 1) B.moveSel--;
+    if (dir === 'down' && B.moveSel + 2 < n) B.moveSel += 2;
+    if (dir === 'up' && B.moveSel - 2 >= 0) B.moveSel -= 2;
+  } else if (B.mode === 'switch') {
+    if (dir === 'down') B.switchSel = Math.min(G.party.length - 1, B.switchSel + 1);
+    if (dir === 'up') B.switchSel = Math.max(0, B.switchSel - 1);
+  }
+}
+
+/* ---------------- Rendering ---------------- */
+function hash(x, y) { var h = (x * 374761393 + y * 668265263) ^ 0x5bf03635; return ((h ^ (h >> 13)) >>> 0) % 100; }
+
+function drawTile(mapId, t, sx, sy, wx, wy) {
+  var indoor = MAPS[mapId].indoor;
+  var h = hash(wx, wy);
+  function px(c, x, y, w, hh) { ctx.fillStyle = c; ctx.fillRect(sx + x, sy + y, w, hh); }
+  switch (t) {
+    case '.': case 'D': case 'M':
+      if (indoor) {
+        px(C.l, 0, 0, 16, 16);
+        px(C.m, 0, 7, 16, 1); px(C.m, 0, 15, 16, 1);
+        if ((wx + wy) % 2 === 0) px(C.m, 8, 0, 1, 7); else px(C.m, 4, 8, 1, 7);
+        if (t === 'M') { px(C.d, 1, 2, 14, 12); px(C.p, 3, 4, 10, 8); }
+        if (t === 'D') { px(C.d, 3, 1, 10, 14); }
+      } else if (t === 'D') {
+        px(C.p, 0, 0, 16, 16); px(C.d, 3, 0, 10, 16); px(C.m, 5, 2, 6, 6); px(C.l, 7, 12, 2, 2);
+      } else {
+        px(C.p, 0, 0, 16, 16);
+        if (h < 30) { px(C.l, h % 13, (h * 7) % 13, 2, 1); }
+        if (h > 70) { px(C.l, (h * 3) % 14, (h * 11) % 14, 1, 2); }
+      }
+      break;
+    case 'g':
+      px(C.p, 0, 0, 16, 16);
+      px(C.m, 2, 6, 2, 10); px(C.m, 6, 3, 2, 13); px(C.m, 11, 5, 2, 11); px(C.m, 14, 8, 1, 8);
+      px(C.l, 3, 9, 1, 7); px(C.l, 8, 6, 1, 10); px(C.l, 12, 9, 1, 7);
+      px(C.d, 6, 3, 1, 3); px(C.d, 11, 5, 1, 3);
+      break;
+    case 'p':
+      px(C.l, 0, 0, 16, 16);
+      px(C.m, h % 12, (h * 5) % 12, 3, 1); px(C.m, (h * 7) % 13, (h * 3) % 14, 2, 1);
+      break;
+    case 'f':
+      px(C.p, 0, 0, 16, 16);
+      px(C.m, 3, 8, 1, 6); px(C.m, 11, 9, 1, 5);
+      px(C.p, 2, 4, 3, 3); px(C.d, 3, 5, 1, 1);
+      px(C.p, 10, 5, 3, 3); px(C.d, 11, 6, 1, 1);
+      break;
+    case 'T':
+      px(C.p, 0, 0, 16, 16);
+      px(C.d, 7, 11, 2, 5);
+      px(C.m, 2, 2, 12, 11); px(C.d, 1, 4, 14, 8);
+      px(C.m, 4, 1, 8, 3); px(C.l, 4, 4, 3, 3); px(C.l, 9, 7, 3, 2);
+      break;
+    case '#':
+      px(C.p, 0, 0, 16, 16);
+      px(C.m, 0, 4, 16, 3); px(C.m, 0, 11, 16, 3); px(C.d, 0, 6, 16, 1); px(C.d, 0, 13, 16, 1);
+      px(C.d, 2, 2, 2, 13); px(C.d, 12, 2, 2, 13);
+      break;
+    case 'W':
+      if (indoor) {
+        px(C.m, 0, 0, 16, 16); px(C.d, 0, 0, 16, 2); px(C.l, 0, 14, 16, 2);
+        px(C.d, (wx % 2) * 8, 7, 8, 1);
+      } else {
+        px(C.l, 0, 0, 16, 16);
+        px(C.m, 2 + (h % 5), 4, 6, 1); px(C.m, 7 + (h % 4), 11, 6, 1); px(C.p, 3, 11, 3, 1);
+      }
+      break;
+    case 'r':
+      px(C.d, 0, 0, 16, 16);
+      px(C.m, 0, 4, 16, 2); px(C.m, 0, 10, 16, 2); px(C.m, 0, 15, 16, 1);
+      px(C.l, (wx % 2) * 8 + 2, 1, 3, 1); px(C.l, ((wx + 1) % 2) * 8 + 2, 7, 3, 1); px(C.l, (wx % 2) * 8 + 2, 12, 3, 1);
+      break;
+    case 'w':
+      px(C.p, 0, 0, 16, 16);
+      px(C.m, 0, 0, 16, 1); px(C.m, 0, 15, 16, 1);
+      if (h % 3 === 0) { px(C.d, 5, 4, 6, 7); px(C.l, 6, 5, 4, 3); }
+      break;
+    case 'S':
+      px(C.p, 0, 0, 16, 16);
+      px(C.d, 7, 7, 2, 8);
+      px(C.m, 2, 1, 12, 7); px(C.p, 3, 2, 10, 5); px(C.d, 4, 3, 8, 1); px(C.d, 4, 5, 6, 1);
+      break;
+    case 'k':
+      px(C.l, 0, 0, 16, 16); px(C.m, 0, 7, 16, 1); px(C.m, 0, 15, 16, 1);
+      px(C.m, 3, 8, 10, 7); px(C.d, 3, 8, 10, 1);
+      if (STONES[wx + ',' + wy]) {
+        var taken = G.flags.starter && STONES[wx + ',' + wy] === G.flags.starter;
+        if (!taken) { px(C.d, 6, 2, 4, 6); px(C.p, 7, 3, 2, 2); }
+      }
+      break;
+    case 't':
+      px(C.l, 0, 0, 16, 16);
+      px(C.d, 1, 4, 14, 9); px(C.m, 2, 5, 12, 7); px(C.d, 3, 13, 2, 3); px(C.d, 11, 13, 2, 3);
+      break;
+    case 'b':
+      px(C.l, 0, 0, 16, 16);
+      px(C.d, 2, 3, 12, 11); px(C.p, 3, 4, 5, 4); px(C.m, 3, 9, 10, 4);
+      break;
+  }
+}
+
+function drawTextBox() {
+  ctx.fillStyle = C.p; ctx.fillRect(0, 104, 160, 40);
+  ctx.fillStyle = C.d; ctx.fillRect(0, 104, 160, 1); ctx.fillRect(0, 106, 160, 1);
+  ctx.fillRect(2, 108, 156, 1); ctx.fillRect(2, 141, 156, 1);
+  ctx.fillRect(2, 108, 1, 34); ctx.fillRect(157, 108, 1, 34);
+}
+function drawText(str, x, y, col) {
+  ctx.fillStyle = col || C.d;
+  ctx.font = '8px "Courier New", monospace';
+  ctx.textBaseline = 'top';
+  ctx.fillText(str, x, y);
+}
+function wrapText(str, n) {
+  var words = str.split(' '), lines = [], cur = '';
+  for (var i = 0; i < words.length; i++) {
+    if ((cur + ' ' + words[i]).trim().length > n) { lines.push(cur.trim()); cur = words[i]; }
+    else cur += ' ' + words[i];
+  }
+  if (cur.trim()) lines.push(cur.trim());
+  return lines;
+}
+function drawDialogText(text, shown) {
+  drawTextBox();
+  var partial = text.substring(0, shown);
+  var lines = wrapText(partial, 19);
+  for (var i = 0; i < lines.length && i < 2; i++) drawText(lines[i], 8, 114 + i * 11);
+  if (shown >= text.length && G.frame % 60 < 32) drawText('▼', 148, 132);
+}
+
+function playerSprite() {
+  if (G.dir === 'up') return SPR.playerUp;
+  if (G.dir === 'left') return SPR.playerSide;
+  if (G.dir === 'right') return SPR.playerSideFlip || (SPR.playerSideFlip = spr([
+"......0000......",
+".....011110.....",
+".....133100.....",
+".....130100.....",
+".....133100.....",
+"......1110......",
+"....111111......",
+"....10111.......",
+"....1011........",
+"....1111........",
+"....11.1........",
+"....11..1.......",
+"....1...1.......",
+"...00...00......",
+"................",
+"................"], true));
+  return SPR.playerDown;
+}
+
+function drawWorld() {
+  var m = MAPS[G.map];
+  var camX = Math.max(0, Math.min(mapW(m) * 16 - 160, G.px + 8 - 80));
+  var camY = Math.max(0, Math.min(mapH(m) * 16 - 144, G.py + 8 - 72));
+  if (mapW(m) * 16 <= 160) camX = (mapW(m) * 16 - 160) / 2;
+  if (mapH(m) * 16 <= 144) camY = (mapH(m) * 16 - 144) / 2;
+  ctx.fillStyle = C.d; ctx.fillRect(0, 0, 160, 144);
+  var x0 = Math.floor(camX / 16), y0 = Math.floor(camY / 16);
+  for (var ty = y0 - 1; ty < y0 + VH + 1; ty++) {
+    for (var tx = x0 - 1; tx < x0 + VW + 1; tx++) {
+      var t = tileAt(G.map, tx, ty);
+      drawTile(G.map, t, tx * 16 - camX, ty * 16 - camY, tx, ty);
+    }
+  }
+  // NPCs
+  var npcs = m.npcs || [];
+  for (var i = 0; i < npcs.length; i++) {
+    ctx.drawImage(SPR[npcs[i].sprite], npcs[i].x * 16 - camX, npcs[i].y * 16 - camY - 2);
+  }
+  // Player (slight bob while walking)
+  var bob = G.moving && (G.moveStep % 4 < 2) ? -1 : 0;
+  ctx.drawImage(playerSprite(), Math.round(G.px - camX), Math.round(G.py - camY) - 2 + bob);
+  // Dialogue overlay
+  if (G.state === 'dialog' && DLG) {
+    var cur = dlgCurrent();
+    if (typeof cur === 'string') {
+      drawDialogText(cur, DLG.shown);
+    } else if (cur && cur.choice) {
+      drawTextBox();
+      drawText('Will you bind it?', 8, 114);
+      // choice box
+      ctx.fillStyle = C.p; ctx.fillRect(104, 82, 54, 24);
+      ctx.fillStyle = C.d;
+      ctx.fillRect(104, 82, 54, 1); ctx.fillRect(104, 105, 54, 1);
+      ctx.fillRect(104, 82, 1, 24); ctx.fillRect(157, 82, 1, 24);
+      for (var ci = 0; ci < cur.choice.length; ci++) {
+        if (DLG.sel === ci) drawText('▶', 108, 86 + ci * 10);
+        drawText(cur.choice[ci], 116, 86 + ci * 10);
+      }
+    }
+  }
+}
+
+/* Battle rendering */
+function hpColor(cur, max) {
+  var f = max > 0 ? cur / max : 0;
+  return f > 0.5 ? C.m : (f > 0.2 ? C.l : C.d);
+}
+function drawHpBar(x, y, w, cur, max) {
+  ctx.fillStyle = C.d; ctx.fillRect(x - 1, y - 1, w + 2, 5);
+  ctx.fillStyle = C.p; ctx.fillRect(x, y, w, 3);
+  var fw = Math.max(0, Math.round(w * Math.max(0, cur) / max));
+  ctx.fillStyle = hpColor(cur, max); ctx.fillRect(x, y, fw, 3);
+}
+function drawInfoBox(x, y, w, h) {
+  ctx.fillStyle = C.p; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = C.d;
+  ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1);
+  ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h);
+  ctx.fillRect(x + 2, y + h - 4, w - 6, 1);
+}
+function drawBattle() {
+  ctx.fillStyle = C.p; ctx.fillRect(0, 0, 160, 144);
+  // ground lines
+  ctx.fillStyle = C.l;
+  ctx.fillRect(88, 58, 66, 2); ctx.fillRect(6, 100, 66, 2);
+  var foe = B.foe, me = myBeast();
+  // Foe sprite (hidden while stone is on it)
+  var stoneOn = B.anim && B.anim.kind === 'stone';
+  if (foe.hp > 0 && !stoneOn) {
+    var fx = 104, fy = 12;
+    if (B.anim && B.anim.kind === 'hit' && B.anim.who === 'foe' && B.anim.t % 4 < 2) fx += 2;
+    ctx.drawImage(SPR[foe.sp], 0, 0, 16, 16, fx, fy, 48, 48);
+  }
+  if (stoneOn) {
+    var wob = Math.sin(B.anim.t / 5) * (B.anim.t % 32 < 16 ? 2 : -2);
+    ctx.fillStyle = C.d;
+    ctx.beginPath(); ctx.arc(128 + (B.anim.t > 32 ? wob : 0), 44, 7, 0, 7); ctx.fill();
+    ctx.fillStyle = C.p; ctx.fillRect(124, 40, 3, 3);
+    ctx.fillStyle = C.m; ctx.fillRect(120, 50, 16, 2);
+  }
+  // My beast (back view = flipped sprite)
+  if (me && me.hp > 0) {
+    var mx = 24, my2 = 56;
+    if (B.anim && B.anim.kind === 'hit' && B.anim.who === 'me' && B.anim.t % 4 < 2) mx -= 2;
+    drawBackSprite(me.sp, mx, my2);
+  }
+  // Foe info
+  drawInfoBox(4, 4, 78, 30);
+  drawText(typeName(foe), 8, 7);
+  drawText('Lv' + foe.level, 56, 7);
+  drawText('HP', 8, 20);
+  drawHpBar(24, 21, 52, Math.max(0, Math.round(B.foeDisp)), foe.stats.hp);
+  // My info
+  drawInfoBox(80, 66, 76, 34);
+  drawText(typeName(me), 84, 68);
+  drawText('Lv' + me.level, 134, 68);
+  drawText('HP', 84, 79);
+  drawHpBar(100, 80, 50, Math.max(0, Math.round(B.myDisp)), me.stats.hp);
+  drawText(padNum(Math.max(0, Math.round(B.myDisp)), 3) + '/' + padNum(me.stats.hp, 3), 104, 89);
+  // Text box / menus
+  drawTextBox();
+  if (B.mode === 'menu') {
+    var lines = wrapText('What will ' + typeName(me) + ' do?', 13);
+    for (var li = 0; li < lines.length && li < 2; li++) drawText(lines[li], 8, 114 + li * 11);
+    ctx.fillStyle = C.p; ctx.fillRect(82, 92, 76, 50);
+    ctx.fillStyle = C.d;
+    ctx.fillRect(82, 92, 76, 1); ctx.fillRect(82, 141, 76, 1);
+    ctx.fillRect(82, 92, 1, 50); ctx.fillRect(157, 92, 1, 50);
+    var items = ['FIGHT', 'BEASTS', 'BIND', 'RUN'];
+    for (var ii = 0; ii < 4; ii++) {
+      var ix = 92 + (ii % 2) * 33, iy = 102 + Math.floor(ii / 2) * 18;
+      if (B.menu === ii) drawText('▶', ix - 8, iy);
+      drawText(items[ii], ix, iy);
+    }
+    drawText('STONES ×' + G.stones, 8, 132);
+  } else if (B.mode === 'fight') {
+    for (var mi = 0; mi < me.moves.length; mi++) {
+      var mv = MOVES[me.moves[mi].id];
+      var mxx = 12 + (mi % 2) * 76, myy = 112 + Math.floor(mi / 2) * 14;
+      if (B.moveSel === mi) drawText('▶', mxx - 8, myy);
+      drawText(mv.name.toUpperCase().substring(0, 11), mxx, myy);
+    }
+    var sel = MOVES[me.moves[B.moveSel].id];
+    ctx.fillStyle = C.p; ctx.fillRect(96, 66, 62, 26);
+    ctx.fillStyle = C.d;
+    ctx.fillRect(96, 66, 62, 1); ctx.fillRect(96, 91, 62, 1);
+    ctx.fillRect(96, 66, 1, 26); ctx.fillRect(157, 66, 1, 26);
+    drawText('TYPE/' + sel.type.toUpperCase(), 100, 70);
+    drawText('PP ' + me.moves[B.moveSel].pp + '/' + sel.pp, 100, 81);
+  } else if (B.mode === 'switch') {
+    ctx.fillStyle = C.p; ctx.fillRect(0, 0, 160, 104);
+    ctx.fillStyle = C.d; ctx.fillRect(0, 103, 160, 1);
+    drawText(B.mustSwitch ? 'Choose a beast!' : 'Choose a beast. (X: back)', 8, 6);
+    for (var pi = 0; pi < G.party.length; pi++) {
+      var pb = G.party[pi], py = 20 + pi * 14;
+      if (B.switchSel === pi) drawText('▶', 4, py);
+      drawText(typeName(pb) + ' Lv' + pb.level, 12, py);
+      drawHpBar(96, py + 1, 40, pb.hp, pb.stats.hp);
+      drawText(pb.hp + '/' + pb.stats.hp, 96, py + 7, pb.hp <= 0 ? C.d : C.d);
+      if (pb.hp <= 0) drawText('FAINTED', 12, py + 7);
+    }
+    drawDialogText(B.msg || ' ', B.msg ? B.msg.length : 0);
+  } else {
+    var bl = wrapText(B.msg.substring(0, B.shown), 19);
+    for (var bi = 0; bi < bl.length && bi < 2; bi++) drawText(bl[bi], 8, 114 + bi * 11);
+  }
+}
+function padNum(n, w) { var s = '' + n; while (s.length < w) s = ' ' + s; return s; }
+var backCache = {};
+function drawBackSprite(sp, x, y) {
+  if (!backCache[sp]) {
+    // Build flipped copy of the species sprite
+    var src = SPR[sp];
+    var c = document.createElement('canvas'); c.width = 16; c.height = 16;
+    var g = c.getContext('2d');
+    g.translate(16, 0); g.scale(-1, 1);
+    g.drawImage(src, 0, 0);
+    backCache[sp] = c;
+  }
+  ctx.drawImage(backCache[sp], 0, 0, 16, 16, x, y, 48, 48);
+}
+
+function drawTitle() {
+  ctx.fillStyle = C.d; ctx.fillRect(0, 0, 160, 144);
+  ctx.fillStyle = C.p; ctx.fillRect(8, 8, 144, 128);
+  ctx.fillStyle = C.d; ctx.fillRect(12, 12, 136, 120);
+  ctx.fillStyle = C.p; ctx.fillRect(16, 16, 128, 112);
+  ctx.font = 'bold 19px "Courier New", monospace';
+  ctx.fillStyle = C.d; ctx.textBaseline = 'top';
+  ctx.fillText('CLANBOUND', 22, 34);
+  ctx.font = '8px "Courier New", monospace';
+  drawText('A beast-binding tale', 38, 62);
+  drawText('Bind wild beasts.', 36, 84);
+  drawText('Raise your clan.', 40, 94);
+  if (G.frame % 90 < 55) drawText('PRESS ENTER / TAP A', 34, 112);
+}
+
+function render() {
+  if (G.state === 'title') { drawTitle(); return; }
+  if (G.state === 'battle' && B) { drawBattle(); }
+  else { drawWorld(); }
+  if (G.flash > 0) {
+    ctx.fillStyle = (G.flash % 4 < 2) ? C.d : C.p;
+    ctx.fillRect(0, 0, 160, 144);
+  }
+  if (G.fade > 0) {
+    ctx.fillStyle = C.d;
+    ctx.globalAlpha = G.fade / 6 * 0.6;
+    ctx.fillRect(0, 0, 160, 144);
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ---------------- Input ---------------- */
+function onConfirm() {
+  if (G.state === 'title') { G.state = 'world'; return; }
+  if (G.state === 'dialog') { dlgConfirm(); return; }
+  if (G.state === 'battle') { battleConfirm(); return; }
+  if (G.state === 'world' && !G.moving) tryInteract();
+}
+function onCancel() {
+  if (G.state === 'battle') battleCancel();
+}
+function onDirPress(dir) {
+  if (G.state === 'dialog') {
+    var cur = dlgCurrent();
+    if (cur && cur.choice) {
+      if (dir === 'down' || dir === 'right') dlgChoose(1);
+      if (dir === 'up' || dir === 'left') dlgChoose(-1);
+    }
+    return;
+  }
+  if (G.state === 'battle') battleDir(dir);
+  else if (G.state === 'world') tapDir = dir;
+}
+var KEYMAP = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
+               w:'up', s:'down', a:'left', d:'right', W:'up', S:'down', A:'left', D:'right' };
+document.addEventListener('keydown', function(e) {
+  var k = e.key;
+  if (KEYMAP[k]) {
+    e.preventDefault();
+    if (!held[KEYMAP[k]]) { held[KEYMAP[k]] = true; onDirPress(KEYMAP[k]); }
+    held[KEYMAP[k]] = true;
+    return;
+  }
+  if (k === 'z' || k === 'Z' || k === 'Enter') { e.preventDefault(); if (!e.repeat) onConfirm(); }
+  else if (k === 'x' || k === 'X' || k === 'Escape') { e.preventDefault(); if (!e.repeat) onCancel(); }
+});
+document.addEventListener('keyup', function(e) {
+  if (KEYMAP[e.key]) held[KEYMAP[e.key]] = false;
+});
+/* Touch controls */
+function bindBtn(el, down, up) {
+  el.addEventListener('pointerdown', function(e){ e.preventDefault(); down(); });
+  if (up) {
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointerleave', up);
+    el.addEventListener('pointercancel', up);
+  }
+}
+document.querySelectorAll('.dpad button[data-dir]').forEach(function(btn) {
+  var dir = btn.getAttribute('data-dir');
+  bindBtn(btn, function(){ held[dir] = true; onDirPress(dir); }, function(){ held[dir] = false; });
+});
+bindBtn(document.getElementById('btnA'), function(){ onConfirm(); });
+bindBtn(document.getElementById('btnB'), function(){ onCancel(); });
+cv.addEventListener('pointerdown', function(){ if (G.state === 'title') onConfirm(); });
+
+/* ---------------- Main loop ---------------- */
+var lastT = 0, acc = 0;
+function loop(t) {
+  requestAnimationFrame(loop);
+  acc += Math.min(50, t - lastT); lastT = t;
+  var step = 1000 / 60;
+  while (acc >= step) {
+    acc -= step;
+    G.frame++;
+    if (G.state === 'world') updateWorld();
+    else if (G.state === 'dialog') {
+      var cur = dlgCurrent();
+      if (typeof cur === 'string' && DLG.shown < cur.length) DLG.shown++;
+    }
+    else if (G.state === 'battle') updateBattle();
+    if (G.flash > 0) G.flash--;
+    if (G.fade > 0) G.fade--;
+  }
+  render();
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
