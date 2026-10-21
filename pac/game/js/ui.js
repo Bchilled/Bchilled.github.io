@@ -1,6 +1,8 @@
-// PAC v0.8 — ui.js: input (keyboard, mouse, gamepad, phone overlay), HUD, edge markers, level-up jackpot,
+// PAC v0.9 — ui.js: input (keyboard, mouse, gamepad, phone overlay), HUD, edge markers, level-up jackpot,
 // menus (main, worlds, characters, endless, PvP, settings), the character sheet (pause + loadout), end-of-run tally.
 "use strict";
+// v0.9: phone A/B/C tap / drag-to-aim / hold-and-slide-to-swap; the cooldown arc under Pac's feet; the aim arrow; swapping
+// actives on the pause screen (click or drag). Changelog in index.html.
 // ================= INPUT =================
 const keys = {}; let mouseAim = null, inspect = false; const ray = new THREE.Raycaster(), mouseV = new THREE.Vector2(), groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
 addEventListener('keydown', e=>{ const k = e.key.toLowerCase(); audio();
@@ -38,9 +40,24 @@ function moveInput(){
   zone.addEventListener('pointermove', e=>{ if(e.pointerId!==id) return; const dx = e.clientX-ox, dy = e.clientY-oy, d = hyp(dx,dy), k = Math.min(1, d/R);
     padVec = d < 5 ? [0,0] : [dx/d*k, dy/d*k]; const m = Math.min(d, R); knob.style.transform = `translate(${dx/Math.max(d,1)*m}px,${dy/Math.max(d,1)*m}px)`; });
   const end = e=>{ if(e.pointerId!==id) return; id = null; padVec = null; base.classList.remove('on'); }; zone.addEventListener('pointerup', end); zone.addEventListener('pointercancel', end);
-  const hold = (el, fn)=>{ let tm = null; el.addEventListener('pointerdown', e=>{ audio(); e.preventDefault(); e.stopPropagation(); el.classList.add('on'); fn(); clearInterval(tm); tm = setInterval(fn, 100); });
-    const up = ()=>{ el.classList.remove('on'); clearInterval(tm); }; el.addEventListener('pointerup', up); el.addEventListener('pointerleave', up); el.addEventListener('pointercancel', up); };
-  hold($('bA'), ()=>{ if(state==='play') useActive(player(),0); }); hold($('bB'), ()=>{ if(state==='play') useActive(player(),1); }); hold($('bC'), ()=>{ if(state==='play') useActive(player(),2); });
+  // v0.9 A / B / C (Brent: "hard to aim in a direction while moving", "a quick swap tool to put abilities on keys"):
+  //  TAP fires it now at the best target · DRAG off the button to aim (an arrow shows the way), let go to fire that way ·
+  //  HOLD still for half a second and the button lifts: slide onto another button and let go to swap the two.
+  const pbs = [$('bA'), $('bB'), $('bC')], overEl = (b, e) => { const r = b.getBoundingClientRect(), p = 12; return e.clientX > r.left-p && e.clientX < r.right+p && e.clientY > r.top-p && e.clientY < r.bottom+p; };
+  pbs.forEach((el, idx)=>{ let pid = null, x0 = 0, y0 = 0, mode = null, holdTm = null;
+    el.addEventListener('pointerdown', e=>{ audio(); e.preventDefault(); e.stopPropagation(); if(pid!=null) return; pid = e.pointerId; try{ el.setPointerCapture(pid); }catch(er){} x0 = e.clientX; y0 = e.clientY; mode = 'tap'; el.classList.add('on');
+      clearTimeout(holdTm); holdTm = setTimeout(()=>{ const P0 = player(); if(mode==='tap' && P0 && P0.act[idx]){ mode = 'swap'; el.classList.add('lift'); toast('learn:swap', 'Slide onto another button and let go to swap them.', 2400); } }, 480); });
+    el.addEventListener('pointermove', e=>{ if(e.pointerId!==pid) return; const dx = e.clientX-x0, dy = e.clientY-y0, d = hyp(dx,dy), P0 = player();
+      if(mode==='tap' && d > 18){ mode = 'aim'; clearTimeout(holdTm); }
+      if(mode==='aim' && P0 && d > 1){ P0.aimHold = idx; P0.dragAim = [dx/d, dy/d]; }     // screen right = +x, screen down = +z
+      if(mode==='swap') pbs.forEach((b,j)=>b.classList.toggle('drop', j!==idx && overEl(b, e))); });
+    const end = e=>{ if(e.pointerId!==pid) return; pid = null; clearTimeout(holdTm); el.classList.remove('on','lift'); pbs.forEach(b=>b.classList.remove('drop')); const P0 = player();
+      if(P0 && state==='play' && e.type==='pointerup'){
+        if(mode==='tap') useActive(P0, idx);
+        else if(mode==='aim' && P0.dragAim){ const [dx, dz] = P0.dragAim; P0.ax = dx; P0.az = dz; P0.aimPx = P0.x + dx*9; P0.aimPz = P0.z + dz*9; P0.aimLockUntil = performance.now() + 350; useActive(P0, idx); }
+        else if(mode==='swap'){ const j = pbs.findIndex((b,j)=>j!==idx && overEl(b, e)); if(j >= 0) swapActives(P0, idx, j); } }
+      if(P0){ P0.aimHold = null; P0.dragAim = null; } mode = null; };
+    el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end); });
   const sw = $('tRight'); let sid = null, sx = 0, sy = 0, st = 0;
   sw.addEventListener('pointerdown', e=>{ audio(); e.preventDefault(); sid = e.pointerId; sx = e.clientX; sy = e.clientY; st = performance.now(); });
   const swEnd = e=>{ if(e.pointerId !== sid) return; sid = null; const dx = e.clientX-sx, dy = e.clientY-sy, d = hyp(dx,dy); if(state!=='play' || performance.now()-st > 600) return;
@@ -48,11 +65,38 @@ function moveInput(){
   sw.addEventListener('pointerup', swEnd); sw.addEventListener('pointercancel', e=>{ if(e.pointerId===sid) sid = null; });
 })();
 function playerAim(P0){
+  if(P0.aimLockUntil > performance.now()) return;   // a phone drag-aim holds for a moment while the cast plays out
   if(!isMobile && mouseAim && !P0.gpAim){ const dx = mouseAim.x-P0.x, dz = mouseAim.z-P0.z, d = hyp(dx,dz)||1; P0.ax = dx/d; P0.az = dz/d; P0.aimPx = mouseAim.x; P0.aimPz = mouseAim.z; return; }
   P0.aimPx = null; P0.aimPz = null; if(P0.gpAim) return;
   // phone: aim at the most dangerous thing in front of you, else the nearest anywhere, else straight ahead
   const tg = priority(P0, 14, 1.4) || priority(P0, 10);
   if(tg){ const dx = tg.x-P0.x, dz = tg.z-P0.z, d = hyp(dx,dz)||1; P0.ax = dx/d; P0.az = dz/d; P0.aimPx = tg.x; P0.aimPz = tg.z; } else { P0.ax = Math.sin(P0.face); P0.az = Math.cos(P0.face); }
+}
+
+// swap two active slots (their cooldowns and upgrades go with the ability)
+// pause screen: click an active row then another, or drag one onto another, to swap their keys
+let swapSel = null;
+function wireSwapRows(){ const P0 = player(); if(!P0) return; document.querySelectorAll('#sheetPane tr.swp').forEach(tr=>{ const i = +tr.dataset.i;
+  tr.onclick = ()=>{ if(swapSel==null){ swapSel = i; } else { swapActives(P0, swapSel, i); swapSel = null; } renderSheet(); };
+  tr.ondragstart = e=>{ e.dataTransfer.setData('text/plain', String(i)); }; tr.ondragover = e=>{ e.preventDefault(); tr.classList.add('drop'); }; tr.ondragleave = ()=>tr.classList.remove('drop');
+  tr.ondrop = e=>{ e.preventDefault(); const j = +e.dataTransfer.getData('text/plain'); swapSel = null; swapActives(P0, j, i); renderSheet(); }; }); }
+function swapActives(h, i, j){ if(i===j) return; const t = h.act[i]; h.act[i] = h.act[j]; h.act[j] = t; buildSkillHud(); SFX.pick && SFX.pick();
+  const n = k => k ? ABIL[k].name : 'nothing'; toast(null, `${n(h.act[i])} is on ${KEYLAB[i]}, ${n(h.act[j])} on ${KEYLAB[j]}.`, 2200); }
+// ---------- every frame: the cooldown arc under Pac's feet, and the aim arrow while a phone button is dragged ----------
+let aimArrow = null; const CA = [];
+function perFrameUi(P0){
+  const arc = $('cdArc'), show = state==='play' && P0 && !P0.dead && !inspect && SAVE.set.cdArc !== false;
+  arc.style.display = show ? 'block' : 'none';
+  if(show){ const [sx, sy] = project(P0.x, floorY(P0.x, P0.z), P0.z); arc.style.transform = `translate(${sx|0}px,${sy|0}px)`;
+    if(!CA.length) for(let i=0;i<3;i++){ const d = document.createElement('div'); d.className = 'ca'; d.innerHTML = '<span></span><i></i>'; arc.appendChild(d); CA.push({d, ic:d.lastChild, k:null, f:-1}); }
+    CA.forEach((c, i)=>{ const k = P0.act[i]; if(k !== c.k){ c.k = k; c.d.style.display = k ? '' : 'none'; if(k){ c.ic.textContent = ABIL[k].ic; c.d.style.setProperty('--el', hexc(EL[ABIL[k].el].col)); } }
+      if(!k) return; const f = Math.round(clamp((P0.cd[k]||0)/cdOf(P0,k), 0, 1)*40)/40; if(f !== c.f){ c.f = f; c.d.style.setProperty('--cd', (f*100)+'%'); c.d.classList.toggle('rdy', f <= 0); } }); }
+  const aiming = P0 && P0.dragAim && P0.aimHold != null && state==='play';
+  if(aiming && !aimArrow){ const s = new THREE.Shape(); s.moveTo(-0.22,0.12); s.lineTo(0.22,0.12); s.lineTo(0.22,0.78); s.lineTo(0.55,0.78); s.lineTo(0,1); s.lineTo(-0.55,0.78); s.lineTo(-0.22,0.78); s.closePath();
+    const g = new THREE.ShapeGeometry(s); g.rotateX(Math.PI/2); aimArrow = new THREE.Mesh(g, new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.55, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide})); scene.add(aimArrow); }
+  if(aimArrow){ aimArrow.visible = !!aiming; if(aiming){ const k = P0.act[P0.aimHold], A = k && ABIL[k], L = A ? (A.dist || A.range || A.rad || 9) : 9;
+    aimArrow.position.set(P0.x, 0.12 + floorY(P0.x, P0.z), P0.z); aimArrow.rotation.y = Math.atan2(P0.dragAim[0], P0.dragAim[1]); aimArrow.scale.set(1.6, 1, L);
+    aimArrow.material.color.setHex(A ? EL[A.el].col : 0xffffff).multiplyScalar(1.4); } }
 }
 
 // ================= HUD =================
@@ -73,46 +117,49 @@ function buildSkillHud(){ const P0 = player(); if(!P0) return;
 function flashSlot(s){ const el = $('sl_'+s); if(el){ el.classList.add('fire'); setTimeout(()=>el.classList.remove('fire'), 160); } const pb = {a0:'bA', a1:'bB', a2:'bC', move:'swipeHint'}[s]; if(pb){ $(pb).classList.add('fire'); setTimeout(()=>$(pb).classList.remove('fire'), 160); } }
 function setCd(el, I){ if(!el) return; const f = I && I.cdMax ? clamp(I.cd/I.cdMax,0,1) : 0; el.querySelector('.cdv').style.setProperty('--cd', (f*100).toFixed(0)+'%'); const n = el.querySelector('.cdn'); if(n) n.textContent = I && I.cdMax >= 2 && I.cd > 0.05 ? (I.cd < 1 ? I.cd.toFixed(1) : Math.ceil(I.cd)) : ''; }
 const MARKS = []; function mark(i){ if(!MARKS[i]){ const d = document.createElement('div'); d.className = 'mark'; d.innerHTML = '<i></i><span></span>'; $('marks').appendChild(d); MARKS[i] = d; } return MARKS[i]; }
+// v0.9 speed: the HUD redraws 20 times a second (not every frame), text only when it changes, the score sheet 4 times a second
+let hudT = 0, hudSlowT = 0; const _txt = new WeakMap();
+const setTxt = (el, v) => { if(_txt.get(el) !== v){ _txt.set(el, v); el.textContent = v; } }, setHtml = (el, v) => { if(_txt.get(el) !== v){ _txt.set(el, v); el.innerHTML = v; } };
 function updateHud(){
-  const P0 = player(); if(!P0) return;
+  const P0 = player(); if(!P0) return; const now = performance.now(); if(now - hudT < 50) return; hudT = now; const slow = now - hudSlowT > 250; if(slow) hudSlowT = now;
   const hp = clamp(P0.hp/P0.maxhp,0,1), en = clamp(P0.energy/P0.maxEnergy,0,1);
-  $('gHpF').style.height = (hp*100)+'%'; $('gHpT').textContent = Math.max(0,Math.round(P0.hp)); $('gHp').classList.toggle('shield', P0.shieldT>0);
-  $('gEnF').style.height = (en*100)+'%'; $('gEnT').textContent = Math.round(P0.energy);
+  $('gHpF').style.height = (hp*100)+'%'; setTxt($('gHpT'), Math.max(0,Math.round(P0.hp))); $('gHp').classList.toggle('shield', P0.shieldT>0);
+  $('gEnF').style.height = (en*100)+'%'; setTxt($('gEnT'), Math.round(P0.energy));
   const xpN = XPC[Math.min(25,P0.level+1)], xpP = XPC[P0.level], xf = P0.level>=25 ? 1 : (P0.xp-xpP)/(xpN-xpP);
-  $('xpBar').firstChild.style.width = (clamp(xf,0,1)*100)+'%'; $('lvN').textContent = 'LV '+P0.level;
-  $('mHp').style.width = hp*100+'%'; $('mEn').style.width = en*100+'%'; $('mXp').style.width = clamp(xf,0,1)*100+'%'; $('mLv').textContent = 'LV '+P0.level;
+  $('xpBar').firstChild.style.width = (clamp(xf,0,1)*100)+'%'; setTxt($('lvN'), 'LV '+P0.level);
+  $('mHp').style.width = hp*100+'%'; $('mEn').style.width = en*100+'%'; $('mXp').style.width = clamp(xf,0,1)*100+'%'; setTxt($('mLv'), 'LV '+P0.level);
   for(const [s] of SLOT_DEF) setCd($('sl_'+s), slotInfo(P0, s));
   setCd($('bA'), slotInfo(P0,'a0')); setCd($('bB'), slotInfo(P0,'a1')); setCd($('bC'), slotInfo(P0,'a2')); setCd($('swipeHint'), slotInfo(P0,'move'));
   const bl = []; if(hyper>0) bl.push(`<span style="color:#ff4fb8">HYPER ×${hyper}</span>`); if(blueT>0) bl.push(`<span style="color:#6ab0ff">EAT MODE ${blueT.toFixed(1)}</span>`);
   for(const [k,v] of Object.entries(P0.buff)) if(v>0) bl.push(`<span>${{dmg:'DMG+',speed:'SPEED+',xp:'XP×2',cd:'FAST CD',magnet:'MAGNET'}[k]||k} ${v.toFixed(0)}</span>`);
-  $('buffs').innerHTML = bl.join('');
-  $('scoreN').textContent = Math.round(ST.score).toLocaleString();
+  setHtml($('buffs'), bl.join(''));
+  setTxt($('scoreN'), Math.round(ST.score).toLocaleString());
   const m = Math.floor(ST.time/60), s = Math.floor(ST.time%60);
-  $('scoreDet').innerHTML = [['Dots eaten',ST.dots],['Patterns cleared',ST.patterns],['Ghosts killed',ST.ghosts],MODE==='campaign'?['Boss',ST.boss?'beaten':'—']:null,['Civilian casualties',ST.civ],['Props smashed',ST.props],['Coins',ST.coins],
+  if(slow) setHtml($('scoreDet'), [['Dots eaten',ST.dots],['Patterns cleared',ST.patterns],['Ghosts killed',ST.ghosts],MODE==='campaign'?['Boss',ST.boss?'beaten':'—']:null,['Civilian casualties',ST.civ],['Props smashed',ST.props],['Coins',ST.coins],
     MODE==='endless'?['Wave',wave]:null, MODE==='pvp'?['Your kills',P0.kills]:null,['Time',`${m}:${String(s).padStart(2,'0')}`],['Difficulty',diff().label+' · '+SAVE.set.speed+'×'],['Best',Math.round(Math.max(SAVE.best[MODE]||0, ST.score)).toLocaleString()]]
-    .filter(Boolean).map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join('');
+    .filter(Boolean).map(([a,b])=>`<div><span>${a}</span><b>${b}</b></div>`).join(''));
   // one short objective line
   let obj = '';
   if(MODE==='campaign'){ obj = !P0.moveOk ? 'Eat the dots' : P0.level < 4 ? `Grow — the stage opens at level 4 (${P0.level}/4)` : BOSS && BOSS.alive && !BOSS.intro ? 'Get to the main stage' : BOSS && BOSS.alive ? 'Beat Ball Boy' : ''; }
   else if(MODE==='endless') obj = `Wave ${wave} · next in ${Math.ceil(waveT)}s`; else obj = `First to ${PVP.target}`;
-  $('obj').textContent = obj;
+  setTxt($('obj'), obj);
   // edge markers: coloured triangles toward things that matter (not every mob)
   const L = [];
   for(const b of BUFFS) L.push({x:b.x, z:b.z, col:hexc(BUFF_TYPES[b.type].col), lab:'', small:true});
   if(MODE==='campaign' && BOSS && BOSS.alive){ if(gateOpen && !BOSS.intro) L.push({x:0, z:STAGE_Z, col:'#ffd23f', lab:'STAGE'}); if(BOSS.awake) L.push({x:BOSS.x, z:BOSS.z, col:'#ff4a2a', lab:'BALL BOY'}); }
   for(const o of ORBS) L.push({x:o.x, z:o.z, col:'#4aa8ff', lab:'ORB'});
   for(const g of G) if(g.big) L.push({x:g.x, z:g.z, col:'#'+GHOST_TYPES[g.type].col.toString(16).padStart(6,'0'), lab:''});
-  if(blueT > 0) for(const g of G) if(!g.big && hyp(g.x-P0.x,g.z-P0.z) > 14) L.push({x:g.x, z:g.z, col:'#6ab0ff', lab:'', small:true});
+  if(blueT > 0){ let c = 0; for(const g of G) if(!g.big && hyp(g.x-P0.x,g.z-P0.z) > 14 && c++ < 6) L.push({x:g.x, z:g.z, col:'#6ab0ff', lab:'', small:true}); }
   if(P0.hp < P0.maxhp*0.5){ let bf = null, bd = 60; for(const p of PICKS) if(p.kind==='fruit'){ const d = hyp(p.x-P0.x,p.z-P0.z); if(d < bd){ bd = d; bf = p; } } if(bf) L.push({x:bf.x, z:bf.z, col:'#7cff8a', lab:'FRUIT'}); }
   if(MODE==='pvp') for(const h of HEROES) if(h.team===1 && !h.dead) L.push({x:h.x, z:h.z, col:'#ff5a5a', lab:''});
   // markers ride the edge of a frame kept clear of the score (top) and the skill bar / thumbs (bottom)
   let n = 0; const M2 = 26, T = 76, B = isMobile ? 200 : 132, cx = SW/2, cy = (T + SH - B)/2, hh = Math.max(40, (SH - B - T)/2);
-  for(const t of L.slice(0, 24)){ const [sx, sy, front] = project(t.x, 1, t.z); const on = front && sx>M2 && sx<SW-M2 && sy>T && sy<SH-B; if(on) continue;
+  for(const t of L.slice(0, 14)){ const [sx, sy, front] = project(t.x, 1, t.z); const on = front && sx>M2 && sx<SW-M2 && sy>T && sy<SH-B; if(on) continue;
     let dx = sx-cx, dy = sy-cy; if(!front){ dx = -dx; dy = -dy; } const k = Math.min((SW/2-M2)/Math.max(1e-6,Math.abs(dx)), hh/Math.max(1e-6,Math.abs(dy)));
     const el = mark(n++); el.style.display = 'block'; el.style.left = (cx+dx*k)+'px'; el.style.top = (cy+dy*k)+'px'; el.className = 'mark'+(t.small?' small':'');
     el.firstChild.style.transform = `translate(-50%,-50%) rotate(${Math.atan2(dy,dx)+Math.PI/2}rad)`; el.firstChild.style.borderBottomColor = t.col; el.lastChild.textContent = t.lab; el.lastChild.style.color = t.col; }
   for(let i=n;i<MARKS.length;i++) MARKS[i].style.display = 'none';
-  if(MODE==='pvp') $('pvpBox').innerHTML = `<span style="color:#41e4ff">BLUE ${PVP.kills[0]}</span> &nbsp;—&nbsp; <span style="color:#ff5a5a">${PVP.kills[1]} RED</span>`;
+  if(MODE==='pvp') setHtml($('pvpBox'), `<span style="color:#41e4ff">BLUE ${PVP.kills[0]}</span> &nbsp;—&nbsp; <span style="color:#ff5a5a">${PVP.kills[1]} RED</span>`);
 }
 $('scoreBox').onclick = ()=>$('scoreDet').classList.toggle('open');
 const TAGS = new Map();
@@ -217,11 +264,14 @@ function settingsHtml(){ const s = SAVE.set;
   <tr><td>Music</td><td><input id="sMus" type="range" min="0" max="1" step="0.05" value="${s.music}"></td></tr>
   <tr><td>Sound</td><td>${seg('sM',['on','muted'],s.muted?'muted':'on')}</td></tr>
   <tr><td>Spoken lines</td><td>${seg('sV',['off','on'],s.voice?'on':'off')}<div class="note">Uses your browser's voice.</div></td></tr>
-  <tr><td>Glow</td><td>${seg('sG',['on','off'],s.bloom?'on':'off')}<div class="note">Turn off if your phone runs slow.</div></td></tr>
+  <tr><td>Graphics</td><td>${seg('sQ',['auto','high','medium','low'],s.quality)}<div class="note">Auto starts at what suits your device and steps down by itself if it lags.</div></td></tr>
+  <tr><td>Glow</td><td>${seg('sG',['on','off'],s.bloom?'on':'off')}<div class="note">Only on the high setting.</div></td></tr>
+  <tr><td>Frame counter</td><td>${seg('sF',['on','off'],s.showFps?'on':'off')}<div class="note">Top right. Tell me the number if it's low.</div></td></tr>
+  <tr><td>Auto-cast</td><td>${seg('sA',['on','off'],s.autoCast?'on':'off')}<div class="note">Active abilities fire by themselves at the best target when ready.</div></td></tr>
   <tr><td>Hyper blur</td><td>${seg('sB',['on','off'],s.blur?'on':'off')}</td></tr>
   <tr><td>Level-up reels</td><td>${seg('sR',['normal','fast'],s.fastReels?'fast':'normal')}</td></tr></table>`; }
 function bindSettings(root, rerender){ const s = SAVE.set; const on = (id, f)=>root.querySelectorAll('#'+id+' .btn').forEach(b=>b.onclick = ()=>{ f(b.dataset.v); save(); rerender(); });
-  on('sD', v=>s.diff = v); on('sS', v=>s.speed = +v); on('sM', v=>setMute(v==='muted')); on('sV', v=>s.voice = v==='on'); on('sB', v=>s.blur = v==='on'); on('sR', v=>s.fastReels = v==='fast'); on('sG', v=>{ s.bloom = v==='on'; bloom.enabled = s.bloom; });
+  on('sD', v=>s.diff = v); on('sS', v=>s.speed = +v); on('sM', v=>setMute(v==='muted')); on('sV', v=>s.voice = v==='on'); on('sB', v=>s.blur = v==='on'); on('sR', v=>s.fastReels = v==='fast'); on('sG', v=>{ s.bloom = v==='on'; bloom.enabled = s.bloom && Q.level===2; }); on('sQ', v=>{ s.quality = v; initQuality(); }); on('sF', v=>s.showFps = v==='on'); on('sA', v=>s.autoCast = v==='on');
   const vol = root.querySelector('#sVol'); if(vol) vol.oninput = ()=>{ s.vol = +vol.value; applyVol(); save(); }; const mus = root.querySelector('#sMus'); if(mus) mus.oninput = ()=>{ s.music = +mus.value; applyVol(); save(); }; }
 function settingsMenu(){ openSub(`<h2>Settings</h2><div class="pane" style="margin-top:10px">${settingsHtml()}</div><div class="foot"><button class="btn" id="sBack">Done</button></div>`, w=>{ bindSettings(w, settingsMenu); $('sBack').onclick = closeSub; }); }
 $('mNew').onclick = ()=>{ audio(); worldSelect(); }; $('mChar').onclick = charSelect; $('mLoad').onclick = ()=>openSheet('loadout'); $('mEndless').onclick = endlessSelect; $('mPvp').onclick = pvpSelect; $('mSet').onclick = settingsMenu;
@@ -248,12 +298,13 @@ function renderSheet(){
     if(sheetTab==='stats') h = `<table><tr><td>Run level</td><td>${P0.level} / 25</td></tr><tr><td>Health</td><td>${Math.round(P0.hp)} / ${P0.maxhp}</td></tr><tr><td>Energy</td><td>${Math.round(P0.energy)} / ${P0.maxEnergy}</td></tr>
       <tr><td>Damage</td><td>×${P0.mods.dmg.toFixed(2)}</td></tr><tr><td>Area</td><td>×${P0.mods.area.toFixed(2)}</td></tr><tr><td>Cooldowns</td><td>×${P0.mods.cdr.toFixed(2)}</td></tr><tr><td>Speed</td><td>×${P0.mods.speed.toFixed(2)}</td></tr>
       <tr><td>Crit</td><td>${Math.round(P0.mods.crit*100)}%</td></tr><tr><td>Damage taken</td><td>-${Math.round(P0.mods.armor*100)}%</td></tr><tr><td>Score</td><td>${Math.round(ST.score).toLocaleString()}</td></tr></table>`;
-    if(sheetTab==='abil'){ const row = (lab, I, d)=>`<tr><td>${lab}</td><td>${I?`<b style="color:${I.el?hexc(EL[I.el].col):'inherit'}">${I.ic} ${I.nm}</b><br><span class="note">${d}</span>`:'<span class="note">empty</span>'}</td></tr>`;
-      h = `<table>${[0,1,2].map(i=>row('Active · '+KEYLAB[i], slotInfo(P0,'a'+i), P0.act[i]?ABIL[P0.act[i]].d:'')).join('')}${[0,1,2].map(i=>row('Passive', slotInfo(P0,'p'+i), P0.pas[i]?ABIL[P0.pas[i]].d:'')).join('')}
+    if(sheetTab==='abil'){ const row = (lab, I, d, i)=>`<tr${i!=null?` class="swp${swapSel===i?' sel':''}" draggable="true" data-i="${i}"`:''}><td>${lab}${i!=null?' <span class="swh">⇅</span>':''}</td><td>${I?`<b style="color:${I.el?hexc(EL[I.el].col):'inherit'}">${I.ic} ${I.nm}</b><br><span class="note">${d}</span>`:'<span class="note">empty</span>'}</td></tr>`;
+      h = `<div class="note" style="margin-bottom:6px">Swap keys: drag an active onto another, or click one then the other.</div><table>${[0,1,2].map(i=>row('Active · '+KEYLAB[i], slotInfo(P0,'a'+i), P0.act[i]?ABIL[P0.act[i]].d:'', i)).join('')}${[0,1,2].map(i=>row('Passive', slotInfo(P0,'p'+i), P0.pas[i]?ABIL[P0.pas[i]].d:'')).join('')}
         ${row('Move · '+(isMobile?'swipe':'SPACE'), slotInfo(P0,'move'), MOVES[CHARS[P0.char].move].d)}${Object.keys(P0.perk).map(k=>`<tr><td>Perk</td><td><b>${PERKS[k].ic} ${PERKS[k].n}</b><br><span class="note">${PERKS[k].d}</span></td></tr>`).join('')}</table>
         <div class="note" style="margin-top:8px">A run holds 3 actives and 3 passives. Once a side is full, a new one only comes as a swap — and the swapped slot loses its upgrades.</div>`; }
     if(sheetTab==='rules') h = `<table><tr><td>Dots</td><td>Eat them to grow. Finish a whole moving pattern and its last dot explodes for a bonus and stacks HYPER.</td></tr>
       <tr><td>Levels</td><td>Level 1 gives your move. Level 2 a passive, levels 3 and 4 your first two actives. After that each level is a random mix: new abilities while you have room (3 actives, 3 passives), upgrades, stats, perks — and swaps once a side is full (the swapped slot loses its upgrades).</td></tr>
+      <tr><td>Actives</td><td>With Auto-cast on (Settings) they fire by themselves at the best target when ready — Ball Boy first. Press one to fire it early. On a phone, drag a button to aim it; hold a button and slide it onto another to swap them. On a computer, swap keys on the Abilities tab here.</td></tr>
       <tr><td>Colours</td><td>Every ability is one of the 7 colours: fire, toxic, frost, void, shock, nature, shadow. Its effects look and sound like it.</td></tr>
       <tr><td>Power-ups</td><td>Glowing capsules show up now and then: rage, speed, magnet, rapid fire, a shield, double XP. Ten seconds each.</td></tr>
       <tr><td>Ghosts</td><td>Seven colours, one per stat. Each colour drops its own bonus. A new colour first shows up as one BIG ghost.</td></tr>
@@ -261,10 +312,11 @@ function renderSheet(){
       <tr><td>Clubgoers</td><td>They run from you. Eating one costs energy and scores nothing.</td></tr><tr><td>Furniture</td><td>Walk into it to tear through (costs energy), or blow it up.</td></tr>
       <tr><td>Main stage</td><td>Opens at level 4. Ball Boy throws four creatures — fire, water, shock, plant. He can't go down until you've faced three of them.</td></tr></table>`;
     if(sheetTab==='set') h = settingsHtml();
+    setTimeout(wireSwapRows, 0);
     $('sheetFoot').innerHTML = `<button class="btn" id="fRes">Resume</button><button class="btn" id="fMenu">Quit to Menu</button><button class="btn" id="fQuit">Quit Game</button>`;
     $('fRes').onclick = closePause; $('fMenu').onclick = ()=>{ $('sheetOv').classList.add('hide'); toMenu(); }; $('fQuit').onclick = ()=>{ try{ window.close(); }catch(e){} toast(null,'A browser tab can only be closed by you.',3000); }; }
   else {
-    if(!C.loadout) h = `<p>${C.name} has no loadout options yet. Gear, stats and talents for him come later.</p><p class="note">He plays with his starting kit: ${C.start.map(k=>ABIL[k].name).join(', ')}.</p>`;
+    if(!C.loadout) h = `<p>${C.name} has no loadout options yet. Gear, stats and talents for him come later.</p><p class="note">He unlocks his creatures one at a time as he levels: ${C.ladder[0][1].map(k=>ABIL[k].name).join(', ')}.</p>`;
     else if(sheetTab==='stats'){ const pts = L.level - 1, used = WHEEL.reduce((a,k)=>a+(SAVE.pac.stats[k]||0),0), eff = {Strength:'+2% damage',Vitality:'+6 health',Spirit:'+6% energy regen',Intellect:'-2% cooldowns',Agility:'+1.5% speed',Speciality:'+2% area',Nature:'+5% pickup range'};
       h = `<div class="note">1 point per character level. Points left: <b style="color:#f6dc95">${pts-used}</b></div><table style="margin-top:8px">${WHEEL.map(k=>`<tr><td style="color:${STAT_COL[k]}">${k}</td><td><button class="btn pm" data-s="${k}" data-d="-1">−</button> <b style="display:inline-block;min-width:26px;text-align:center">${SAVE.pac.stats[k]||0}</b> <button class="btn pm" data-s="${k}" data-d="1">+</button> <span class="note">${eff[k]} per point</span></td></tr>`).join('')}</table>`; }
     else if(sheetTab==='gear') h = `<div class="note">Test sets until items and crafting are built. The same pieces fit every character.</div><div class="seg" style="margin:10px 0">${['none','crude','quality','epic'].map(t=>`<button class="btn ${(gear||'none')===t?'sel':''}" data-g="${t}">${t}</button>`).join('')}</div>
@@ -330,7 +382,9 @@ function openTally(win){
   const countNext = ()=>{ if(state!=='tally') return; if(i >= nums.length){ starStep(0); return; } const j = nums[i++], el = $('tr'+j), target = +el.dataset.v; let k = 0; const steps = 16, t0 = performance.now();
     const tm = setInterval(()=>{ k = Math.min(steps, Math.floor((performance.now()-t0)/30)+1); el.textContent = Math.round(target*k/steps).toLocaleString(); tone(500+k*60+i*40, 0.03, 'square', 0.03); if(k >= steps){ clearInterval(tm); setTimeout(countNext, 80); } }, 30); };
   setTimeout(countNext, 300);
-  $('tCont').textContent = mode==='campaign' && win ? 'Continue' : 'Play Again';
-  $('tCont').onclick = ()=>{ if(mode==='campaign' && win){ toMenu(); worldSelect(); } else if(mode==='pvp') startRun('pvp', {size:PVP.size, target:PVP.target}); else startRun(mode); };
+  // v0.9 (Brent: "there was no continue option"): each world is its own run, and World 2 isn't built yet — say so
+  if(mode==='campaign' && win) $('tAcct').innerHTML += '<div style="margin-top:8px;color:#f6dc95">World 2 is next — it\'s being built. Each world is its own run, so you\'ll start it fresh.</div>';
+  $('tCont').textContent = 'Play Again';
+  $('tCont').onclick = ()=>{ if(mode==='pvp') startRun('pvp', {size:PVP.size, target:PVP.target}); else startRun(mode); };
   $('tMenu').onclick = toMenu;
 }

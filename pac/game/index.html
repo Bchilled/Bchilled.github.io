@@ -6,8 +6,50 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <!--
-  PAC — v0.8.0 (Claude, 2026-10-21) — files: index.html (layout + styles), look.js (ink look + model loader),
-  js/core.js, js/world.js, js/actors.js, js/abilities.js, js/ui.js, js/intro.js, js/main.js, assets/*.glb (Blender), vendor/ (three r128).
+  PAC — v0.9.0 (Claude, 2026-10-21) — files: index.html (layout + styles), look.js (ink look + model loader),
+  js/core.js, js/world.js, js/dress.js, js/actors.js, js/abilities.js, js/ui.js, js/intro.js, js/main.js, assets/*.glb (Blender), vendor/ (three r128).
+  CHANGELOG v0.9.0 — from Brent's v0.8 feedback (2026-10-21) and his "Go" on the plan (lag → aiming → the club → Pac + ghosts):
+   SPEED
+   + FIXED a v0.8 bug: two colours were swallowed by a code comment, so every frame with a stunned or frozen ghost crashed half-way
+     (Rage Quit, Tilt, Jolt, Cold Open) — the screen froze and the console filled. (js/main.js ~244)
+   + Quality levels high / medium / low (Settings → Graphics, default Auto) with automatic step-down below 45 fps; an FPS counter
+     (Settings → Frame counter). Lower render resolution, glow only on high, crowd outlines only on high. (js/core.js, js/ui.js)
+   + The floors are painted once per room and drawn unlit; walls are unlit textured boxes merged per room; 3 point lights (was 6);
+     fewer spots, beams and sparkles; velvet ropes rebuilt cheap (the Blender rope was 11,000 triangles a piece); shared effect
+     geometry and materials; the HUD redraws 20×/s. (js/world.js, js/dress.js, js/actors.js, js/ui.js)
+   AIMING + ABILITIES
+   + Actives AUTO-CAST at the best target when ready — Ball Boy first (Settings → Auto-cast). A press fires one early.
+   + Phone A/B/C: tap = fire at the best target; DRAG off a button to aim (an arrow shows the way); HOLD and slide onto another
+     button to swap them. PC: swap keys on the pause screen's Abilities tab (click two, or drag one onto another). (js/ui.js)
+   + Cooldown icons in an arc under Pac's feet — dark while recharging, ringed in colour when ready. (js/ui.js, index.html)
+   + Early kit reaches about twice as far and chases: Number Twos are lobbed at the target and steer after it, Pellet Puke homes,
+     Shank Hands are thrown like boomerangs; Rage Quit radius 10, Dead Drop lands on Ball Boy / the thickest crowd up to 11 m,
+     Unhinged range 12. Damage / cooldowns retuned. (js/abilities.js, js/main.js)
+   + Ball Boy unlocks his creatures one at a time (levels 2, 4, 5) like Pac's ladder. (js/actors.js, js/abilities.js)
+   + Ball Boy (boss) fights in a rhythm: a creature, a pause, a volley of three balls, a longer pause. (js/actors.js)
+   + After World 1 the tally says World 2 is being built and each world is its own run; the button is Play Again. (js/ui.js)
+   THE CLUB, ROOM BY ROOM (js/dress.js new, js/world.js rebuilt)
+   + Entrance: a street — road with a zebra crossing, curb, sidewalk, a red carpet to the door, a queue behind velvet ropes along
+     the club front, door staff, a limo, a taxi, parked cars, street lamps, bins, a hydrant, a hot-dog cart, a dumpster, road
+     barriers; inside, a checker lobby with coat check, tickets, a photo wall and a chandelier.
+   + Dance floor: SUNKEN — four lit steps down on every side into an LED-tile pit packed with dancers; chrome rails; lounges with
+     couches, tables, balloons, champagne; a DJ riser with an LED wall and a lighting truss; confetti, cups, glow sticks.
+   + Bar: plank floor, back-lit bottle walls, pendant lamps, taps, glowing fridges, kegs and crates, a glass rack over the island;
+     a game room with an arcade carpet, pool tables, arcade cabinets, a jukebox.
+   + VIP: patterned carpet and runner, velvet walls, booths, ice buckets, palms, champagne towers, chandeliers, gold statues, a
+     private bar, a white grand piano; petals, banknotes, gold confetti.
+   + Backstage: concrete with hazard and spike tape, cables everywhere, mirror desks with bulbs, costume racks, lockers, catering,
+     cable spools, a ladder, gear carts, amp stacks, guitars, drum cases, pallets.
+   + Main stage: a crowd barrier, a drum kit on a riser, amp walls, mics, wedges, keys, pyro, a lighting rig with par cans, a huge
+     LED wall, gobo projections on the floor.
+   + Every floor: soft shadows under the furniture, dark corners at the walls, light pools in the room's colours.
+   PAC + THE GHOSTS (models/blender/pac.py, models/blender/ghost.py → assets/pac.glb, assets/ghost.glb)
+   + Pac gets his signatures back on the new body: a backwards red cap, a huge open grin, yellow (the vest), and a thumbs-up
+     swagger when he stands still (and on the menu). His arms bend at the elbow and swing naturally when he walks. (js/actors.js, look.js)
+   + Seven ghost faces from Brent's sketch plan, one per colour, all original: red furious (bloodshot, fangs), green sugar rush
+     (huge eyes, tongue out, a coil spring), blue tripping (ringed spiral eyes, rainbow echoes), purple nodding off (half-mast lids,
+     drool, Z's), orange drunk (odd eyes, red nose, rosy cheeks, hiccup bubbles), teal the engineer (goggles, tool belt), black
+     the thief (bandit mask, shifty eyes, a stolen blue orb). They move in character too: jitter, bounce, nod, sway, glance.
   CHANGELOG v0.8.0 — from Brent's v0.7 feedback (2026-10-21 02:05-02:09) and his "Build" (07:50):
    + Pac is now an ORIGINAL character (Brent's brief): slender, tattooed, rough-edged, quick-witted ghost killer — platinum slick-back,
      scar, taped nose, stubble, mustard vest, ink sleeves; his jaw UNHINGES when he eats. (models/blender/pac.py)
@@ -119,6 +161,16 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
 .slot.fire{border-color:var(--gold2);box-shadow:0 0 14px rgba(246,220,149,.55)}
 #mbars{display:none}
 #marks{position:absolute;inset:0;pointer-events:none}
+/* v0.9: the cooldown arc under Pac's feet — the three actives, dark while they recharge, ringed in their colour when ready */
+#cdArc{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;display:none;z-index:2}
+#cdArc .ca{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;overflow:hidden;background:rgba(10,8,14,.55);border:2px solid color-mix(in srgb, var(--el,#888) 45%, rgba(0,0,0,.4));display:flex;align-items:center;justify-content:center;transition:border-color .15s, box-shadow .15s}
+#cdArc .ca:nth-child(1){left:-36px;top:34px}#cdArc .ca:nth-child(2){left:0;top:46px}#cdArc .ca:nth-child(3){left:36px;top:34px}
+#cdArc .ca i{font-style:normal;font-size:15px;line-height:1;filter:drop-shadow(0 0 2px #000);opacity:.55}
+#cdArc .ca span{position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.72) var(--cd,0%),rgba(0,0,0,0) 0)}
+#cdArc .ca.rdy{border-color:var(--el,#fff);box-shadow:0 0 8px var(--el,#fff), inset 0 0 6px color-mix(in srgb, var(--el,#fff) 50%, transparent)}#cdArc .ca.rdy i{opacity:1}
+body.mobile #cdArc .ca{width:24px;height:24px;margin:-12px 0 0 -12px}body.mobile #cdArc .ca i{font-size:13px}
+/* pause screen: actives can be swapped by click or drag */
+tr.swp{cursor:grab}tr.swp:hover td{background:rgba(246,220,149,.06)}tr.swp.sel td,tr.swp.drop td{background:rgba(246,220,149,.16)}.swh{opacity:.6;font-size:11px}
 .mark{position:absolute;width:0;height:0;display:none}
 .mark i{position:absolute;left:0;top:0;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:18px solid #fff;filter:drop-shadow(0 0 5px currentColor) drop-shadow(0 0 1px #000)}
 .mark span{position:absolute;left:0;top:14px;transform:translateX(-50%);font-family:Cinzel;font-weight:700;font-size:11px;letter-spacing:.1em;white-space:nowrap;text-shadow:0 0 3px #000,0 0 6px #000}
@@ -146,6 +198,8 @@ body.cine #toast{opacity:0!important}
 #card .cs{font-family:Cinzel;font-weight:700;letter-spacing:.6em;font-size:15px;color:#fff;margin-top:6px;text-shadow:0 0 6px #000}
 @keyframes cardIn{0%{opacity:0;transform:translateX(-30%)}14%{opacity:1;transform:translateX(0)}80%{opacity:1;transform:translateX(2%)}100%{opacity:0;transform:translateX(12%)}}
 #topR{position:absolute;top:10px;right:12px;display:flex;gap:6px;z-index:9}
+#fps{position:absolute;top:50px;right:14px;z-index:9;font:600 11px Rajdhani,system-ui;color:#9a917f;text-shadow:0 0 3px #000;pointer-events:none;display:none}
+body.mobile #fps{top:42px;right:10px}
 .ib{width:38px;height:34px;font-size:16px;color:var(--gold);background:linear-gradient(180deg,#2c2520e6,#15110ee6);border:1px solid #6d5734;cursor:pointer;border-radius:3px}
 .ib:hover{border-color:var(--cyan)}
 /* ---------- PHONE CONTROLS: small, see-through, over the game ---------- */
@@ -160,6 +214,7 @@ body:not(.mobile) #touch{display:none}
 .pb .pl{position:absolute;left:50%;bottom:3px;transform:translateX(-50%);font-size:9px;font-weight:900;letter-spacing:.08em;opacity:.85}
 .pb.on,.pb.fire{border-color:#fff;filter:brightness(1.6)}
 .pb.locked{opacity:.3}
+.pb.lift{transform:scale(1.18);box-shadow:0 0 18px var(--el,#fff);z-index:3}.pb.drop{border-color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.7)}
 /* A / B / C: an arc under the right thumb; each button glows in its ability's colour */
 .pb{background:radial-gradient(circle at 40% 35%,color-mix(in srgb, var(--el,#888) 55%, transparent),rgba(10,8,14,.35));border-color:color-mix(in srgb, var(--el,#fff) 60%, rgba(255,255,255,.3))}
 #bA{right:16px;bottom:28px;width:70px;height:70px}
@@ -285,7 +340,7 @@ body.mobile #mmAcct{left:5%;right:auto;bottom:auto;top:96px;font-size:11px}
   <canvas id="gl"></canvas><canvas id="glitch"></canvas>
   <div id="tags"></div><div id="dmg"></div>
   <div id="hud" class="hide">
-   <div id="marks"></div>
+   <div id="marks"></div><div id="cdArc"></div>
    <div id="topL"><div id="wName"></div><div id="obj"></div></div>
    <div id="scoreBox"><div class="lab">SCORE · BEST <span id="bestN">0</span></div><div id="scoreN">0</div></div>
    <div id="scoreDet" class="panel"></div>
@@ -298,6 +353,7 @@ body.mobile #mmAcct{left:5%;right:auto;bottom:auto;top:96px;font-size:11px}
    <div id="mbars"><div class="lv"><span id="mLv"></span> <span id="pasRow"></span></div><div class="bar"><i id="mHp" style="background:#e0323c"></i></div><div class="bar"><i id="mEn" style="background:#3a74ff"></i></div><div class="bar"><i id="mXp" style="background:#e8c060"></i></div></div>
   </div>
   <div id="say"></div><div id="toast"></div><div id="big"></div><div id="card"></div>
+  <div id="fps"></div>
   <div id="topR" class="hide"><button class="ib" id="muteB" title="Mute (M)">🔊</button><button class="ib" id="menuB" title="Pause (Esc)">☰</button></div>
   <!-- phone: see-through controls over the game -->
   <div id="touch" class="hide">
@@ -356,6 +412,7 @@ body.mobile #mmAcct{left:5%;right:auto;bottom:auto;top:96px;font-size:11px}
 <script src="look.js"></script>
 <script src="js/core.js"></script>
 <script src="js/world.js"></script>
+<script src="js/dress.js"></script>
 <script src="js/actors.js"></script>
 <script src="js/abilities.js"></script>
 <script src="js/ui.js"></script>

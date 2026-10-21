@@ -219,7 +219,7 @@ function playIntro(done){ introDone = done; state = 'intro'; hideAllOverlays(); 
       for(let i=0;i<IPMAX;i++){ const p = IP[i]; if(p){ p.life -= dt; p.vy -= p.grav*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.z += p.vz*dt; const a = Math.max(0, Math.min(1, p.life*2)); ipPos[i*3] = p.x; ipPos[i*3+1] = p.y; ipPos[i*3+2] = p.z; ipCol[i*3] = p.c.r*a*1.6; ipCol[i*3+1] = p.c.g*a*1.6; ipCol[i*3+2] = p.c.b*a*1.6; } else ipPos[i*3+1] = -9999; }
       for(let i=IP.length-1;i>=0;i--) if(IP[i].life <= 0) IP.splice(i,1);
       ipPts.geometry.attributes.position.needsUpdate = true; ipPts.geometry.attributes.color.needsUpdate = true;
-      composer.render(dt); overlay(b, t, f); }catch(e){ console.error(e); }
+      if(bloom.enabled) composer.render(dt); else renderer.render(IS, IC); overlay(b, t, f); }catch(e){ console.error(e); }
     if(introT >= INTRO_LEN){ endIntro(); return; } introRAF = requestAnimationFrame(step); };
   introRAF = requestAnimationFrame(step); ic.onclick = endIntro; }
 function endIntro(){ if(state!=='intro') return; cancelAnimationFrame(introRAF); ic.classList.add('hide'); $('skip').classList.add('hide'); if('speechSynthesis' in window) speechSynthesis.cancel();

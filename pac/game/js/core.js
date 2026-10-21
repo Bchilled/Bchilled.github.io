@@ -1,4 +1,4 @@
-// PAC v0.8 — core.js: helpers, save, settings, renderer + bloom, camera, audio engine (techno + SFX), voice lines.
+// PAC v0.9 — core.js: helpers, save, settings, renderer + bloom, camera, audio engine (techno + SFX), voice lines.
 "use strict";
 const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => v<a?a:v>b?b:v, rnd = (a,b) => a+Math.random()*(b-a), pick = a => a[Math.floor(Math.random()*a.length)], hyp = Math.hypot;
@@ -11,7 +11,7 @@ const SAVE_KEY = 'pac-save-v3';
 const DEF_SAVE = () => ({unlocked:['pac'], beaten:{}, char:'pac', seenIntro:false, best:{campaign:0,endless:0,pvp:0}, seen:{},
   lvl:{pac:{level:1,xp:0}, ballboy:{level:1,xp:0}}, coins:0,
   pac:{gear:null, stats:{}, bought:[], talents:{}},
-  set:{muted:false, vol:0.7, music:0.55, voice:false, blur:true, diff:'normal', speed:1, fastReels:false, bloom:true}});
+  set:{muted:false, vol:0.7, music:0.55, voice:false, blur:true, diff:'normal', speed:1, fastReels:false, bloom:true, quality:'auto', showFps:true, autoCast:true}});
 function merge(a,b){ for(const k in b){ const v = b[k]; if(v && typeof v==='object' && !Array.isArray(v) && a[k] && typeof a[k]==='object' && !Array.isArray(a[k])) merge(a[k], v); else a[k] = v; } return a; }
 let SAVE = DEF_SAVE(); try{ const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if(s) SAVE = merge(DEF_SAVE(), s); }catch(e){}
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} }
@@ -26,7 +26,7 @@ const isMobile = matchMedia('(pointer:coarse)').matches || Math.min(innerWidth, 
 if(isMobile) document.body.classList.add('mobile');
 const cv = $('gl');
 const renderer = new THREE.WebGLRenderer({canvas:cv, antialias:!isMobile, powerPreference:'high-performance'});
-renderer.setPixelRatio(Math.min(devicePixelRatio, isMobile ? 1.5 : 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1));   // set properly by applyQuality() below
 // no tone mapping: the ink shader and neon colours are authored in display space
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x05030a);
 scene.fog = new THREE.Fog(0x07040c, 50, 120);
@@ -50,16 +50,30 @@ const sun = new THREE.DirectionalLight(0xd8d0ff, 0.35); sun.position.copy(LOOK.L
 const glowTex = (()=>{ const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d');
   const g = x.createRadialGradient(32,32,0,32,32,32); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(.25,'rgba(255,255,255,.5)'); g.addColorStop(1,'rgba(255,255,255,0)');
   x.fillStyle = g; x.fillRect(0,0,64,64); return new THREE.CanvasTexture(c); })();
+// shared glow materials for things made many times a second (shots, effects) — one material per colour, never leaked
+const GLOWM = new Map();
+function glowS(color, size, opacity=1){ const k = color+'/'+opacity; let m = GLOWM.get(k); if(!m){ m = new THREE.SpriteMaterial({map:glowTex, color, transparent:true, opacity, blending:THREE.AdditiveBlending, depthWrite:false}); GLOWM.set(k, m); }
+  const s = new THREE.Sprite(m); s.scale.set(size,size,1); return s; }
 function glow(color, size, opacity=1){ const s = new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex, color, transparent:true, opacity, blending:THREE.AdditiveBlending, depthWrite:false})); s.scale.set(size,size,1); return s; }
 function at(o,x,y,z){ o.position.set(x,y,z); return o; }
 function pool(color, size, opacity){ const m = new THREE.Mesh(new THREE.PlaneGeometry(size,size), new THREE.MeshBasicMaterial({map:glowTex, color, transparent:true, opacity, blending:THREE.AdditiveBlending, depthWrite:false}));
   m.rotation.x = -Math.PI/2; return m; }
 function initColors(m, n, hex=0xffffff){ const c = new THREE.Color(hex), a = new Float32Array(n*3); for(let i=0;i<n;i++){ a[i*3]=c.r; a[i*3+1]=c.g; a[i*3+2]=c.b; }
   m.instanceColor = new THREE.InstancedBufferAttribute(a,3); m.instanceColor.setUsage(THREE.DynamicDrawUsage); }
-const neonMat = c => new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(1.7)});
+const NEONM = new Map(); const neonMat = c => { let m = NEONM.get(c); if(!m){ m = new THREE.MeshBasicMaterial({color:new THREE.Color(c).multiplyScalar(1.7)}); NEONM.set(c, m); } return m; };   // cached per colour
 const tmpV = new THREE.Vector3(), tmpC = new THREE.Color(), dummy = new THREE.Object3D();
 function project(x,y,z){ tmpV.set(x,y,z).project(camera); return [(tmpV.x*0.5+0.5)*SW, (-tmpV.y*0.5+0.5)*SH, tmpV.z<1]; }
 
+// ---------------- QUALITY (v0.9 speed pass): starts at a level that suits the device, steps DOWN by itself if frames drop ----------------
+// high: sharp, glow (bloom) on · medium: normal sharpness, no bloom, crowd without outlines · low: softer resolution, fewer effects
+const Q = {level:2, auto:true, fps:60, acc:0, n:0, lastStep:0}; const QNAMES = ['low','medium','high']; const QUALITY_HOOKS = [];
+function applyQuality(){ const L = Q.level, dpr = devicePixelRatio || 1;
+  renderer.setPixelRatio(L===2 ? Math.min(dpr, isMobile ? 1.25 : 1.5) : L===1 ? Math.min(dpr, isMobile ? 0.9 : 1.0) : Math.min(dpr, 0.65));
+  bloom.enabled = L===2 && SAVE.set.bloom; resize(); QUALITY_HOOKS.forEach(f=>f(L)); }
+function initQuality(){ const s = SAVE.set.quality; Q.auto = s==='auto'; Q.level = s==='high' ? 2 : s==='medium' ? 1 : s==='low' ? 0 : (isMobile ? 1 : 2); applyQuality(); }
+function qualityTick(rawDt, playing){ Q.acc += rawDt; Q.n++; if(Q.acc < 1.5) return; Q.fps = Q.n/Q.acc; Q.acc = 0; Q.n = 0;
+  const f = $('fps'); if(f){ f.style.display = SAVE.set.showFps ? 'block' : 'none'; f.textContent = Math.round(Q.fps)+' FPS · '+QNAMES[Q.level]; }
+  if(Q.auto && playing && Q.fps < 45 && Q.level > 0 && performance.now() - Q.lastStep > 4000){ Q.level--; Q.lastStep = performance.now(); applyQuality(); } }
 // ---------------- AUDIO: a small synth. Techno loop per level, chunky SFX, a cheap club reverb. ----------------
 let AC = null, master = null, musicGain = null, sfxGain = null, verb = null, verbGain = null;
 function audio(){ if(AC) return; try{

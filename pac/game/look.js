@@ -66,7 +66,8 @@ function inkify(root, opt={}){
     const src = m.material, name = (src.name||'').toLowerCase(), col = src.color ? src.color.clone() : new THREE.Color(1,1,1);
     if(name.includes('neon') || name.includes('glow') || name.includes('light')){ m.material = new THREE.MeshBasicMaterial({color:col.multiplyScalar(1.6)}); continue; }
     const hm = hatchMat(col, {gloss:opt.gloss, density:opt.density}); hm.userData.base = col.clone(); m.material = hm; mats.push(hm);
-    if(w > 0 && !name.includes('pupil') && !name.includes('nooutline')){ const o = new THREE.Mesh(m.geometry, outlineMat(w)); o.name = 'outline'; m.add(o); }
+    // v0.9: no outline on small face details (teeth, mouth, creases, brows, tape...) — their ink rings cluttered close-ups
+    if(w > 0 && !name.includes('pupil') && !name.includes('nooutline') && !/tooth|mouth|crease|bags|scar|brow|eye_white|tape|cap_band|cap_patch|pac_gold|tongue/.test(name)){ const o = new THREE.Mesh(m.geometry, outlineMat(w)); o.name = 'outline'; m.add(o); }
   }
   return mats;
 }
@@ -96,8 +97,8 @@ function character(M, key, opt={}){
   const root = new THREE.Group(), body = src.getObjectByName(key==='pac'?'pac':'ballboy').clone(true); root.add(body);
   if(opt.tint) body.traverse(o=>{ if(o.isMesh && o.material.name && o.material.name.includes(opt.tintMat||'jacket')) o.material = o.material.clone(), o.material.color.set(opt.tint); });
   const mats = inkify(body, {outline:opt.outline ?? 0.022});
-  const p = key==='pac' ? 'pac.' : 'bb.'; const B = {};
-  for(const n of ['hips','body','head','jawU','jawL','armL','armR','handL','handR','legL','legR','footL','footR']){ const o = node(body, p+n); if(o){ B[n] = o; o.userData.rest = {p:o.position.clone(), r:o.rotation.clone()}; } }
+  const p = key==='pac' ? 'pac.' : 'bb.'; const B = {};   // the bones (v0.9: + forearms, Pac's elbows)
+  for(const n of ['hips','body','head','jawU','jawL','armL','armR','foreL','foreR','handL','handR','legL','legR','footL','footR']){ const o = node(body, p+n); if(o){ B[n] = o; o.userData.rest = {p:o.position.clone(), r:o.rotation.clone()}; } }
   if(!B.head) B.head = B.jawU || B.body;
   // story-only pieces (Pac's leather jacket + shades) start hidden; the intro switches them on
   const extras = {}; for(const n of ['leatherB','leatherL','leatherR','shades']){ const o = node(body, p+n); if(o){ o.visible = !!opt.story; extras[n] = o; } }
@@ -115,7 +116,10 @@ function showcase(M){
   const pac = character(M, 'pac'); if(pac) add('pac', 'PAC', pac.root);
   const bb = character(M, 'ballboy'); if(bb) add('ballboy', 'BALL BOY', bb.root);
   for(const [n,l] of [['crowd.raver','RAVER'],['crowd.dancer','DANCER'],['crowd.bouncer','BOUNCER'],['crowd.bro','BRO']]){ const o = piece(M,'crowd',n); add(n.split('.')[1], l, o); }
-  const g = piece(M,'ghost','ghost.body'); if(g){ const e = piece(M,'ghost','ghost.eyes', {outline:0}); if(e) g.add(e); g.traverse(o=>{ if(o.isMesh && o.material.uniforms && o.material.userData.base && o.material.userData.base.r>0.9 && o.material.userData.base.g>0.9 && o.material.userData.base.b>0.9 && o.parent && o.parent.name!=='ghosteyes') o.material.uniforms.uTint.value.set(0xc0453f); }); add('ghost','GHOST', g); }
+  // v0.9: the seven ghost faces, each on a body in its colour
+  for(const [t,c] of [['red',0xc0453f],['green',0x4aa860],['blue',0x4a7fd0],['purple',0x8a5ac8],['orange',0xd88a3a],['teal',0x3aa8a0],['black',0x3a3a44]]){ const g = piece(M,'ghost','ghost.body'); if(!g) continue;
+    g.traverse(o=>{ if(o.isMesh && o.material.uniforms && o.material.userData.base && o.material.userData.base.r>0.9) o.material.uniforms.uTint.value.set(c); });
+    const f = piece(M,'ghost','ghost.face.'+t, {outline:0.012}); if(f) g.add(f); add('ghost_'+t, t.toUpperCase(), g); }
   for(const [n,l] of [['cre.cindercub','CINDERCUB'],['cre.splashpup','SPLASHPUP'],['cre.voltmoth','VOLTMOTH'],['cre.bramblebud','BRAMBLEBUD']]) add(n.split('.')[1], l, piece(M,'creatures',n));
   for(const [n,l] of [['story.emperor','THE EMPEROR'],['story.baron','BARON KABOOM'],['story.chrome','CHROME GUY'],['story.qwing','Q-WING'],['story.moon','QUARTER MOON'],['story.arcade','ARCADE PLANET']]) add(n.split('.')[1], l, piece(M,'story',n));
   return out;

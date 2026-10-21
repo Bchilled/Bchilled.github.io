@@ -1,10 +1,15 @@
-// PAC v0.8 — abilities.js. Abilities are DATA. Brent's rulings (2026-10-21):
+// PAC v0.9 — abilities.js. Abilities are DATA. Brent's rulings (2026-10-21):
 //  · 3 ACTIVE buttons (L-click / R-click / E · phone A / B / C) + 3 PASSIVES (fire by themselves) + the movement ability (Space · phone swipe).
 //  · A run holds at most 6 abilities. Once a side is full, a new one only comes as a SWAP on the spot — it loses all that slot's upgrades.
 //  · Upgrades are random on level-up, mixed with stats and perks. Pac-themed names, dark and twisted.
 //  · Every ability belongs to one of the game's 7 colours (elements), and its effects look like that element.
 // Ladder: L1 movement → L2 pick a passive (Brent's three) → L3 pick an active (Brent's defensive three) → L4 pick an active
 // (Brent's offensive three) → L5-25 a random mix: new abilities while slots are free, upgrades, stats, perks, swaps.
+// v0.9 (Brent: "hard to aim", "you have to get way too close", "we have to push way too many buttons"):
+//  · actives AUTO-CAST at the best target when ready (Ball Boy first); a press still fires one early, aimed by you
+//  · the early kit chases its targets from about twice as far: Number Twos are lobbed at them, Pellet Puke homes in,
+//    Shank Hands are thrown like boomerangs; Rage Quit, Dead Drop and Unhinged reach further
+//  · Ball Boy unlocks his creatures one at a time, like Pac's ladder
 "use strict";
 // ---------- the 7 colours as elements (same order as the ghost colours / stats) ----------
 const EL = {
@@ -17,9 +22,9 @@ const EL = {
   shadow:{col:0x7a3aa8, acc:0xff3050, ghost:'black',  label:'SHADOW'}};
 const ABIL = {
   // ---------- PASSIVES ----------
-  numbertwo:{side:'pas', who:'pac', el:'toxic', ic:'💩', name:'Number Twos', d:'Forty years of nothing but pellets. Drops a toxic dump behind him every second — it swells, then blows.', cd:1.4, dmg:18, rad:3.3},
-  puke:     {side:'pas', who:'pac', el:'fire',  ic:'🤮', name:'Pellet Puke', d:'Ate a ghost pepper on a dare. Sprays flaming half-chewed pellets at whatever is closest in front of him.', cd:0.38, dmg:6, range:7.5, arc:0.6},
-  shank:    {side:'pas', who:'pac', el:'shadow',ic:'🔪', name:'Shank Hands', d:'Prison habits. Shivs stab out of both sides — left and right of the way he\'s walking.', cd:0.6, dmg:13, len:4},
+  numbertwo:{side:'pas', who:'pac', el:'toxic', ic:'💩', name:'Number Twos', d:'Forty years of nothing but pellets. Lobs a toxic dump at the nearest threat — it lands, swells, then blows.', cd:1.6, dmg:22, rad:3.3, range:12},
+  puke:     {side:'pas', who:'pac', el:'fire',  ic:'🤮', name:'Pellet Puke', d:'Ate a ghost pepper on a dare. Spits flaming half-chewed pellets that chase whatever is closest.', cd:0.5, dmg:7, range:13, arc:0.5},
+  shank:    {side:'pas', who:'pac', el:'shadow',ic:'🔪', name:'Shank Hands', d:'Prison habits. Flings two shivs at the nearest threat — they cut through everything, out and back like boomerangs.', cd:1.1, dmg:15, len:9},
   habit:    {side:'pas', who:'all', el:'shock', ic:'🟠', name:'Pellet Habit', d:'He can\'t quit. Flicks homing pellets at the nastiest thing nearby.', cd:1.0, dmg:10},
   pepper:   {side:'pas', who:'all', el:'fire',  ic:'🌶️', name:'Ghost Peppers', d:'Burning peppers circle him. Anything that touches them regrets lunch.', cd:0, dps:24},
   coldturkey:{side:'pas',who:'pac', el:'frost', ic:'🧊', name:'Cold Turkey', d:'Quitting is ugly. A freezing aura slows and frost-bites everything that gets close.', cd:0.5, dps:12, rad:4.2},
@@ -31,10 +36,10 @@ const ABIL = {
   bramble:  {side:'pas', who:'ballboy', el:'nature', ic:'🌱', name:'Bramblebud', d:'Bramblebud pops out by the biggest crowd, roots it in place and stabs it with thorns.', cd:7},
   // ---------- ACTIVES ----------
   insurance:{side:'act', who:'pac', el:'void',  ic:'🫧', name:'Life Insurance', d:'A bubble soaks hits for 5 s, then the policy pays out: most of it back as health.', cd:9, absorb:70, dur:5},
-  ragequit: {side:'act', who:'pac', el:'shock', ic:'💢', name:'Rage Quit', d:'Flips the table. A lightning blast all around him shoves everything back.', cd:4.5, dmg:32, rad:8, knock:8},
-  deaddrop: {side:'act', who:'pac', el:'shadow',ic:'🪦', name:'Dead Drop', d:'Leaps where you aim — untouchable in the air — and lands like a coffin lid.', cd:5, dmg:40, rad:5.5, dist:7},
+  ragequit: {side:'act', who:'pac', el:'shock', ic:'💢', name:'Rage Quit', d:'Flips the table. A lightning blast all around him shoves everything back.', cd:5, dmg:36, rad:10, knock:8},
+  deaddrop: {side:'act', who:'pac', el:'shadow',ic:'🪦', name:'Dead Drop', d:'Leaps onto Ball Boy or the thickest crowd (or where you aim) — untouchable in the air — and lands like a coffin lid.', cd:5.5, dmg:42, rad:5.5, dist:11},
   binge:    {side:'act', who:'pac', el:'fire',  ic:'🔴', name:'Power Pellet Binge', d:'Swallows a power pellet whole. Goes huge for 6 s, sucks ghosts in and eats everything he touches.', cd:16, dur:6, dps:90},
-  unhinged: {side:'act', who:'pac', el:'shadow',ic:'🦷', name:'Unhinged', d:'His jaw comes off the hinge. Lunges at the nearest threat and swallows the whole cone in front of him.', cd:2.8, dmg:78, range:9, arc:2.1},
+  unhinged: {side:'act', who:'pac', el:'shadow',ic:'🦷', name:'Unhinged', d:'His jaw comes off the hinge. Lunges at the nearest threat and swallows the whole cone in front of him.', cd:3.2, dmg:78, range:12, arc:2.1},
   glitter:  {side:'act', who:'pac', el:'toxic', ic:'✨', name:'Toxic Glitter', d:'6 s of top speed, trailing a glitter cloud that eats through the swarm.', cd:12, dur:6, dps:34},
   repo:     {side:'act', who:'pac', el:'void',  ic:'💀', name:'Repo Ghosts', d:'Five repossessed souls home in on the biggest threats and pop.', cd:6, dmg:34, n:5, req:5, cost:300},
   fruitsalad:{side:'act',who:'all', el:'fire',  ic:'🍉', name:'Fruit Salad Massacre', d:'Eight homing fruit. He\'s done eating it — now it\'s eating them.', cd:7, dmg:26, n:8, req:7, cost:420},
@@ -43,10 +48,10 @@ const ABIL = {
   posse:    {side:'act', who:'pac', el:'shadow',ic:'⚰️', name:'Ghost Posse', d:'Four dead buddies hunt with him for 10 s.', cd:20, n:4, dur:10, dps:30},
   notonlist:{side:'act', who:'all', el:'nature',ic:'🚫', name:'Not On The List', d:'Bouncer shove: a wide cone of everything goes flying.', cd:3.5, dmg:22, range:7, arc:1.6, knock:14},
   smokebreak:{side:'act',who:'pac', el:'shadow',ic:'🚬', name:'Smoke Break', d:'Lights up. Ghosts inside the cloud go slow and stupid.', cd:10, rad:6, dur:4},
-  // Ball Boy starts with all three: each throws a creature that does one move and comes back
-  hottake:  {side:'act', who:'ballboy', el:'fire',  ic:'🔥', name:'Hot Take', d:'Cindercub lands where you aim and breathes fire on whatever is nearest.', cd:4.5},
+  // Ball Boy unlocks these one at a time (v0.9): each throws a creature that does one move and comes back
+  hottake:  {side:'act', who:'ballboy', el:'fire',  ic:'🔥', name:'Hot Take', d:'Cindercub lands by the nearest threat (or where you aim) and breathes fire on it.', cd:4.5},
   splashzone:{side:'act',who:'ballboy', el:'frost', ic:'💧', name:'Splash Zone', d:'Splashpup lands where you aim and blasts a wave that shoves everything back.', cd:6},
-  jolt:     {side:'act', who:'ballboy', el:'shock', ic:'⚡', name:'Jolt', d:'Voltmoth flutters to the biggest crowd and zaps it stiff.', cd:6.5}};
+  jolt:     {side:'act', who:'ballboy', el:'shock', ic:'⚡', name:'Jolt', d:'Voltmoth flutters to Ball Boy or the biggest crowd and zaps it stiff.', cd:6.5}};
 const MOVES = {warp:{name:'Warp Tunnel', ic:'🌀', d:'Blink a few metres — through ghosts, crowds and anything thin.', cost:20, cd:2, dist:8},
                peaceout:{name:'Peace Out', ic:'👟', d:'A quick dash. Untouchable while you dash.', cost:15, cd:2.2, dist:7}};
 const STATUP = {hp:{n:'+20 Max Health', ic:'❤️'}, spd:{n:'+6% Move Speed', ic:'👟'}, dmg:{n:'+10% Damage', ic:'🗡️'}, cdr:{n:'-8% Cooldowns', ic:'⏱️'}, area:{n:'+12% Area', ic:'⭕'},
@@ -84,7 +89,8 @@ function offersFor(h){
   const C = CHARS[h.char], nPas = h.pas.filter(Boolean).length, nAct = h.act.filter(Boolean).length;
   if(C.ladder){ let pSeen = 0, aSeen = 0;
     for(const [side, list] of C.ladder){ const have = side==='pas' ? nPas : nAct, idx = side==='pas' ? pSeen++ : aSeen++;
-      if(have === idx && freeSlot(h, side) >= 0) return list.map(k=>({kind:'ab', k})); } }
+      const left = list.filter(k=>!held(h).includes(k));   // v0.9: Ball Boy's ladder offers the same three creatures until he has them all
+      if(have === idx && freeSlot(h, side) >= 0 && left.length) return left.map(k=>({kind:'ab', k})); } }
   return randomOffers(h);
 }
 // the level-up mix: new abilities while there's room, random upgrades of what you hold, stats, perks — and swaps once a side is full
@@ -111,7 +117,7 @@ const KEYS = () => isMobile ? ['A','B','C'] : ['left click','right click','E'];
 function applyChoice(h, o){
   if(o.kind==='move'){ h.moveOk = true; if(h.isPlayer) toast('learn:move', `${MOVES[CHARS[h.char].move].name}: ${isMobile?'swipe on the right side of the screen':'press SPACE'}. Ghosts are on their way — and look out for the blue orb.`); }
   else if(o.kind==='ab'){ const A = ABIL[o.k], list = A.side==='act' ? h.act : h.pas, i = list.indexOf(null); if(i < 0) return; list[i] = o.k;
-    if(h.isPlayer) toast('learn:'+o.k, A.side==='pas' ? `${A.name}: it fights on its own.` : `${A.name} is on ${KEYS()[i]}.${isMobile?' It aims itself.':''}`, 3600); }
+    if(h.isPlayer) toast('learn:'+o.k, A.side==='pas' ? `${A.name}: it fights on its own.` : `${A.name} is on ${KEYS()[i]}. ${SAVE.set.autoCast ? 'It fires by itself when it\'s ready — press it to fire early'+(isMobile?', or drag it to aim':'')+'.' : (isMobile?'It aims itself.':'')}`, 3600); }
   else if(o.kind==='swap'){ const A = ABIL[o.k], list = A.side==='act' ? h.act : h.pas, old = list[o.slot]; if(old){ clearSlotFx(h, old); delete h.rank[old]; } list[o.slot] = o.k; delete h.rank[o.k];
     if(h.isPlayer) toast(null, `${A.name} replaced ${old?ABIL[old].name:'it'}${A.side==='act'?' on '+KEYS()[o.slot]:''}. Its upgrades are gone.`, 3600); }
   else if(o.kind==='rank'){ h.rank[o.k] = (h.rank[o.k]||0)+1; }
@@ -146,6 +152,12 @@ function priority(h, range, cone, ang){ let best = null, bs = -1; const fa = ang
     if(cone && Math.abs(angDiff(fa, Math.atan2(dx,dz))) > cone) continue; const s = threat(e)/(d+4); if(s > bs){ bs = s; best = e; } } return best; }
 function nearest(h, range){ let best = null, bd = range; for(const e of ENEMY[h.team]){ if(e.dead) continue; const d = hyp(e.x-h.x, e.z-h.z); if(d < bd){ bd = d; best = e; } } return best; }
 function nearestFrom(team, x, z, range){ let best = null, bs = -1; for(const e of ENEMY[team]){ if(e.dead) continue; const d = hyp(e.x-x, e.z-z); if(d > range) continue; const s = threat(e)/(d+3); if(s > bs){ bs = s; best = e; } } return best; }
+// v0.9: the best target — Ball Boy first (Brent), else the most dangerous thing in range
+const bossNear = (h, r) => BOSS && BOSS.alive && BOSS.awake && h.team===0 && hyp(BOSS.x-h.x, BOSS.z-h.z) < r ? BOSS : null;
+function bestTarget(h, range){ return bossNear(h, range) || priority(h, range); }
+function countNear(h, x, z, r){ let n = 0; for(const e of ENEMY[h.team]) if(!e.dead && hyp(e.x-x, e.z-z) < r) n++; return n; }
+// the thickest crowd in range: the enemy with the most others around it
+function cluster(h, range, r=4.5){ let best = null, bn = 0; for(const e of ENEMY[h.team]){ if(e.dead || hyp(e.x-h.x, e.z-h.z) > range) continue; let n = 0; for(const f of ENEMY[h.team]) if(!f.dead && hyp(f.x-e.x, f.z-e.z) < r) n++; if(n > bn){ bn = n; best = e; } } return best ? {e:best, n:bn} : null; }
 // aim assist for cones: snap to the most dangerous thing within `tol` of where you aim
 function aimAssist(h, ang, range, tol=0.55){ const t = priority(h, range, tol, ang); return t ? Math.atan2(t.x-h.x, t.z-h.z) : ang; }
 function hit(e, amount, h, o={}){
@@ -182,19 +194,23 @@ function hurtHero(h, d, src){
 
 // ---------------- projectiles ----------------
 const BOMBS = [], BOLTS = [], LOBS = [], TRAILS = [], ALLIES = [], PINBALLS = [];
-const boltGeo = new THREE.SphereGeometry(0.2,10,8);
+const boltGeo = new THREE.IcosahedronGeometry(0.2,1), lobGeo = new THREE.SphereGeometry(0.36,12,8), ballGeo = new THREE.SphereGeometry(0.4,16,12), unitCircle = new THREE.CircleGeometry(1, 16);
+let lobMat = null, ballMat = null;
 let poopGeo = null;
 function poopModel(){ if(!poopGeo){ const g = new THREE.Group(), m = LOOK.hatchMat(0x6b5a22, {emit:0x0a2a00}); [[0.42,0.14],[0.32,0.38],[0.2,0.58]].forEach(([r,y],i)=>{ const t = LOOK.inked(new THREE.TorusGeometry(r*0.7, r*0.42, 10, 18), m, 0.03); t.rotation.x = Math.PI/2; t.position.y = y; g.add(t); });
   const tip = LOOK.inked(new THREE.ConeGeometry(0.14, 0.25, 10), m, 0.03); tip.position.y = 0.78; g.add(tip); g.add(at(glow(0x6cff3a, 2.2, 0.5), 0, 0.4, 0)); poopGeo = g; } return poopGeo.clone(); }
 // o: {turn (homing rad/s), boom (explode radius), el, size, mesh, delay (fly straight first), y}
 function fireBolt(h, tg, dmg, spd, spread, col=0xfff3c8, life=1.3, homing=true, pierce=0, o={}){
-  const m = o.mesh || new THREE.Mesh(o.size ? new THREE.SphereGeometry(o.size,10,8) : boltGeo, neonMat(col)); m.add(glow(col, o.size ? o.size*8 : 1.6, 0.8)); m.position.set(h.x, o.y||1.0, h.z); scene.add(m);
+  const m = o.mesh || new THREE.Mesh(boltGeo, neonMat(col)); if(o.size) m.scale.setScalar(o.size/0.2); m.add(glowS(col, o.size ? o.size*8/(o.size/0.2) : 1.6, 0.8)); m.position.set(h.x, o.y||1.0, h.z); scene.add(m);
   const a = (o.ang!=null ? o.ang : tg ? Math.atan2(tg.x-h.x, tg.z-h.z) : Math.atan2(h.ax, h.az)) + spread;
-  BOLTS.push({m, vx:Math.sin(a)*spd, vz:Math.cos(a)*spd, life, dmg, owner:h, tg:homing?tg:null, homing, hitSet:new Set(), pierce, turn:o.turn||6, boom:o.boom||0, el:o.el, delay:o.delay||0, col}); }
-function lob(h, tx, tz, o){ const m = new THREE.Mesh(new THREE.SphereGeometry(0.36,12,8), LOOK.hatchMat(0xd02a3a)); m.add(glow(0xff3b5c, 2, 0.8)); scene.add(m);
+  BOLTS.push({m, vx:Math.sin(a)*spd, vz:Math.cos(a)*spd, life, half:life/2, dmg, owner:h, tg:homing?tg:null, homing, hitSet:new Set(), pierce, turn:o.turn||6, boom:o.boom||0, el:o.el, delay:o.delay||0, col, boomer:!!o.boomer, backT:0}); }
+// a shiv for Shank Hands: a flat blade that spins on its way out and back
+const shivGeo = new THREE.ConeGeometry(0.13, 0.9, 4); shivGeo.rotateX(Math.PI/2);
+const shivMesh = () => new THREE.Mesh(shivGeo, neonMat(0xff3050));
+function lob(h, tx, tz, o){ if(!lobMat) lobMat = LOOK.hatchMat(0xd02a3a); const m = new THREE.Mesh(lobGeo, lobMat); m.add(glowS(0xff3b5c, 2, 0.8)); scene.add(m);
   LOBS.push(Object.assign({m, x0:h.x, z0:h.z, x1:tx, z1:tz, f:0, owner:h}, o)); }
-function addTrail(h, x, z, rad, life, dps, col, puffy){ const m = new THREE.Mesh(new THREE.CircleGeometry(rad, 16), new THREE.MeshBasicMaterial({color:new THREE.Color(col).multiplyScalar(1.3), transparent:true, opacity:0.45, blending:THREE.AdditiveBlending, depthWrite:false}));
-  m.rotation.x = -Math.PI/2; m.position.set(x, 0.07, z); scene.add(m); TRAILS.push({m, x, z, rad, life, max:life, dps, owner:h, col, puffy}); }
+function addTrail(h, x, z, rad, life, dps, col, puffy){ const m = new THREE.Mesh(unitCircle, new THREE.MeshBasicMaterial({color:new THREE.Color(col).multiplyScalar(1.3), transparent:true, opacity:0.45, blending:THREE.AdditiveBlending, depthWrite:false}));
+  m.scale.set(rad, rad, 1); m.rotation.x = -Math.PI/2; m.position.set(x, 0.07, z); scene.add(m); TRAILS.push({m, x, z, rad, life, max:life, dps, owner:h, col, puffy}); }
 function aimAngle(h){ return Math.atan2(h.ax, h.az); }
 let skullProto = null;
 function skullMesh(){ if(!skullProto){ const b = LOOK.rawPiece(MODELS,'ghost','ghost.body'), e = LOOK.rawPiece(MODELS,'ghost','ghost.eyes'); skullProto = new THREE.Group();
@@ -212,22 +228,22 @@ function runPassive(h, k, dt){
     if(h.cd[k] <= 0){ h.cd[k] = A.cd; areaHit(h, h.x, h.z, R, dmgOf(h,k,A.dps)*A.cd, {slow:0.7, el:'frost'}); } return; }
   if(k==='exwife'){ const want = 1 + Math.floor((h.rank[k]||0)/2), mine = ALLIES.filter(a=>a.owner===h && !a.temp).length; if(mine < want) addAlly(h, false); return; }
   if(h.cd[k] > 0 || h.stunT > 0) return;
-  if(k==='numbertwo'){ h.cd[k] = cdOf(h,k); const bx = h.x - Math.sin(h.face)*1.1, bz = h.z - Math.cos(h.face)*1.1; const m = poopModel(); m.position.set(bx, 0, bz); m.rotation.y = Math.random()*6; scene.add(m);
-    BOMBS.push({m, x:bx, z:bz, fuse:1.0, owner:h}); if(h.isPlayer) SFX.fart(0.15); }
-  else if(k==='puke'){ h.cd[k] = cdOf(h,k); const range = areaOf(h,k,A.range), ang = aimAssist(h, aimAngle(h), range+2, 0.9), n = shots(h, 3);
-    for(let j=0;j<n;j++) fireBolt(h, null, dmgOf(h,k,A.dmg), 22, (j-(n-1)/2)*A.arc/(n-1||1) + rnd(-0.05,0.05), 0xff7a20, range/22, false, 1, {ang, el:'fire'});
+  if(k==='numbertwo'){ h.cd[k] = cdOf(h,k); const tg = bestTarget(h, areaOf(h,k,A.range)), m = poopModel(); m.rotation.y = Math.random()*6; scene.add(m);
+    if(tg){ m.position.set(h.x, 1, h.z); BOMBS.push({m, x:h.x, z:h.z, x0:h.x, z0:h.z, tg, fly:0, fuse:0.5, owner:h}); }   // v0.9: lobbed at the target, steering after it in the air
+    else { const bx = h.x - Math.sin(h.face)*1.1, bz = h.z - Math.cos(h.face)*1.1; m.position.set(bx, floorY(bx, bz), bz); BOMBS.push({m, x:bx, z:bz, fuse:1.0, owner:h}); }
+    if(h.isPlayer) SFX.fart(0.15); }
+  else if(k==='puke'){ const range = areaOf(h,k,A.range), tg = bestTarget(h, range); if(!tg) return; h.cd[k] = cdOf(h,k); const ang = Math.atan2(tg.x-h.x, tg.z-h.z), n = shots(h, 3);   // v0.9: homing
+    for(let j=0;j<n;j++) fireBolt(h, tg, dmgOf(h,k,A.dmg), 18, (j-(n-1)/2)*A.arc/(n-1||1) + rnd(-0.05,0.05), 0xff7a20, range/18*1.5, true, 0, {ang, el:'fire', turn:6, delay:0.06});
     spray(h.x + Math.sin(ang)*0.6, h.z + Math.cos(ang)*0.6, ang, 1.2, A.arc, 0xffb030, 4, 1.4); if(h.isPlayer) tone(260, 0.05, 'sawtooth', 0.02, 0.6); }
-  else if(k==='shank'){ h.cd[k] = cdOf(h,k); h.fx.spikeT = 0.22; const len = areaOf(h,k,A.len);
-    for(const s of [-1,1]){ const a = h.face + s*Math.PI/2, ux = Math.sin(a), uz = Math.cos(a);
-      for(const e of ENEMY[h.team]){ if(e.dead) continue; const px = e.x-h.x, pz = e.z-h.z, along = px*ux+pz*uz, off = Math.abs(px*uz-pz*ux); if(along > 0 && along < len+0.6 && off < 0.9+(e.r||0.6)*0.5) hit(e, dmgOf(h,k,A.dmg), h, {fx:h.x, fz:h.z, knock:1.4, el:'shadow'}); }
-      burst(h.x+ux*len, 1, h.z+uz*len, 0xff3050, 3, 3, 6, 0.3); }
+  else if(k==='shank'){ const len = areaOf(h,k,A.len), tg = bestTarget(h, len+1); if(!tg) return; h.cd[k] = cdOf(h,k); const ang = Math.atan2(tg.x-h.x, tg.z-h.z), n = shots(h, 2);   // v0.9: boomerang shivs
+    for(let j=0;j<n;j++) fireBolt(h, null, dmgOf(h,k,A.dmg), 20, (j%2?1:-1)*0.4*(1+Math.floor(j/2)*0.6), 0xff3050, len/20*2, false, 99, {ang, el:'shadow', mesh:shivMesh(), boomer:true});
     if(h.isPlayer) tone(1300, 0.03, 'triangle', 0.02); }
   else if(k==='habit'){ const tg = priority(h, 18); if(tg){ h.cd[k] = cdOf(h,k); const n = shots(h, 1 + Math.floor((h.rank[k]||0)/2)); for(let j=0;j<n;j++) fireBolt(h, tg, dmgOf(h,k,A.dmg), 20, (j-(n-1)/2)*0.25, 0xffb020, 1.6, true, 0, {el:'shock', turn:7}); if(h.isPlayer) tone(1500, 0.03, 'square', 0.012); } }
   else if(k==='tilt'){ let from = h, any = false; const seen = new Set(), lv = h.rank[k]||0;
     for(let j=0;j<3+lv;j++){ let b = null, bd = 1e9; for(const e of ENEMY[h.team]){ if(e.dead || seen.has(e)) continue; const d = hyp(e.x-from.x, e.z-from.z); if(d < (j?7:14) && d < bd){ bd = d; b = e; } }
       if(!b) break; seen.add(b); zapLine(from.x, from.z, b.x, b.z, 0xffd040); hit(b, dmgOf(h,k,A.dmg), h, {el:'shock', stun:0.15}); from = b; any = true; }
     if(any){ h.cd[k] = cdOf(h,k); if(h.isPlayer) SFX.zap(); } }
-  else if(k==='bonusball'){ h.cd[k] = cdOf(h,k); for(let j=0;j<shots(h,1);j++){ const a = aimAngle(h) + j*0.4, m = new THREE.Mesh(new THREE.SphereGeometry(0.4,16,12), new THREE.MeshStandardMaterial({color:0xeeeeff, metalness:1, roughness:0.1, emissive:0x2a1050})); m.add(glow(0xa45cff, 2.4, 0.7)); m.position.set(h.x, 0.5, h.z); scene.add(m);
+  else if(k==='bonusball'){ h.cd[k] = cdOf(h,k); for(let j=0;j<shots(h,1);j++){ const a = aimAngle(h) + j*0.4; if(!ballMat) ballMat = new THREE.MeshStandardMaterial({color:0xeeeeff, metalness:1, roughness:0.1, emissive:0x2a1050}); const m = new THREE.Mesh(ballGeo, ballMat); m.add(glowS(0xa45cff, 2.4, 0.7)); m.position.set(h.x, 0.5, h.z); scene.add(m);
     PINBALLS.push({m, x:h.x, z:h.z, vx:Math.sin(a)*16, vz:Math.cos(a)*16, life:6, owner:h, hitT:new Map()}); } }
   else if(k==='lawn'){ if(hyp(h.vx,h.vz) > 1){ h.cd[k] = A.cd; addTrail(h, h.x, h.z, 1.3*h.mods.area, 2.5, dmgOf(h,k,A.dps), 0x22d6a0); if(Math.random()<0.3) burst(h.x, 0.3, h.z, 0xb8ff60, 2, 2, 6, 0.5); } }
   else if(k==='cherry'){ const tg = priority(h, 14); if(tg){ h.cd[k] = cdOf(h,k); for(let j=0;j<shots(h,1);j++) lob(h, tg.x + j*rnd(-2,2), tg.z + j*rnd(-2,2), {dmg:dmgOf(h,k,A.dmg), rad:areaOf(h,k,A.rad), slow:2, el:'fire'}); } }
@@ -270,7 +286,7 @@ function teethFx(x, z, ang, R){
   scene.add(g); JAWS.push({g, rows, R, t:0, mats:[tm, gm]}); }
 function updateJaws(dt){ for(let i=JAWS.length-1;i>=0;i--){ const J = JAWS[i]; J.t += dt; const k = J.t/0.45, close = Math.min(1, k*3.2);
     J.rows.forEach((r,j)=>{ r.position.z = (j?1:-1)*J.R*0.42*(1-close); }); const o = k < 0.6 ? 1 : 1 - (k-0.6)/0.4; J.mats[0].opacity = 0.95*o; J.mats[1].opacity = 0.55*o;
-    if(k >= 1){ scene.remove(J.g); JAWS.splice(i,1); } } }
+    if(k >= 1){ scene.remove(J.g); J.g.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); J.mats.forEach(m=>m.dispose()); JAWS.splice(i,1); } } }
 function addAlly(h, temp){ const g = new THREE.Group(); const body = LOOK.rawPiece(MODELS,'ghost','ghost.body'), eyes = LOOK.rawPiece(MODELS,'ghost','ghost.eyes');
   const tint = temp ? 0x9a7ab8 : 0xd8a0ff, emit = temp ? 0x200a30 : 0x3a1060;
   if(body){ LOOK.inkify(body, {outline:0.03}); body.traverse(o=>{ if(o.isMesh && o.material.uniforms && o.material.uniforms.uTint){ o.material.uniforms.uTint.value.set(tint); o.material.uniforms.uEmit.value.set(emit); } }); g.add(body); } if(eyes) g.add(eyes);
@@ -284,7 +300,8 @@ function useActive(h, idx){
   if(k==='insurance'){ h.shieldT = A.dur; h.shieldHP = A.absorb*(1+0.25*(h.rank[k]||0)); h.absorbed = 0; SFX.shield(); elRing('void', h.x, h.z, 3, 0.5, true); elBurst('void', h.x, 1, h.z, 30, 6); }
   else if(k==='ragequit'){ const R = areaOf(h,k,A.rad); areaHit(h, h.x, h.z, R, dmgOf(h,k,A.dmg), {knock:A.knock, el:'shock', stun:0.3}); elRing('shock', h.x, h.z, R, 0.5); ringFx(h.x, h.z, R*0.6, 0xffffff, 0.3); discFx(h.x, h.z, R, 0xffb020, 0.25);
     for(let i=0;i<9;i++){ const a = i/9*6.283 + rnd(-0.2,0.2); zapLine(h.x, h.z, h.x+Math.cos(a)*R, h.z+Math.sin(a)*R, 0xffd040, 1); } burst(h.x,1,h.z,0xfff3a0,50,14); addShake(0.35); SFX.boom(0.9); }
-  else if(k==='deaddrop'){ let d = A.dist, tx = h.x, tz = h.z; while(d > 1){ tx = h.x + aimX*d; tz = h.z + aimZ*d; if(!blocked(tx,tz,h.r) && inLane(tx,tz)) break; d -= 0.5; } if(d <= 1){ tx = h.x; tz = h.z; } h.hop = {x0:h.x, z0:h.z, x1:tx, z1:tz}; h.hopT = 0.55; SFX.boing(); elBurst('shadow', h.x, 0.5, h.z, 20, 5); }
+  // Dead Drop lands on what you (or auto-cast) aimed at, up to 11 m
+  else if(k==='deaddrop'){ let d = h.aimPx!=null ? clamp(hyp(h.aimPx-h.x, h.aimPz-h.z), 2, A.dist) : 7, tx = h.x, tz = h.z; while(d > 1){ tx = h.x + aimX*d; tz = h.z + aimZ*d; if(!blocked(tx,tz,h.r) && inLane(tx,tz)) break; d -= 0.5; } if(d <= 1){ tx = h.x; tz = h.z; } h.hop = {x0:h.x, z0:h.z, x1:tx, z1:tz}; h.hopT = 0.55; SFX.boing(); elBurst('shadow', h.x, 0.5, h.z, 20, 5); }
   else if(k==='binge'){ h.ballT = A.dur*(1+0.1*(h.rank[k]||0)); heroSay(h, 'level'); tone(90, 0.8, 'sawtooth', 0.1, 2); addShake(0.3); elBurst('fire', h.x, 1, h.z, 70, 11); elRing('fire', h.x, h.z, 6, 0.5); }
   else if(k==='unhinged'){ const a2 = aimAssist(h, ang, A.range + 3, 0.7); h.ax = Math.sin(a2); h.az = Math.cos(a2); h.lungeT = 0.17; h.face = a2; SFX.whoosh(); }
   else if(k==='glitter'){ h.sugarT = A.dur*(1+0.1*(h.rank[k]||0)); SFX.fart(0.8); elBurst('toxic', h.x, 1, h.z, 40, 7); }
@@ -298,13 +315,39 @@ function useActive(h, idx){
   else if(k==='posse'){ for(let i=0;i<A.n;i++) addAlly(h, true); elBurst('shadow', h.x, 1, h.z, 40, 6); }
   else if(k==='notonlist'){ const R = areaOf(h,k,A.range), a2 = aimAssist(h, ang, R, 0.6); coneHit(h, h.x, h.z, a2, R, A.arc, dmgOf(h,k,A.dmg), {knock:A.knock, el:'nature'}); fanFx(h.x, h.z, a2, R, A.arc, 0x22d6a0, 0.3); spray(h.x, h.z, a2, R*0.4, A.arc, 0xb8ff60, 20, 1); addShake(0.2); }
   else if(k==='smokebreak'){ const R = areaOf(h,k,A.rad); for(let i=0;i<40;i++) puff(h.x, 0.8, h.z, 0x8a7a9a, 1, R*0.7); addTrail(h, h.x, h.z, R, A.dur, 2, 0x4a3a5a); h.fx.smoke = {x:h.x, z:h.z, R, t:A.dur}; }
-  else if(k==='hottake'){ const R = h.aimPx!=null ? clamp(hyp(h.aimPx-h.x, h.aimPz-h.z), 2.5, 8) : 5; throwCreature(h, 'cindercub', h.x+aimX*R, h.z+aimZ*R); }
+  else if(k==='hottake'){ const R = h.aimPx!=null ? clamp(hyp(h.aimPx-h.x, h.aimPz-h.z), 2.5, 12) : 6; throwCreature(h, 'cindercub', h.x+aimX*R, h.z+aimZ*R); }
   else if(k==='splashzone'){ throwCreature(h, 'splashpup', h.x+aimX*2.2, h.z+aimZ*2.2); }
-  else if(k==='jolt'){ let best = null, bn = 0; for(const e of ENEMY[h.team]){ if(e.dead || hyp(e.x-h.x,e.z-h.z) > 15) continue; let n = 0; for(const f of ENEMY[h.team]) if(!f.dead && hyp(f.x-e.x,f.z-e.z) < 5) n++; if(n > bn){ bn = n; best = e; } }
+  else if(k==='jolt'){ let best = bossNear(h, 18), bn = best ? 99 : 0; for(const e of ENEMY[h.team]){ if(best && best.kind==='boss') break; if(e.dead || hyp(e.x-h.x,e.z-h.z) > 18) continue; let n = 0; for(const f of ENEMY[h.team]) if(!f.dead && hyp(f.x-e.x,f.z-e.z) < 5) n++; if(n > bn){ bn = n; best = e; } }
     const tx = best ? best.x : h.x+aimX*6, tz = best ? best.z : h.z+aimZ*6; throwCreature(h, 'voltmoth', tx, tz); }
   return true;
 }
 let glitchT = 0, glitchDir = 0;
+// ---------------- v0.9 AUTO-CAST ----------------
+// Brent: "auto-cast when ready, aiming at the best target". Every ready active fires itself the moment it would do something
+// useful, aimed at the best target (Ball Boy first). Pressing its button still fires it early, aimed by you. One per tick.
+const AUTO = {
+  insurance: h => h.hp < h.maxhp*0.5 || (h.hp < h.maxhp*0.85 && countNear(h, h.x, h.z, 7) >= 2) || bossNear(h, 10) ? {} : null,
+  ragequit:  h => { const R = areaOf(h,'ragequit',ABIL.ragequit.rad)*0.85; return countNear(h, h.x, h.z, R) >= 3 || countNear(h, h.x, h.z, 3) >= 1 || bossNear(h, R) ? {} : null; },
+  deaddrop:  h => { const D = ABIL.deaddrop.dist, b = bossNear(h, D); if(b) return {t:b}; const c = cluster(h, D); return c && c.n >= 3 ? {t:c.e} : null; },
+  binge:     h => countNear(h, h.x, h.z, 10) >= 7 || bossNear(h, 6) ? {} : null,
+  unhinged:  h => { const t = bestTarget(h, areaOf(h,'unhinged',ABIL.unhinged.range)+1); return t ? {t} : null; },
+  glitter:   h => countNear(h, h.x, h.z, 8) >= 5 || h.hp < h.maxhp*0.35 ? {} : null,
+  repo:      h => { const t = bestTarget(h, 20); return t ? {t} : null; },
+  fruitsalad:h => countNear(h, h.x, h.z, 18) >= 3 || bossNear(h, 20) ? {} : null,
+  killscreen:h => { const b = bossNear(h, 26); if(b) return {t:b}; const c = cluster(h, 22, 8); return c && c.n >= 7 ? {t:c.e} : null; },
+  coldopen:  h => { const R = areaOf(h,'coldopen',ABIL.coldopen.rad)*0.8; return countNear(h, h.x, h.z, R) >= 5 || bossNear(h, R) ? {} : null; },
+  posse:     h => countNear(h, h.x, h.z, 14) >= 5 || bossNear(h, 16) ? {} : null,
+  notonlist: h => { const t = bestTarget(h, areaOf(h,'notonlist',ABIL.notonlist.range)); return t && (t.kind==='boss' || countNear(h, t.x, t.z, 3) >= 2 || hyp(t.x-h.x, t.z-h.z) < 3) ? {t} : null; },
+  smokebreak:h => countNear(h, h.x, h.z, 6) >= 6 ? {} : null,
+  hottake:   h => { const t = bestTarget(h, 12); return t ? {t} : null; },
+  splashzone:h => { const t = bestTarget(h, 6); return t ? {t} : null; },
+  jolt:      h => { const b = bossNear(h, 18); if(b) return {t:b}; const c = cluster(h, 18); return c && c.n >= 2 ? {t:c.e} : null; } };
+// point the hero's aim at a target (the casts read h.ax/h.az, and h.aimPx/aimPz for how far)
+function aimAt(h, t){ const dx = t.x-h.x, dz = t.z-h.z, d = hyp(dx,dz)||1; h.ax = dx/d; h.az = dz/d; h.aimPx = t.x; h.aimPz = t.z; }
+function autoCast(h, dt){ h.autoT = (h.autoT||0) - dt; if(h.autoT > 0 || h.dead || h.stunT > 0 || h.hopT > 0) return; h.autoT = 0.15;
+  for(let i=0;i<3;i++){ const k = h.act[i]; if(!k || (h.cd[k]||0) > 0 || h.aimHold === i) continue; const plan = AUTO[k] && AUTO[k](h); if(!plan) continue;
+    if(plan.t) aimAt(h, plan.t); if(useActive(h, i)) return; } }
+
 // movement: Space / a swipe on the phone. dir = optional [dx, dz] (the swipe direction)
 function useMove(h, dir){
   if(!h || !h.moveOk || h.dead || h.stunT > 0 || h.moveCd > 0) return; const M = MOVES[CHARS[h.char].move]; if(h.energy < M.cost){ if(h.isPlayer) toast(null,'Not enough energy. It refills over time.', 2000); return; }
