@@ -80,6 +80,32 @@
         padding: 10px 14px;
       }
       .help b { font-family: "Courier New", monospace; }
+      .bar {
+        width: min(96vw, 520px);
+        margin-top: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+      #muteBtn {
+        background: var(--btn-bg);
+        color: var(--btn-ink);
+        border: none;
+        border-radius: 8px;
+        padding: 9px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        font-family: "Courier New", monospace;
+        cursor: pointer;
+        box-shadow: 0 3px 0 rgba(0,0,0,.35);
+      }
+      #muteBtn:active { transform: translateY(2px); box-shadow: none; }
+      .controls-line {
+        font-size: 13.5px;
+        font-weight: bold;
+        line-height: 1.5;
+      }
       /* Touch controls */
       .touch {
         display: none;
@@ -149,12 +175,19 @@
       </div>
     </div>
 
+    <div class="bar">
+      <span class="controls-line">Move: Arrows/WASD — Confirm: Enter/Space/E — Back: X/Esc — Menus can be clicked</span>
+      <button id="muteBtn" type="button">SOUND: ON</button>
+    </div>
+
     <div class="help">
-      <b>Move</b> — arrow keys / WASD &nbsp;·&nbsp; <b>Z</b> or <b>Enter</b> — talk / confirm &nbsp;·&nbsp; <b>X</b> — back<br />
-      Walk north up the route to Emberwick. The clan elder waits in the hall at the top of town —
-      choose your first beast at the standing stones, then head back to the tall grass to battle and bind wild beasts.
-      Weaken a beast first, then throw a <b>Binding Stone</b> (the BIND command) to bring it into the clan.
-      The mender's hut, southwest in town, heals your party for free.
+      Walk north up the <b>Ember Trail</b> into <b>Emberhold</b>. Elder Bramm waits in the Clan Hall at the
+      north end of town — choose your first beast at the standing stones: <b>Fernhorn</b>, <b>Embercub</b>, or <b>Surgekit</b>.
+      To leave town, follow the dirt path: the <b>south gate</b> leads back down the Ember Trail, and the
+      <b>east gate</b> opens onto the <b>Highgrass Trail</b> — taller grass, stronger beasts — ending at
+      <b>Stonehaven</b>, where Elder Vesk and a mender wait. That is the end of this demo's road.<br />
+      Weaken a wild beast first, then throw an <b>Oathstone</b> (the BIND command) to bring it into the clan.
+      Mender Sola's hut, southwest in Emberhold, heals your party for free.
     </div>
 
 <script>
@@ -205,7 +238,7 @@ function spr(rows, flip, outline) {
 function sprB(rows) { return spr(rows, false, true); }
 
 var SPR = {};
-SPR.cindercub = sprB([
+SPR.embercub = sprB([
 "................",
 "..00........00..",
 "..020......020..",
@@ -222,7 +255,7 @@ SPR.cindercub = sprB([
 ".....2.22...111.",
 "............1.1.",
 "................"]);
-SPR.rillkit = sprB([
+SPR.surgekit = sprB([
 "................",
 "...00......00...",
 "...010....010...",
@@ -239,7 +272,7 @@ SPR.rillkit = sprB([
 ".....1.11....11.",
 "............1...",
 "................"]);
-SPR.fernawn = sprB([
+SPR.fernhorn = sprB([
 "................",
 ".....1....1.....",
 "....121..121....",
@@ -256,7 +289,7 @@ SPR.fernawn = sprB([
 ".....2..2.......",
 "................",
 "................"]);
-SPR.bristlerat = sprB([
+SPR.quillrat = sprB([
 "................",
 "...00......00...",
 "...020....020...",
@@ -273,7 +306,7 @@ SPR.bristlerat = sprB([
 "...2.....2......",
 "................",
 "................"]);
-SPR.dartfinch = sprB([
+SPR.dartwing = sprB([
 "................",
 ".......00.......",
 "......0330......",
@@ -290,7 +323,7 @@ SPR.dartfinch = sprB([
 "................",
 "................",
 "................"]);
-SPR.grublet = sprB([
+SPR.mossgrub = sprB([
 "................",
 "....0......0....",
 ".....0....0.....",
@@ -307,7 +340,7 @@ SPR.grublet = sprB([
 "................",
 "................",
 "................"]);
-SPR.thornhog = sprB([
+SPR.thornboar = sprB([
 "................",
 "...1..1..1..1...",
 "....1.1.1.1.....",
@@ -500,19 +533,19 @@ function effectiveness(moveType, defTypes) {
 
 /* ---------------- Species ---------------- */
 var SPECIES = {
-  cindercub:  { name:'CINDERCUB',  types:['Fire'],          base:{hp:44,atk:53,def:43,spc:50,spd:65}, catchRate:45,  exp:64,
+  embercub:  { name:'EMBERCUB',  types:['Fire'],          base:{hp:44,atk:53,def:43,spc:50,spd:65}, catchRate:45,  exp:64,
                 learn:[[1,'swipe'],[1,'yip'],[8,'cinder'],[12,'quick']] },
-  rillkit:    { name:'RILLKIT',    types:['Water'],         base:{hp:50,atk:48,def:53,spc:48,spd:43}, catchRate:45,  exp:64,
+  surgekit:  { name:'SURGEKIT',  types:['Water'],         base:{hp:50,atk:48,def:53,spc:48,spd:43}, catchRate:45,  exp:64,
                 learn:[[1,'ram'],[1,'brace'],[8,'spout'],[12,'chomp']] },
-  fernfawn:   { name:'FERNFAWN',   types:['Grass'],         base:{hp:48,atk:50,def:50,spc:56,spd:40}, catchRate:45,  exp:64,
+  fernhorn:  { name:'FERNHORN',  types:['Grass'],         base:{hp:48,atk:50,def:50,spc:56,spd:40}, catchRate:45,  exp:64,
                 learn:[[1,'swipe'],[1,'yip'],[8,'thorn'],[12,'chomp']] },
-  bristlerat: { name:'BRISTLERAT',types:['Normal'],        base:{hp:40,atk:53,def:35,spc:30,spd:62}, catchRate:255, exp:40,
+  quillrat:  { name:'QUILLRAT',  types:['Normal'],        base:{hp:40,atk:53,def:35,spc:30,spd:62}, catchRate:255, exp:40,
                 learn:[[1,'swipe'],[1,'dust'],[7,'chomp']] },
-  dartfinch:  { name:'DARTFINCH',  types:['Normal','Flying'],base:{hp:38,atk:47,def:40,spc:38,spd:56}, catchRate:255, exp:44,
+  dartwing:  { name:'DARTWING',  types:['Normal','Flying'],base:{hp:38,atk:47,def:40,spc:38,spd:56}, catchRate:255, exp:44,
                 learn:[[1,'peck'],[1,'dust'],[8,'quick']] },
-  grublet:    { name:'GRUBLET',    types:['Bug'],           base:{hp:45,atk:35,def:48,spc:30,spd:30}, catchRate:255, exp:48,
+  mossgrub:  { name:'MOSSGRUB',  types:['Bug'],           base:{hp:45,atk:35,def:48,spc:30,spd:30}, catchRate:255, exp:48,
                 learn:[[1,'sting'],[1,'brace']] },
-  thornhog:   { name:'THORNHOG',   types:['Grass'],         base:{hp:56,atk:49,def:56,spc:36,spd:26}, catchRate:120, exp:90,
+  thornboar: { name:'THORNBOAR', types:['Grass'],         base:{hp:56,atk:49,def:56,spc:36,spd:26}, catchRate:120, exp:90,
                 learn:[[1,'ram'],[1,'thorn']] }
 };
 
@@ -585,11 +618,12 @@ var MAPS = {
       "TTTTTTTTTTTTTTTT"
     ],
     warps: { "8,0":{ map:'town', x:9, y:14, dir:'up' }, "9,0":{ map:'town', x:10, y:14, dir:'up' } },
-    signs: { "12,17":["ROUTE OF FIRST STEPS","Emberwick lies north.","Wild beasts rustle in","the tall grass."] },
+    signs: { "12,17":["EMBER TRAIL","North: EMBERHOLD,","through the south gate.","Wild beasts rustle in","the tall grass."] },
     npcs: [
       { id:'scout', x:6, y:17, sprite:'scout', talk:'scout' }
     ],
-    encounters: [ ['bristlerat',45], ['dartfinch',30], ['grublet',15], ['thornhog',10] ]
+    encounters: [ ['quillrat',45], ['dartwing',30], ['mossgrub',15], ['thornboar',10] ],
+    lv: [2,4]
   },
   town: {
     indoor:false,
@@ -600,16 +634,16 @@ var MAPS = {
       "T.rrrrwwwwwwwwrrrr.T",
       "T.wDwwwwwwDwwwwDww.T",
       "T....f...pp...f....T",
-      "T........pp........T",
-      "T..f.....pp.....f..T",
+      "T........pp....S...T",
+      "T..f.....ppppppppppp",
       "T........pp...WW...T",
       "T........pp...WW...T",
       "T.rrrr...pp........T",
       "T.wDww...pp....S...T",
       "T........pp........T",
       "T..f.....ppS....f..T",
-      "T........pp........T",
-      "TTTTTTTTTppTTTTTTTTT"
+      "T.......Spp........T",
+      "TTTTTTTT#pp#TTTTTTTT"
     ],
     warps: {
       "10,4":{ map:'hall', x:5, y:6, dir:'up' },
@@ -617,16 +651,93 @@ var MAPS = {
       "15,4":{ map:'house2', x:4, y:3, dir:'up' },
       "3,11":{ map:'mender', x:4, y:4, dir:'up' },
       "9,15":{ map:'route', x:8, y:1, dir:'down' },
-      "10,15":{ map:'route', x:9, y:1, dir:'down' }
+      "10,15":{ map:'route', x:9, y:1, dir:'down' },
+      "19,7":{ map:'route2', x:1, y:2, dir:'right' }
     },
     signs: {
-      "15,11":["MENDER'S HUT","Rest and healing for","weary beasts. Free,","as clan law demands."],
-      "11,13":["EMBERWICK","A small clan town.","The Hall stands at","the north end."]
+      "15,11":["MENDER'S HUT","Sola mends weary","beasts here. Free,","as clan law demands."],
+      "11,13":["EMBERHOLD","Clan Hall: north end.","East gate: STONEHAVEN.","South gate: the Trail."],
+      "8,14":["SOUTH GATE","Down the EMBER TRAIL —","the way you came in.","North: EMBERHOLD."],
+      "15,6":["EAST GATE","HIGHGRASS TRAIL to","STONEHAVEN. Taller","grass, stronger beasts."]
     },
     npcs: [
       { id:'lass', x:7, y:7, sprite:'lass', talk:'lass' },
-      { id:'oldman', x:12, y:6, sprite:'oldman', talk:'oldman' }
+      { id:'oldman', x:12, y:6, sprite:'oldman', talk:'oldman' },
+      { id:'warden', x:13, y:8, sprite:'oldman', talk:'warden' }
     ],
+    encounters: null
+  },
+  route2: {
+    indoor:false,
+    tiles:[
+      "TTTTTTTTTTTTTTTTTT",
+      "T......ff........T",
+      "pppp..GGGG....GG.p",
+      "pppp..GGGG..GGGGpp",
+      "T..GG..GGGG......T",
+      "T..GG..GGGG..S...T",
+      "T......GGGG......T",
+      "T..ff............T",
+      "T......GGGG..ff..T",
+      "T......GGGG......T",
+      "T................T",
+      "TTTTTTTTTTTTTTTTTT"
+    ],
+    warps: {
+      "0,2":{ map:'town', x:18, y:7, dir:'left' },
+      "0,3":{ map:'town', x:18, y:7, dir:'left' },
+      "17,2":{ map:'haven', x:1, y:5, dir:'right' },
+      "17,3":{ map:'haven', x:1, y:6, dir:'right' }
+    },
+    signs: { "13,5":["HIGHGRASS TRAIL","West: EMBERHOLD.","East: STONEHAVEN.","Taller grass,","stronger beasts."] },
+    npcs: [],
+    encounters: [ ['quillrat',30], ['dartwing',25], ['mossgrub',15], ['thornboar',30] ],
+    lv: [4,6]
+  },
+  haven: {
+    indoor:false,
+    tiles:[
+      "TTTTTTTTTTTTTTTT",
+      "T..............T",
+      "T..rrrr....kk..T",
+      "T..rDwr........T",
+      "T......pp......T",
+      "pp.S...pp...f..T",
+      "pp.....pp......T",
+      "T......pp..S...T",
+      "T..f...pp......T",
+      "T......pp......T",
+      "T..............T",
+      "TTTTTTTTTTTTTTTT"
+    ],
+    warps: {
+      "0,5":{ map:'route2', x:16, y:2, dir:'left' },
+      "0,6":{ map:'route2', x:16, y:3, dir:'left' },
+      "4,3":{ map:'havenhut', x:4, y:4, dir:'up' }
+    },
+    signs: {
+      "3,5":["WEST GATE","HIGHGRASS TRAIL back","to EMBERHOLD."],
+      "11,7":["STONEHAVEN","A small clan outpost.","The mender's hut is","northwest. Rest easy."]
+    },
+    npcs: [
+      { id:'elder2', x:11, y:4, sprite:'elder', talk:'elder2' }
+    ],
+    encounters: null
+  },
+  havenhut: {
+    indoor:true,
+    tiles:[
+      "WWWWWWWWW",
+      "W.......W",
+      "W..b....W",
+      "W.......W",
+      "W.......W",
+      "W...MM..W",
+      "WWWWWWWWW"
+    ],
+    warps: { "4,5":{ map:'haven', x:4, y:4, dir:'down' }, "5,5":{ map:'haven', x:4, y:4, dir:'down' } },
+    signs: {},
+    npcs: [ { id:'healer2', x:5, y:2, sprite:'mender', talk:'healer2' } ],
     encounters: null
   },
   hall: {
@@ -760,7 +871,7 @@ function dlgConfirm() {
 }
 
 /* Dialogue content — all original text. */
-function healParty() { for (var i = 0; i < G.party.length; i++) { G.party[i].hp = G.party[i].stats.hp;
+function healParty() { sfxHeal(); for (var i = 0; i < G.party.length; i++) { G.party[i].hp = G.party[i].stats.hp;
   for (var j = 0; j < G.party[i].moves.length; j++) G.party[i].moves[j].pp = MOVES[G.party[i].moves[j].id].pp; } }
 
 var TALKS = {
@@ -769,8 +880,10 @@ var TALKS = {
       startDialog([
         "Ah — a young clansman,",
         "come of age at last.",
-        "In Emberwick we do not",
-        "break beasts with whips.",
+        "I am BRAMM, elder of",
+        "EMBERHOLD.",
+        "Here we do not break",
+        "beasts with whips.",
         "We BIND them. Heart to",
         "heart, clan to kin.",
         "Three beasts sleep upon",
@@ -786,9 +899,9 @@ var TALKS = {
         "How does your beast",
         "fare, young clansman?",
         "Weaken a wild beast in",
-        "the grass, then throw a",
-        "BINDING STONE to bind",
-        "it to the clan."
+        "the grass, then throw an",
+        "OATHSTONE to bind it",
+        "to the clan."
       ];
       if (G.stones === 0) {
         lines.push("No stones left? Here —");
@@ -797,19 +910,20 @@ var TALKS = {
         startDialog(lines, function(){ G.stones += 3; });
         return;
       }
-      lines.push("And that is where this");
-      lines.push("little demo's tale ends.");
-      lines.push("The route is yours now —");
-      lines.push("roam it, battle, and");
-      lines.push("bind to your heart's");
-      lines.push("content.");
+      lines.push("Ready to roam further?");
+      lines.push("Take the EAST GATE, by");
+      lines.push("the warden. The HIGH-");
+      lines.push("GRASS TRAIL runs east");
+      lines.push("to STONEHAVEN — taller");
+      lines.push("grass, stronger beasts.");
+      lines.push("Elder VESK waits there.");
       startDialog(lines);
     }
   },
   mender: function() {
     startDialog([
-      "Welcome to the mender's",
-      "hut, clansman.",
+      "Welcome, clansman. I am",
+      "SOLA, the mender.",
       "Your beasts look weary.",
       "Rest them a moment…",
       "…",
@@ -817,10 +931,55 @@ var TALKS = {
       "again. Off you go."
     ], function(){ healParty(); });
   },
+  healer2: function() {
+    startDialog([
+      "Well met, traveller.",
+      "I am ORIN, mender of",
+      "STONEHAVEN.",
+      "Your beasts look weary.",
+      "Rest them a moment…",
+      "…",
+      "There — hale and whole.",
+      "The trail home is safer",
+      "with a strong party."
+    ], function(){ healParty(); });
+  },
+  elder2: function() {
+    startDialog([
+      "So you braved the tall",
+      "grass. I am VESK, elder",
+      "of STONEHAVEN.",
+      "You have reached the",
+      "end of this demo's road.",
+      "EMBERHOLD behind you,",
+      "STONEHAVEN before you —",
+      "the clan's lands, for",
+      "now, go no further.",
+      "Roam, battle, and bind",
+      "to your heart's content.",
+      "More road will come."
+    ]);
+  },
+  warden: function() {
+    startDialog([
+      "I keep the EAST GATE of",
+      "EMBERHOLD, clansman.",
+      "Through this gate runs",
+      "the HIGHGRASS TRAIL,",
+      "east to STONEHAVEN.",
+      "The grass there grows",
+      "taller, and the beasts",
+      "hit harder. Go prepared.",
+      "The SOUTH GATE, down",
+      "the main path, leads",
+      "back along the EMBER",
+      "TRAIL, the way you came."
+    ]);
+  },
   lass: function() {
     startDialog([
       "I heard rustling in the",
-      "route grass this morning!",
+      "trail grass this morning!",
       "Wild beasts only leap",
       "out at clansfolk who",
       "walk with a beast of",
@@ -840,7 +999,7 @@ var TALKS = {
     startDialog([
       "Supper's soon. If you",
       "see my boy out on the",
-      "route, send him home.",
+      "trail, send him home.",
       "He thinks the tall grass",
       "is a playground!"
     ]);
@@ -848,9 +1007,9 @@ var TALKS = {
   kid: function() {
     startDialog([
       "When I come of age I'm",
-      "binding a THORNHOG!",
+      "binding a THORNBOAR!",
       "Nobody messes with a",
-      "hog covered in thorns."
+      "boar covered in thorns."
     ]);
   },
   scout: function() {
@@ -858,10 +1017,10 @@ var TALKS = {
       G.flags.scoutGift = true;
       startDialog([
         "Ho, clansman! No beast",
-        "at your side yet? The",
-        "elder waits in the hall,",
-        "north end of Emberwick.",
-        "Take these three BINDING",
+        "at your side yet? Elder",
+        "BRAMM waits in the hall,",
+        "north end of EMBERHOLD.",
+        "Take these three OATH-",
         "STONES from me — you'll",
         "want them soon enough."
       ], function(){ G.stones += 3; });
@@ -880,11 +1039,11 @@ var TALKS = {
 };
 
 /* Standing stones in the hall: pedestal x -> starter species */
-var STONES = { '3,2':'fernfawn', '6,2':'cindercub', '9,2':'rillkit' };
+var STONES = { '3,2':'fernhorn', '6,2':'embercub', '9,2':'surgekit' };
 var STONE_TEXT = {
-  fernfawn: ["FERNFAWN, the grass fawn.","Its lash is a living vine."],
-  cindercub:["CINDERCUB, the fire cub.","Its bite carries","hearth-sparks."],
-  rillkit:  ["RILLKIT, the water kit.","Its jet can crack","river-stone."]
+  fernhorn: ["FERNHORN, the grass hart.","Its lash is a living vine."],
+  embercub: ["EMBERCUB, the fire cub.","Its bite carries","hearth-sparks."],
+  surgekit: ["SURGEKIT, the water kit.","Its jet can crack","river-stone."]
 };
 function interactPedestal(x, y) {
   var sp = STONES[x + ',' + y];
@@ -902,10 +1061,10 @@ function interactPedestal(x, y) {
       startDialog([
         "You bound " + SPECIES[sp].name,
         "to the clan!",
-        "The elder also presses",
-        "5 BINDING STONES into",
+        "Elder Bramm also presses",
+        "5 OATHSTONES into",
         "your hand.",
-        "Now — the route grass",
+        "Now — the trail grass",
         "will stir for you."
       ]);
     }
@@ -939,12 +1098,32 @@ function onStep() {
     return;
   }
   var t = tileAt(G.map, G.x, G.y);
-  if (t === 'g' && G.party.length > 0 && m.encounters) {
+  if ((t === 'g' || t === 'G') && m.encounters) {
+    if (G.party.length === 0) {
+      if (!G.flags.warnedNoBeast) {
+        G.flags.warnedNoBeast = true;
+        startDialog([
+          "Something rustles in",
+          "the grass…",
+          "Wild beasts! But you",
+          "have no beast of your",
+          "own to fight them.",
+          "Go to the CLAN HALL at",
+          "the north end of",
+          "EMBERHOLD and bind a",
+          "starter first."
+        ]);
+      }
+      return;
+    }
     if (Math.random() < 0.12) startBattle();
   }
 }
 function updateWorld() {
   if (G.moving) {
+    // A tap made mid-step counts only if the key is still held when
+    // the step ends — otherwise it would fire a phantom extra step.
+    if (tapDir && !held[tapDir]) tapDir = null;
     G.moveStep++;
     var d = DIRS[G.dir];
     var total = 8; // frames per tile (GB-ish walking pace)
@@ -973,7 +1152,7 @@ function updateWorld() {
 /* ---------------- Battle ---------------- */
 var B = null;
 function pickWild() {
-  var table = MAPS.route.encounters, total = 0, i;
+  var table = MAPS[G.map].encounters, total = 0, i;
   for (i = 0; i < table.length; i++) total += table[i][1];
   var r = Math.random() * total;
   for (i = 0; i < table.length; i++) { r -= table[i][1]; if (r <= 0) return table[i][0]; }
@@ -985,7 +1164,9 @@ function firstAlive() {
 }
 function startBattle() {
   var sp = pickWild();
-  var lvl = sp === 'thornhog' ? 3 + Math.floor(Math.random() * 3) : 2 + Math.floor(Math.random() * 3);
+  var range = MAPS[G.map].lv || [2, 4];
+  var lvl = range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1));
+  if (sp === 'thornboar') lvl = Math.min(range[1] + 1, lvl + 1);
   var foe = makeBeast(sp, lvl);
   var ai = firstAlive();
   B = {
@@ -998,8 +1179,17 @@ function startBattle() {
   B.participants[ai] = true;
   G.state = 'battle';
   G.flash = 8;
-  bSay('A wild ' + typeName(foe) + ' appeared!', function(){
+  sfxEncounter();
+  var sendOut = function(){
     bSay('Go! ' + typeName(G.party[B.active]) + '!', function(){ B.mode = 'menu'; }, 500);
+  };
+  bSay('A wild ' + typeName(foe) + ' appeared!', function(){
+    if (!G.flags.taught) {
+      G.flags.taught = true;
+      bSay('Choose FIGHT, then pick a move!', sendOut, 900);
+    } else {
+      sendOut();
+    }
   }, 700);
 }
 function bSay(text, next, autoMs) {
@@ -1051,6 +1241,7 @@ function doAttack(user, target, moveId, isFoe, done) {
     dmg = Math.floor(dmg * (217 + Math.floor(Math.random() * 39)) / 255);
     if (eff > 0 && dmg < 1) dmg = 1;
     target.hp = Math.max(0, target.hp - dmg);
+    sfxHit();
     if (target === B.foe) B.anim = { kind:'hit', who:'foe', t:0 };
     else B.anim = { kind:'hit', who:'me', t:0 };
     var after = function(){
@@ -1148,12 +1339,12 @@ function handleMyFaint() {
 }
 function whiteOut() {
   bSay('You have no beasts left able to fight!', function(){
-    bSay('You hurry back to Emberwick, cradling your beasts…', function(){
+    bSay('You hurry back to Emberhold…', function(){
       G.map = 'town'; G.x = 3; G.y = 12; G.dir = 'down';
       G.px = 48; G.py = 12 * 16;
       healParty();
       B = null; G.state = 'world';
-      startDialog(['The mender sets them','right, as always.','"Careful in that grass,','clansman."']);
+      startDialog(['Mender Sola sets them','right, as always.','"Careful in that grass,','clansman."']);
     }, 900);
   }, 900);
 }
@@ -1181,7 +1372,7 @@ function tryRun() {
 }
 function tryCapture() {
   if (G.stones <= 0) {
-    bSay('You have no BINDING STONES left!', function(){ B.mode = 'menu'; }, 500);
+    bSay('You have no OATHSTONES left!', function(){ B.mode = 'menu'; }, 500);
     return;
   }
   G.stones--;
@@ -1197,7 +1388,7 @@ function tryCapture() {
   var s = 0;
   while (s < 3 && Math.random() > per) s++;
   B.anim.shakeTarget = B.capSuccess ? 3 : s;
-  bSayQuiet('You threw a BINDING STONE!');
+  bSayQuiet('You threw an OATHSTONE!');
 }
 function bSayQuiet(text) { B.msg = text; B.shown = text.length; }
 function finishCapture() {
@@ -1207,7 +1398,9 @@ function finishCapture() {
       G.party.push(foe);
       bSay('Got it! ' + typeName(foe) + ' was bound to the clan!', function(){ endBattle(); }, 800);
     } else {
-      bSay(typeName(foe) + ' was bound, but your party is full! It was sent to the clan stores.', function(){ endBattle(); }, 800);
+      bSay(typeName(foe) + ' bound! Party full.', function(){
+        bSay('It was sent to the clan stores.', function(){ endBattle(); }, 700);
+      }, 700);
     }
   } else {
     bSay('Oh no! The ' + typeName(foe) + ' broke free!', function(){
@@ -1243,6 +1436,7 @@ function updateBattle() {
   if (B.mode === 'msg' && B.autoAt && G.frame >= B.autoAt && B.shown >= B.msg.length) {
     var n = B.next; B.autoAt = 0; B.next = null;
     if (n) n();
+    if (!B) return; // the chain ended the battle (win, run, capture, white-out)
   }
   // Animations
   if (B.anim) {
@@ -1254,9 +1448,10 @@ function updateBattle() {
         if (shakeNo >= B.anim.shakeTarget) {
           B.anim = null; B.mode = 'msg';
           finishCapture();
+          if (!B) return;
         }
       }
-      if (B.anim && B.anim.t > 32 * 5) { B.anim = null; B.mode = 'msg'; finishCapture(); }
+      if (B.anim && B.anim.t > 32 * 5) { B.anim = null; B.mode = 'msg'; finishCapture(); if (!B) return; }
     }
   }
   // HP bar easing
@@ -1323,6 +1518,8 @@ function battleDir(dir) {
 }
 
 /* ---------------- Rendering ---------------- */
+/* Click/tap regions, rebuilt by the draw functions every frame. */
+var CLICKS = [];
 function hash(x, y) { var h = (x * 374761393 + y * 668265263) ^ 0x5bf03635; return ((h ^ (h >> 13)) >>> 0) % 100; }
 
 function drawTile(mapId, t, sx, sy, wx, wy) {
@@ -1350,6 +1547,12 @@ function drawTile(mapId, t, sx, sy, wx, wy) {
       px(C.m, 2, 6, 2, 10); px(C.m, 6, 3, 2, 13); px(C.m, 11, 5, 2, 11); px(C.m, 14, 8, 1, 8);
       px(C.l, 3, 9, 1, 7); px(C.l, 8, 6, 1, 10); px(C.l, 12, 9, 1, 7);
       px(C.d, 6, 3, 1, 3); px(C.d, 11, 5, 1, 3);
+      break;
+    case 'G':
+      px(C.l, 0, 0, 16, 16);
+      px(C.m, 1, 4, 2, 12); px(C.m, 5, 1, 2, 15); px(C.m, 9, 3, 2, 13); px(C.m, 13, 2, 2, 14);
+      px(C.d, 5, 1, 1, 4); px(C.d, 13, 2, 1, 4); px(C.d, 9, 3, 1, 3); px(C.d, 1, 4, 1, 3);
+      px(C.p, 3, 8, 1, 8); px(C.p, 7, 6, 1, 10); px(C.p, 11, 9, 1, 7); px(C.p, 15, 7, 1, 9);
       break;
     case 'p':
       px(C.l, 0, 0, 16, 16);
@@ -1415,33 +1618,36 @@ function drawTile(mapId, t, sx, sy, wx, wy) {
   }
 }
 
+var TEXTFONT = 'bold 10px "Courier New", monospace';
 function drawTextBox() {
-  ctx.fillStyle = C.p; ctx.fillRect(0, 104, 160, 40);
-  ctx.fillStyle = C.d; ctx.fillRect(0, 104, 160, 1); ctx.fillRect(0, 106, 160, 1);
-  ctx.fillRect(2, 108, 156, 1); ctx.fillRect(2, 141, 156, 1);
-  ctx.fillRect(2, 108, 1, 34); ctx.fillRect(157, 108, 1, 34);
+  ctx.fillStyle = C.p; ctx.fillRect(0, 100, 160, 44);
+  ctx.fillStyle = C.d; ctx.fillRect(0, 100, 160, 1); ctx.fillRect(0, 102, 160, 1);
+  ctx.fillRect(2, 104, 156, 1); ctx.fillRect(2, 141, 156, 1);
+  ctx.fillRect(2, 104, 1, 38); ctx.fillRect(157, 104, 1, 38);
 }
 function drawText(str, x, y, col) {
   ctx.fillStyle = col || C.d;
-  ctx.font = '8px "Courier New", monospace';
+  ctx.font = TEXTFONT;
   ctx.textBaseline = 'top';
   ctx.fillText(str, x, y);
 }
-function wrapText(str, n) {
+function wrapText(str, maxW) {
+  ctx.font = TEXTFONT;
   var words = str.split(' '), lines = [], cur = '';
   for (var i = 0; i < words.length; i++) {
-    if ((cur + ' ' + words[i]).trim().length > n) { lines.push(cur.trim()); cur = words[i]; }
-    else cur += ' ' + words[i];
+    var test = cur ? cur + ' ' + words[i] : words[i];
+    if (cur && ctx.measureText(test).width > maxW) { lines.push(cur); cur = words[i]; }
+    else cur = test;
   }
-  if (cur.trim()) lines.push(cur.trim());
+  if (cur) lines.push(cur);
   return lines;
 }
 function drawDialogText(text, shown) {
   drawTextBox();
   var partial = text.substring(0, shown);
-  var lines = wrapText(partial, 19);
-  for (var i = 0; i < lines.length && i < 2; i++) drawText(lines[i], 8, 114 + i * 11);
-  if (shown >= text.length && G.frame % 60 < 32) drawText('▼', 148, 132);
+  var lines = wrapText(partial, 140);
+  for (var i = 0; i < lines.length && i < 2; i++) drawText(lines[i], 8, 110 + i * 16);
+  if (shown >= text.length && G.frame % 60 < 32) drawText('▼', 146, 128);
 }
 
 function playerSprite() {
@@ -1493,18 +1699,24 @@ function drawWorld() {
   if (G.state === 'dialog' && DLG) {
     var cur = dlgCurrent();
     if (typeof cur === 'string') {
+      CLICKS.push({ x:0, y:0, w:160, h:144, act:function(){ dlgConfirm(); } });
       drawDialogText(cur, DLG.shown);
     } else if (cur && cur.choice) {
       drawTextBox();
-      drawText('Will you bind it?', 8, 114);
-      // choice box
-      ctx.fillStyle = C.p; ctx.fillRect(104, 82, 54, 24);
+      drawText('Will you bind it?', 8, 110);
+      // choice box (clickable)
+      ctx.fillStyle = C.p; ctx.fillRect(92, 70, 66, 34);
       ctx.fillStyle = C.d;
-      ctx.fillRect(104, 82, 54, 1); ctx.fillRect(104, 105, 54, 1);
-      ctx.fillRect(104, 82, 1, 24); ctx.fillRect(157, 82, 1, 24);
+      ctx.fillRect(92, 70, 66, 1); ctx.fillRect(92, 103, 66, 1);
+      ctx.fillRect(92, 70, 1, 34); ctx.fillRect(157, 70, 1, 34);
       for (var ci = 0; ci < cur.choice.length; ci++) {
-        if (DLG.sel === ci) drawText('▶', 108, 86 + ci * 10);
-        drawText(cur.choice[ci], 116, 86 + ci * 10);
+        (function(idx){
+          CLICKS.push({ x:92, y:70 + idx * 17, w:66, h:17,
+            hov:function(){ DLG.sel = idx; },
+            act:function(){ DLG.sel = idx; dlgConfirm(); } });
+        })(ci);
+        if (DLG.sel === ci) drawText('▶', 96, 74 + ci * 17);
+        drawText(cur.choice[ci], 106, 74 + ci * 17);
       }
     }
   }
@@ -1555,64 +1767,79 @@ function drawBattle() {
     drawBackSprite(me.sp, mx, my2);
   }
   // Foe info
-  drawInfoBox(4, 4, 78, 30);
-  drawText(typeName(foe), 8, 7);
-  drawText('Lv' + foe.level, 56, 7);
-  drawText('HP', 8, 20);
-  drawHpBar(24, 21, 52, Math.max(0, Math.round(B.foeDisp)), foe.stats.hp);
+  drawInfoBox(2, 2, 88, 36);
+  drawText(typeName(foe), 6, 5);
+  drawText('Lv' + foe.level, 62, 5);
+  drawText('HP', 6, 21);
+  drawHpBar(24, 22, 60, Math.max(0, Math.round(B.foeDisp)), foe.stats.hp);
+  // Oathstone count (always visible in battle)
+  drawText('STONES ×' + G.stones, 6, 44);
   // My info
-  drawInfoBox(80, 66, 76, 34);
-  drawText(typeName(me), 84, 68);
-  drawText('Lv' + me.level, 134, 68);
-  drawText('HP', 84, 79);
-  drawHpBar(100, 80, 50, Math.max(0, Math.round(B.myDisp)), me.stats.hp);
-  drawText(padNum(Math.max(0, Math.round(B.myDisp)), 3) + '/' + padNum(me.stats.hp, 3), 104, 89);
+  drawInfoBox(70, 58, 88, 40);
+  drawText(typeName(me), 74, 61);
+  drawText('Lv' + me.level, 128, 61);
+  drawText('HP', 74, 76);
+  drawHpBar(92, 77, 58, Math.max(0, Math.round(B.myDisp)), me.stats.hp);
+  drawText(padNum(Math.max(0, Math.round(B.myDisp)), 3) + '/' + padNum(me.stats.hp, 3), 96, 86);
   // Text box / menus
   drawTextBox();
   if (B.mode === 'menu') {
-    var lines = wrapText('What will ' + typeName(me) + ' do?', 13);
-    for (var li = 0; li < lines.length && li < 2; li++) drawText(lines[li], 8, 114 + li * 11);
-    ctx.fillStyle = C.p; ctx.fillRect(82, 92, 76, 50);
-    ctx.fillStyle = C.d;
-    ctx.fillRect(82, 92, 76, 1); ctx.fillRect(82, 141, 76, 1);
-    ctx.fillRect(82, 92, 1, 50); ctx.fillRect(157, 92, 1, 50);
+    var lines = wrapText('What will ' + typeName(me) + ' do?', 56);
+    for (var li = 0; li < lines.length && li < 3; li++) drawText(lines[li], 8, 105 + li * 13);
+    ctx.fillStyle = C.d; ctx.fillRect(68, 104, 1, 36);
     var items = ['FIGHT', 'BEASTS', 'BIND', 'RUN'];
     for (var ii = 0; ii < 4; ii++) {
-      var ix = 92 + (ii % 2) * 33, iy = 102 + Math.floor(ii / 2) * 18;
+      (function(idx){
+        var cx = idx % 2 === 0 ? 68 : 108, cy = idx < 2 ? 104 : 122;
+        CLICKS.push({ x:cx, y:cy, w:44, h:18,
+          hov:function(){ if (B && B.mode === 'menu') B.menu = idx; },
+          act:function(){ if (B && B.mode === 'menu') { B.menu = idx; battleConfirm(); } } });
+      })(ii);
+      var ix = 76 + (ii % 2) * 40, iy = 106 + Math.floor(ii / 2) * 18;
       if (B.menu === ii) drawText('▶', ix - 8, iy);
       drawText(items[ii], ix, iy);
     }
-    drawText('STONES ×' + G.stones, 8, 132);
   } else if (B.mode === 'fight') {
     for (var mi = 0; mi < me.moves.length; mi++) {
+      (function(idx){
+        var cx = idx % 2 === 0 ? 4 : 78, cy = idx < 2 ? 104 : 122;
+        CLICKS.push({ x:cx, y:cy, w:78, h:18,
+          hov:function(){ if (B && B.mode === 'fight') B.moveSel = idx; },
+          act:function(){ if (B && B.mode === 'fight') { B.moveSel = idx; battleConfirm(); } } });
+      })(mi);
       var mv = MOVES[me.moves[mi].id];
-      var mxx = 12 + (mi % 2) * 76, myy = 112 + Math.floor(mi / 2) * 14;
+      var mxx = 16 + (mi % 2) * 72, myy = 107 + Math.floor(mi / 2) * 18;
       if (B.moveSel === mi) drawText('▶', mxx - 8, myy);
       drawText(mv.name.toUpperCase().substring(0, 11), mxx, myy);
     }
     var sel = MOVES[me.moves[B.moveSel].id];
-    ctx.fillStyle = C.p; ctx.fillRect(96, 66, 62, 26);
+    ctx.fillStyle = C.p; ctx.fillRect(100, 62, 58, 28);
     ctx.fillStyle = C.d;
-    ctx.fillRect(96, 66, 62, 1); ctx.fillRect(96, 91, 62, 1);
-    ctx.fillRect(96, 66, 1, 26); ctx.fillRect(157, 66, 1, 26);
-    drawText('TYPE/' + sel.type.toUpperCase(), 100, 70);
-    drawText('PP ' + me.moves[B.moveSel].pp + '/' + sel.pp, 100, 81);
+    ctx.fillRect(100, 62, 58, 1); ctx.fillRect(100, 89, 58, 1);
+    ctx.fillRect(100, 62, 1, 28); ctx.fillRect(157, 62, 1, 28);
+    drawText('TYPE/' + sel.type.toUpperCase(), 104, 66);
+    drawText('PP ' + me.moves[B.moveSel].pp + '/' + sel.pp, 104, 78);
   } else if (B.mode === 'switch') {
-    ctx.fillStyle = C.p; ctx.fillRect(0, 0, 160, 104);
-    ctx.fillStyle = C.d; ctx.fillRect(0, 103, 160, 1);
-    drawText(B.mustSwitch ? 'Choose a beast!' : 'Choose a beast. (X: back)', 8, 6);
+    ctx.fillStyle = C.p; ctx.fillRect(0, 0, 160, 100);
+    ctx.fillStyle = C.d; ctx.fillRect(0, 99, 160, 1);
+    drawText(B.mustSwitch ? 'Choose a beast!' : 'Choose a beast.', 8, 5);
     for (var pi = 0; pi < G.party.length; pi++) {
-      var pb = G.party[pi], py = 20 + pi * 14;
+      (function(idx){
+        CLICKS.push({ x:0, y:18 + idx * 15, w:160, h:15,
+          hov:function(){ if (B && B.mode === 'switch') B.switchSel = idx; },
+          act:function(){ if (B && B.mode === 'switch') { B.switchSel = idx; battleConfirm(); } } });
+      })(pi);
+      var pb = G.party[pi], py = 20 + pi * 15;
       if (B.switchSel === pi) drawText('▶', 4, py);
-      drawText(typeName(pb) + ' Lv' + pb.level, 12, py);
-      drawHpBar(96, py + 1, 40, pb.hp, pb.stats.hp);
-      drawText(pb.hp + '/' + pb.stats.hp, 96, py + 7, pb.hp <= 0 ? C.d : C.d);
-      if (pb.hp <= 0) drawText('FAINTED', 12, py + 7);
+      drawText(typeName(pb) + ' Lv' + pb.level, 14, py);
+      if (pb.hp <= 0) drawText('FAINTED', 108, py);
+      else drawHpBar(112, py + 2, 44, pb.hp, pb.stats.hp);
     }
     drawDialogText(B.msg || ' ', B.msg ? B.msg.length : 0);
   } else {
-    var bl = wrapText(B.msg.substring(0, B.shown), 19);
-    for (var bi = 0; bi < bl.length && bi < 2; bi++) drawText(bl[bi], 8, 114 + bi * 11);
+    CLICKS.push({ x:0, y:0, w:160, h:144, act:function(){ battleConfirm(); } });
+    var bl = wrapText(B.msg.substring(0, B.shown), 140);
+    for (var bi = 0; bi < bl.length && bi < 2; bi++) drawText(bl[bi], 8, 110 + bi * 16);
   }
 }
 function padNum(n, w) { var s = '' + n; while (s.length < w) s = ' ' + s; return s; }
@@ -1637,15 +1864,19 @@ function drawTitle() {
   ctx.fillStyle = C.p; ctx.fillRect(16, 16, 128, 112);
   ctx.font = 'bold 19px "Courier New", monospace';
   ctx.fillStyle = C.d; ctx.textBaseline = 'top';
-  ctx.fillText('CLANBOUND', 22, 34);
-  ctx.font = '8px "Courier New", monospace';
-  drawText('A beast-binding tale', 38, 62);
-  drawText('Bind wild beasts.', 36, 84);
-  drawText('Raise your clan.', 40, 94);
-  if (G.frame % 90 < 55) drawText('PRESS ENTER / TAP A', 34, 112);
+  ctx.fillText('CLANBOUND', 22, 24);
+  drawText('A beast-binding tale', 20, 50);
+  ctx.font = 'bold 9px "Courier New", monospace';
+  ctx.fillStyle = C.d;
+  ctx.fillText('Move: Arrows/WASD', 20, 68);
+  ctx.fillText('Confirm: Enter/Space/E', 20, 79);
+  ctx.fillText('Back: X/Esc', 20, 90);
+  ctx.fillText('Menus can be clicked', 20, 101);
+  if (G.frame % 90 < 55) drawText('PRESS ENTER', 46, 114);
 }
 
 function render() {
+  CLICKS = [];
   if (G.state === 'title') { drawTitle(); return; }
   if (G.state === 'battle' && B) { drawBattle(); }
   else { drawWorld(); }
@@ -1661,40 +1892,121 @@ function render() {
   }
 }
 
+/* ---------------- Audio (WebAudio chiptune, all original) ----------------
+   Three short loops — calm town, light route, tense battle — plus
+   tiny blip effects. The context is created on the player's first
+   key press or tap, as browsers require. */
+var MUS = { ctx:null, master:null, on:true, step:0, nextTime:0, cur:'' };
+var SONGS = {
+  town:   { step:0.24,
+            mel:[64,67,69,67, 64,62,64,0, 60,62,64,67, 69,67,64,0, 65,69,72,69, 65,64,62,0, 60,62,64,62, 60,0,0,0],
+            bass:[48,55,53,55, 48,55,53,55, 48,55,53,55, 48,55,48,0], bassEvery:2 },
+  route:  { step:0.19,
+            mel:[67,71,74,71, 69,67,69,0, 71,74,79,74, 71,69,67,0, 69,71,74,76, 74,71,69,0, 67,69,71,69, 67,0,0,0],
+            bass:[43,50,47,50, 43,50,47,50, 48,50,47,50, 43,50,43,0], bassEvery:2 },
+  battle: { step:0.155,
+            mel:[57,0,60,57, 0,57,64,0, 57,0,60,57, 65,64,62,0, 57,0,60,57, 0,57,64,0, 69,67,65,64, 62,0,59,0],
+            bass:[45,0,45,0,45,0,45,45, 41,0,41,0,43,0,43,0, 45,0,45,0,45,0,45,45, 50,0,48,0,47,0,43,0], bassEvery:1 }
+};
+function ensureAudio() {
+  if (MUS.ctx) { if (MUS.ctx.state === 'suspended') MUS.ctx.resume(); return; }
+  try {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    MUS.ctx = new AC();
+    MUS.master = MUS.ctx.createGain();
+    MUS.master.gain.value = MUS.on ? 1 : 0;
+    MUS.master.connect(MUS.ctx.destination);
+    MUS.nextTime = MUS.ctx.currentTime + 0.06;
+    setInterval(musicTick, 42);
+  } catch (e) { /* no audio — game still plays */ }
+}
+function midiHz(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+function tone(freq, t, dur, type, vol, slideTo) {
+  var o = MUS.ctx.createOscillator(), g = MUS.ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+  g.gain.setValueAtTime(vol, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  o.connect(g); g.connect(MUS.master);
+  o.start(t); o.stop(t + dur + 0.02);
+}
+function wantSong() {
+  if (G.state === 'battle') return 'battle';
+  if (G.map === 'route' || G.map === 'route2') return 'route';
+  return 'town';
+}
+function musicTick() {
+  if (!MUS.ctx || MUS.ctx.state !== 'running') return;
+  var want = wantSong();
+  if (want !== MUS.cur) { MUS.cur = want; MUS.step = 0; MUS.nextTime = Math.max(MUS.nextTime, MUS.ctx.currentTime + 0.03); }
+  var song = SONGS[MUS.cur];
+  while (MUS.nextTime < MUS.ctx.currentTime + 0.14) {
+    var t = MUS.nextTime, i = MUS.step % song.mel.length;
+    if (song.mel[i]) tone(midiHz(song.mel[i]), t, song.step * 0.92, 'square', 0.045);
+    if (MUS.step % song.bassEvery === 0) {
+      var b = song.bass[Math.floor(MUS.step / song.bassEvery) % song.bass.length];
+      if (b) tone(midiHz(b), t, song.step * song.bassEvery * 0.9, 'triangle', 0.07);
+    }
+    MUS.nextTime += song.step;
+    MUS.step++;
+  }
+}
+function blip(f0, f1, dur, type, vol) {
+  if (!MUS.ctx || !MUS.on || MUS.ctx.state !== 'running') return;
+  tone(f0, MUS.ctx.currentTime, dur, type || 'square', vol || 0.05, f1 || undefined);
+}
+function sfxMove() { blip(520, 0, 0.05, 'square', 0.035); }
+function sfxConfirm() { blip(660, 0, 0.05, 'square', 0.045); setTimeout(function(){ blip(880, 0, 0.07, 'square', 0.045); }, 45); }
+function sfxCancel() { blip(300, 200, 0.07, 'square', 0.04); }
+function sfxHit() { blip(170, 55, 0.14, 'sawtooth', 0.06); }
+function sfxEncounter() { blip(220, 660, 0.16, 'square', 0.05); }
+function sfxHeal() { blip(523, 0, 0.07, 'square', 0.04); setTimeout(function(){ blip(784, 0, 0.1, 'square', 0.04); }, 70); }
+
 /* ---------------- Input ---------------- */
 function onConfirm() {
+  ensureAudio();
+  sfxConfirm();
   if (G.state === 'title') { G.state = 'world'; return; }
   if (G.state === 'dialog') { dlgConfirm(); return; }
   if (G.state === 'battle') { battleConfirm(); return; }
   if (G.state === 'world' && !G.moving) tryInteract();
 }
 function onCancel() {
-  if (G.state === 'battle') battleCancel();
+  ensureAudio();
+  if (G.state === 'battle') { sfxCancel(); battleCancel(); }
 }
 function onDirPress(dir) {
   if (G.state === 'dialog') {
     var cur = dlgCurrent();
     if (cur && cur.choice) {
-      if (dir === 'down' || dir === 'right') dlgChoose(1);
-      if (dir === 'up' || dir === 'left') dlgChoose(-1);
+      if (dir === 'down' || dir === 'right') { dlgChoose(1); sfxMove(); }
+      if (dir === 'up' || dir === 'left') { dlgChoose(-1); sfxMove(); }
     }
     return;
   }
-  if (G.state === 'battle') battleDir(dir);
-  else if (G.state === 'world') tapDir = dir;
+  if (G.state === 'battle') {
+    var before = B ? (B.menu + ':' + B.moveSel + ':' + B.switchSel) : '';
+    battleDir(dir);
+    var after = B ? (B.menu + ':' + B.moveSel + ':' + B.switchSel) : '';
+    if (before !== after) sfxMove();
+  }
+  else if (G.state === 'world') { if (!G.moving) tapDir = dir; }
 }
 var KEYMAP = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
                w:'up', s:'down', a:'left', d:'right', W:'up', S:'down', A:'left', D:'right' };
 document.addEventListener('keydown', function(e) {
   var k = e.key;
+  ensureAudio();
   if (KEYMAP[k]) {
     e.preventDefault();
     if (!held[KEYMAP[k]]) { held[KEYMAP[k]] = true; onDirPress(KEYMAP[k]); }
     held[KEYMAP[k]] = true;
     return;
   }
-  if (k === 'z' || k === 'Z' || k === 'Enter') { e.preventDefault(); if (!e.repeat) onConfirm(); }
-  else if (k === 'x' || k === 'X' || k === 'Escape') { e.preventDefault(); if (!e.repeat) onCancel(); }
+  if (k === 'z' || k === 'Z' || k === 'Enter' || k === ' ' || k === 'e' || k === 'E') { e.preventDefault(); if (!e.repeat) onConfirm(); }
+  else if (k === 'x' || k === 'X' || k === 'Escape' || k === 'Shift') { e.preventDefault(); if (!e.repeat) onCancel(); }
 });
 document.addEventListener('keyup', function(e) {
   if (KEYMAP[e.key]) held[KEYMAP[e.key]] = false;
@@ -1714,7 +2026,36 @@ document.querySelectorAll('.dpad button[data-dir]').forEach(function(btn) {
 });
 bindBtn(document.getElementById('btnA'), function(){ onConfirm(); });
 bindBtn(document.getElementById('btnB'), function(){ onCancel(); });
-cv.addEventListener('pointerdown', function(){ if (G.state === 'title') onConfirm(); });
+/* Mouse / tap on the game screen: menus are fully clickable. */
+function canvasPos(e) {
+  var r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * 160 / r.width, y: (e.clientY - r.top) * 144 / r.height };
+}
+cv.addEventListener('pointerdown', function(e) {
+  ensureAudio();
+  var p = canvasPos(e);
+  for (var i = CLICKS.length - 1; i >= 0; i--) {
+    var c = CLICKS[i];
+    if (p.x >= c.x && p.x < c.x + c.w && p.y >= c.y && p.y < c.y + c.h) { c.act(); return; }
+  }
+  if (G.state === 'title') onConfirm();
+});
+cv.addEventListener('pointermove', function(e) {
+  if (!CLICKS.length) return;
+  var p = canvasPos(e);
+  for (var i = CLICKS.length - 1; i >= 0; i--) {
+    var c = CLICKS[i];
+    if (c.hov && p.x >= c.x && p.x < c.x + c.w && p.y >= c.y && p.y < c.y + c.h) { c.hov(); return; }
+  }
+});
+/* Sound on/off */
+var muteBtn = document.getElementById('muteBtn');
+muteBtn.addEventListener('click', function() {
+  MUS.on = !MUS.on;
+  ensureAudio();
+  if (MUS.master) MUS.master.gain.value = MUS.on ? 1 : 0;
+  muteBtn.textContent = MUS.on ? 'SOUND: ON' : 'SOUND: OFF';
+});
 
 /* ---------------- Main loop ---------------- */
 var lastT = 0, acc = 0;
