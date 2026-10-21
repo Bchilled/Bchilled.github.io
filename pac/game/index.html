@@ -6,8 +6,32 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <!--
-  PAC — v0.7.0 (Claude, 2026-10-21) — files: index.html (layout + styles), look.js (ink look + model loader),
+  PAC — v0.8.0 (Claude, 2026-10-21) — files: index.html (layout + styles), look.js (ink look + model loader),
   js/core.js, js/world.js, js/actors.js, js/abilities.js, js/ui.js, js/intro.js, js/main.js, assets/*.glb (Blender), vendor/ (three r128).
+  CHANGELOG v0.8.0 — from Brent's v0.7 feedback (2026-10-21 02:05-02:09) and his "Build" (07:50):
+   + Pac is now an ORIGINAL character (Brent's brief): slender, tattooed, rough-edged, quick-witted ghost killer — platinum slick-back,
+     scar, taped nose, stubble, mustard vest, ink sleeves; his jaw UNHINGES when he eats. (models/blender/pac.py)
+   + 3 active buttons (L-click / R-click / E · phone A / B / C) + 3 passives + movement (Space · phone swipe on the right side).
+     A run holds 6 abilities; once a side is full, new ones only come as swaps that wipe that slot's upgrades.
+   + Faster levelling. After the set picks (L2 passive, L3 + L4 actives) every level is a random mix: new abilities, upgrades,
+     stats, perks (Extra Pellet, Leech, Overkill, Thick Skin), swaps — never three of a kind.
+   + Dark, Pac-themed ability names (Number Twos, Pellet Puke, Shank Hands, Life Insurance, Rage Quit, Dead Drop, Power Pellet Binge,
+     Unhinged, Toxic Glitter, Repo Ghosts, Fruit Salad Massacre, Cold Turkey, Ghost Ex-Wife, Get Off My Lawn...). More homing options
+     (Pellet Habit, Repo Ghosts, Fruit Salad Massacre) and aim-assist on cones (Unhinged, Pellet Puke, Not On The List).
+   + Every ability is one of the 7 colours (fire, toxic, frost, void, shock, nature, shadow) with its own effects and cast sound.
+   + Level-up window: slow-mo, flash, confetti, jackpot sound, cards slam in glowing in their colour, the pick bursts in its colour.
+   + Ball Boy's team is four ORIGINAL creatures, one per element: Cindercub (fire), Splashpup (water), Voltmoth (shock),
+     Bramblebud (plant) — each yells, shows its name, and warns before it hits. You must face 3 before he can go down.
+   + Ghosts improved (same model): rippling hems, edges glowing in their colour, wisps, ectoplasm puddles, frozen look.
+   + The club is packed: more dancers, bouncers on the doors, bartenders, a DJ, podium dancers, a band; tables with stools.
+   + Hallways and terrain: an entrance hallway, lounges behind low walls, an island bar and a side bar, a VIP hallway, backstage lanes.
+   + More heals (3 fruit per room, ghosts drop fruit, heals in the boss room) and random power-ups (rage, speed, magnet, rapid fire,
+     shield, double XP). The boss room is cleared of dots, coins and crowd for the fight.
+   + Blue-orb lag fixed: the full-screen CSS invert is replaced by a cheap shader pass. Wall checks bucketed for speed.
+   + The intro is told with the game's 3D models (original villains: the Emperor, Baron Kaboom, the Quarter Moon, the Q-Wing,
+     the chrome assassin), beat for beat from INTRO.md, ~97 s, with comic captions and bubbles on top. Our own whistle tune.
+   - Removed: the old ball-shaped Pac, the MOVE button (now a swipe), micro-passive slots (folded into the 3 passives),
+     Gloomoth and Boulderbud (became Voltmoth and Bramblebud).
   CHANGELOG v0.7.0 — from Brent's v0.6 feedback (2026-10-21 00:32) and his "Go":
    + Real modelled characters (Blender, scripted): Pac (cap, gloves, sneakers, hinged jaw), Ball Boy, clubgoers (raver, dancer,
      bouncer, bro — people, not legs), ghosts with a wavy hem, Ball Boy's three creatures, club furniture. Inked look + neon glow (bloom).
@@ -81,14 +105,17 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
 #lvN{font-family:Cinzel;font-weight:900;color:var(--gold2);font-size:14px;min-width:44px;text-shadow:0 0 4px #000}
 #xpBar{flex:1;height:6px;background:#100c08;border:1px solid var(--trim)}
 #xpBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#b88a2a,#ffe08a);transition:width .15s}
-#skills{display:flex;gap:6px}
+#skills{display:flex;gap:6px;align-items:flex-end}
+.sdiv{width:1px;align-self:stretch;background:linear-gradient(transparent,#6d5734,transparent);margin:0 3px}
+.slot.small{width:50px;height:50px}.slot.small .ic{font-size:19px}.slot.small .nm{font-size:8.5px}
+.slot:not(.empty){border-color:color-mix(in srgb, var(--el,#6d5734) 70%, #6d5734);box-shadow:inset 0 0 0 1px #000, inset 0 0 14px color-mix(in srgb, var(--el,#000) 35%, transparent)}
 .slot{width:66px;height:66px;position:relative;border:1px solid #6d5734;background:linear-gradient(180deg,#1e1820e8,#0b090de8);box-shadow:inset 0 0 0 1px #000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;border-radius:3px}
 .slot .ic{font-size:24px;line-height:1}
 .slot .nm{font-size:10.5px;font-weight:700;text-align:center;line-height:1.05;margin-top:3px;padding:0 3px;color:#e9e1cf}
 .slot .key{position:absolute;top:2px;left:4px;font-size:9px;font-family:Cinzel;color:var(--dim)}
 .slot .cdv,.pb .cdv{position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.72) var(--cd,0%),rgba(0,0,0,0) 0);pointer-events:none}
 .slot .cdn,.pb .cdn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:Cinzel;font-weight:900;font-size:20px;color:#fff;text-shadow:0 0 4px #000,0 0 2px #000;pointer-events:none}
-.slot.empty .ic{opacity:.25}.slot.empty .nm{color:#5d554a}
+.slot.empty .ic{opacity:.3;color:#6d5734}.slot.empty .nm{color:#5d554a}
 .slot.fire{border-color:var(--gold2);box-shadow:0 0 14px rgba(246,220,149,.55)}
 #mbars{display:none}
 #marks{position:absolute;inset:0;pointer-events:none}
@@ -110,6 +137,9 @@ canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block}
 body.cine #toast{opacity:0!important}
 #big{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);font-family:Cinzel;font-weight:900;font-size:50px;color:var(--gold2);text-shadow:0 0 22px rgba(255,180,60,.8),0 3px 0 #000;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;z-index:6}
 #big.small{font-size:30px}
+#big.lvl{font-size:64px;color:#fff3c0;text-shadow:0 0 30px #ffb000,0 0 60px rgba(255,79,184,.6),0 4px 0 #000}
+#flash{position:absolute;inset:0;pointer-events:none;z-index:15;opacity:0;mix-blend-mode:screen}
+#confetti{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:25}
 #card{position:absolute;left:0;right:0;top:60%;text-align:center;pointer-events:none;z-index:7;opacity:0}
 #card.on{animation:cardIn 1.9s ease-out forwards}
 #card .ct{display:inline-block;font-family:Cinzel;font-weight:900;font-size:64px;color:var(--gold2);letter-spacing:.06em;padding:0 40px;background:linear-gradient(90deg,rgba(150,10,30,0),rgba(150,10,30,.75) 18%,rgba(150,10,30,.75) 82%,rgba(150,10,30,0));text-shadow:0 3px 0 #000,0 0 22px rgba(255,120,60,.6)}
@@ -130,10 +160,20 @@ body:not(.mobile) #touch{display:none}
 .pb .pl{position:absolute;left:50%;bottom:3px;transform:translateX(-50%);font-size:9px;font-weight:900;letter-spacing:.08em;opacity:.85}
 .pb.on,.pb.fire{border-color:#fff;filter:brightness(1.6)}
 .pb.locked{opacity:.3}
-#bA{right:18px;bottom:30px;width:70px;height:70px;background:radial-gradient(circle at 40% 35%,rgba(230,70,100,.55),rgba(120,16,40,.4))}
-#bB{right:100px;bottom:18px;width:56px;height:56px;background:radial-gradient(circle at 40% 35%,rgba(80,120,230,.55),rgba(20,46,122,.4))}
-#bM{right:32px;bottom:114px;width:50px;height:50px;background:radial-gradient(circle at 40% 35%,rgba(230,190,80,.55),rgba(122,90,18,.4))}
-#bB .pi{font-size:20px}#bM .pi{font-size:18px}
+/* A / B / C: an arc under the right thumb; each button glows in its ability's colour */
+.pb{background:radial-gradient(circle at 40% 35%,color-mix(in srgb, var(--el,#888) 55%, transparent),rgba(10,8,14,.35));border-color:color-mix(in srgb, var(--el,#fff) 60%, rgba(255,255,255,.3))}
+#bA{right:16px;bottom:28px;width:70px;height:70px}
+#bB{right:96px;bottom:16px;width:58px;height:58px}
+#bC{right:24px;bottom:110px;width:58px;height:58px}
+#bB .pi,#bC .pi{font-size:21px}
+/* the swipe zone: the rest of the right side; a quick swipe fires the movement ability that way */
+#tRight{position:absolute;right:0;bottom:0;width:42%;height:62%;pointer-events:auto}
+#swipeHint{position:absolute;right:96px;bottom:104px;width:54px;height:54px;border-radius:50%;border:1.5px dashed rgba(255,255,255,.3);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;opacity:.6;overflow:hidden;font-family:Cinzel}
+#swipeHint span{font-size:18px;filter:drop-shadow(0 0 3px #000)}#swipeHint b{font-size:7.5px;letter-spacing:.1em;opacity:.85}
+#swipeHint.fire{border-color:#fff;opacity:1;filter:brightness(1.6)}#swipeHint.locked{opacity:.2}
+#swipeHint .cdv{position:absolute;inset:0;background:conic-gradient(rgba(0,0,0,.65) var(--cd,0%),rgba(0,0,0,0) 0);pointer-events:none}
+#swipeHint .cdn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;text-shadow:0 0 4px #000}
+#pasRow span{font-size:12px;margin-left:2px;filter:drop-shadow(0 0 3px var(--el,#000))}#pasRow .e{opacity:.35}
 /* ---------- OVERLAYS ---------- */
 .ov{position:absolute;inset:0;z-index:20;display:flex;align-items:center;justify-content:center}
 .ov.dim{background:rgba(0,0,0,.7)}
@@ -160,6 +200,17 @@ body:not(.mobile) #touch{display:none}
 .card .n{font-family:Cinzel;font-size:19px;font-weight:700;margin:4px 0;color:var(--gold2)}
 .card .d{font-size:14px;line-height:1.35;color:#d6cfbf}
 .card .ic{font-size:30px;float:right;margin-left:8px}
+.card.offer{position:relative;border-color:var(--el);box-shadow:0 0 0 1px #000,0 0 22px color-mix(in srgb, var(--el) 45%, transparent),inset 0 0 30px color-mix(in srgb, var(--el) 18%, transparent);animation:slam .42s cubic-bezier(.2,1.6,.4,1) both}
+.card.offer .n{color:#fff;text-shadow:0 0 12px var(--el)}
+.card.offer .badge{position:absolute;top:-10px;left:12px;font-family:Cinzel;font-weight:900;font-size:11px;letter-spacing:.12em;padding:2px 8px;border-radius:3px;background:var(--el);color:#0b0910;box-shadow:0 0 12px var(--el)}
+.card.offer .chip{position:absolute;top:-10px;right:12px;font-family:Cinzel;font-size:9.5px;letter-spacing:.18em;padding:2px 7px;border-radius:3px;border:1px solid var(--el);color:var(--el);background:#0b0910}
+.card.offer:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 0 0 1px #000,0 0 34px var(--el)}
+.card.offer.chosen{animation:chosen .3s ease-out forwards}.card.offer.gone{animation:gone .25s ease-in forwards}
+@keyframes slam{0%{opacity:0;transform:scale(1.7) rotate(-6deg)}60%{opacity:1;transform:scale(.94) rotate(1deg)}100%{transform:none}}
+@keyframes chosen{0%{transform:scale(1)}40%{transform:scale(1.12);box-shadow:0 0 60px var(--el)}100%{transform:scale(1.3);opacity:0}}
+@keyframes gone{to{opacity:0;transform:scale(.8) translateY(20px)}}
+.reel.stop{border-color:#ffe14d;box-shadow:inset 0 0 18px #000,0 0 16px rgba(255,225,77,.6)}
+#jack .win{border-color:#8c7144;box-shadow:0 0 60px rgba(255,180,40,.25),inset 0 0 0 1px #000}
 .r-common{color:#d8d2c2!important}.r-rare{color:#5aa8ff!important}.r-mythic{color:#ffb627!important}.r-move{color:#7cff8a!important}.r-micro{color:#c08aff!important}.r-stat{color:#9ad0c8!important}
 #jack .reels{display:flex;gap:10px;justify-content:center;margin:12px 0 16px}
 .reel{width:72px;height:72px;border:2px solid #8c7144;background:radial-gradient(#1a1418,#060407);display:flex;align-items:center;justify-content:center;font-size:32px;box-shadow:inset 0 0 18px #000;border-radius:4px;font-family:Cinzel;font-weight:900;color:#ffd23f}
@@ -189,7 +240,7 @@ input[type=range]{width:180px;accent-color:#d8b46a}
 #stars{font-size:46px;letter-spacing:6px;margin:10px 0;text-align:center;color:#3a3226}
 #stars .on{color:#ffd23f;text-shadow:0 0 16px #ffb000}
 #unlockCard{margin:12px auto;padding:12px;border:1px solid var(--gold);text-align:center;box-shadow:0 0 22px rgba(246,220,149,.3);border-radius:4px}
-#introC{position:absolute;inset:0;width:100%;height:100%;z-index:30;background:#000;cursor:pointer}
+#introC{position:absolute;inset:0;width:100%;height:100%;z-index:30;background:transparent;cursor:pointer}
 #skip{position:absolute;right:16px;bottom:12px;z-index:31;color:#998;font-size:13px;font-family:Cinzel;letter-spacing:.1em;pointer-events:none}
 /* ---------- PHONE LAYOUT ---------- */
 body.mobile #gEn,body.mobile #gHp,body.mobile #skillWrap,body.mobile #buffs,body.mobile #wName{display:none}
@@ -244,17 +295,19 @@ body.mobile #mmAcct{left:5%;right:auto;bottom:auto;top:96px;font-size:11px}
    <div id="gEn" class="globe mp"><div class="fill" id="gEnF"></div><div class="glass"></div><span id="gEnT"></span></div>
    <div id="buffs"></div>
    <div id="skillWrap"><div id="microRow"></div><div id="xpRow"><span id="lvN">LV 0</span><div id="xpBar"><i></i></div></div><div id="skills"></div></div>
-   <div id="mbars"><div class="lv" id="mLv"></div><div class="bar"><i id="mHp" style="background:#e0323c"></i></div><div class="bar"><i id="mEn" style="background:#3a74ff"></i></div><div class="bar"><i id="mXp" style="background:#e8c060"></i></div></div>
+   <div id="mbars"><div class="lv"><span id="mLv"></span> <span id="pasRow"></span></div><div class="bar"><i id="mHp" style="background:#e0323c"></i></div><div class="bar"><i id="mEn" style="background:#3a74ff"></i></div><div class="bar"><i id="mXp" style="background:#e8c060"></i></div></div>
   </div>
   <div id="say"></div><div id="toast"></div><div id="big"></div><div id="card"></div>
   <div id="topR" class="hide"><button class="ib" id="muteB" title="Mute (M)">🔊</button><button class="ib" id="menuB" title="Pause (Esc)">☰</button></div>
   <!-- phone: see-through controls over the game -->
   <div id="touch" class="hide">
    <div id="tLeft"><div id="stickBase"><div id="stickKnob"></div></div></div>
+   <div id="tRight"><div id="swipeHint"><span id="swI"></span><b>SWIPE</b><div class="cdv"></div><div class="cdn"></div></div></div>
    <button class="pb" id="bA"><span class="pi" id="bAi"></span><b class="pl">A</b><div class="cdv"></div><div class="cdn"></div></button>
    <button class="pb" id="bB"><span class="pi" id="bBi"></span><b class="pl">B</b><div class="cdv"></div><div class="cdn"></div></button>
-   <button class="pb" id="bM"><span class="pi" id="bMi"></span><b class="pl">MOVE</b><div class="cdv"></div><div class="cdn"></div></button>
+   <button class="pb" id="bC"><span class="pi" id="bCi"></span><b class="pl">C</b><div class="cdv"></div><div class="cdn"></div></button>
   </div>
+  <div id="flash"></div><canvas id="confetti"></canvas>
 
   <!-- MAIN MENU -->
   <div class="ov hide" id="mainMenu">

@@ -1,185 +1,226 @@
-// PAC v0.7 — intro.js. THE INTRO, beat for beat from INTRO.md (Brent's dictation). Not rushed: ~95 s.
-// Presented as COMIC WINDOWS: inked panels that slide in like turning pages, with narration boxes and speech bubbles.
-// Nothing here is invented beyond what the script says; it only animates it.
+// PAC v0.8 — intro.js. THE STORY, told with the game's own 3D models, beat for beat from Brent's INTRO.md (~97 s, not rushed).
+// Original stand-ins (v0.8): the Emperor (joystick crown, token throne), Baron Kaboom (bomb-headed knight), the Quarter Moon
+// (a battle station shaped like a coin), the Q-Wing, the chrome assassin. The 3D plays in its own scene through the game's
+// renderer + glow; a see-through canvas on top carries the comic captions, speech bubbles and sound words.
 "use strict";
-const ic = $('introC'), ix = ic.getContext('2d'); let introT = 0, introRAF = 0, introDone = null, introFired = {};
+const ic = $('introC'), ix = ic.getContext('2d');
+let introT = 0, introRAF = 0, introDone = null, introFired = {}, IS = null, IC = null, IO = null;
 const BEATS = [
-  {d:5,  cap:''},                                                             // 1 darkness, spotlight snaps on
-  {d:10, cap:''},                                                             // 2 the crawl
-  {d:6,  cap:'The Emperor.'},                                                 // 3 Emperor laughing: DO IT
-  {d:8,  cap:'Darth Bomberguy turns the Death Star on an arcade-booth planet.'}, // 4 the crime
-  {d:8,  cap:'And then — a fool. A legend. Both.'},                           // 5 Pac's comedic entrance, eats the crawl row by row
-  {d:6,  cap:''},                                                             // 6 the narrator can't keep up — cut off mid-word
-  {d:5,  cap:'Every row he eats, he grows.'},                                 // 7 growth
-  {d:6,  cap:'Fully grown, he eats the entire Death Star.'},                  // 8
-  {d:6,  cap:''},                                                             // 9 burp — then farts himself into a black hole
-  {d:6,  cap:'Darth Bomberguy escapes in the Q-Wing.'},                       // 10 the vow
-  {d:8,  cap:'The Legendary Salty Dawg Saloon.'},                             // 11 shots, sad and depressed
-  {d:7,  cap:'Outside, something is sent to kill him.'},                      // 12 the whistle, the portal, the chrome assassin (naked)
-  {d:4,  cap:''},                                                             // 13 Pac eats him
-  {d:6,  cap:''},                                                             // 14 the T2 walk: leathers, shades
-  {d:6,  cap:''}];                                                            // 15 TITLE
+  {d:5,  cap:''},                                                       // 1 darkness → a spotlight snaps on
+  {d:10, cap:''},                                                       // 2 the crawl (rules + story), read aloud
+  {d:6,  cap:'The Emperor.'},                                           // 3 he laughs — DO IT
+  {d:8,  cap:'Baron Kaboom turns the Quarter Moon on an arcade-booth planet.'}, // 4 the crime
+  {d:8,  cap:'And then — a fool. A legend. Both.'},                     // 5 Pac's entrance; he eats the crawl row by row
+  {d:6,  cap:''},                                                       // 6 the narrator is cut off mid-word
+  {d:5,  cap:'Every row he eats, he grows.'},                           // 7
+  {d:6,  cap:'Fully grown, he eats the entire Quarter Moon.'},          // 8
+  {d:6,  cap:''},                                                       // 9 burp — then he farts himself into a black hole
+  {d:6,  cap:'Baron Kaboom escapes in the Q-Wing.'},                    // 10 the vow
+  {d:8,  cap:'The Legendary Salty Dawg Saloon.'},                       // 11 shots at the bar, sad and depressed
+  {d:7,  cap:'Outside, something is sent to kill him.'},                // 12 the whistle, the portal, the chrome assassin
+  {d:4,  cap:''},                                                       // 13 Pac eats him
+  {d:6,  cap:''},                                                       // 14 the walk: leathers, shades
+  {d:6,  cap:''}];                                                      // 15 TITLE
 const BEAT_AT = []; { let a = 0; for(const b of BEATS){ BEAT_AT.push(a); a += b.d; } } const INTRO_LEN = BEATS.reduce((a,b)=>a+b.d, 0);
-const CRAWL = ['In a galaxy far, far away...', '', 'THE RULES: eat everything that isn\'t nailed down.', 'Ghosts chase. Pac eats. Towers fall.', 'Every boss you beat joins you.', '',
-  'THE STORY: the Emperor rules the arcade galaxy', 'with an iron joystick. His enforcer,', 'DARTH BOMBERGUY, answers only to him...'];
-const NARRATION = 'In a galaxy far, far away, the rules are simple: eat everything that isn\'t nailed down. Ghosts chase. Pac eats. Towers fall. The Emperor rules the arcade galaxy with an iron joystick, and his enforcer, Darth Bomb';
-const STARS_I = Array.from({length:220}, ()=>[Math.random(), Math.random(), Math.random()]);
-function playIntro(done){ introDone = done; state = 'intro'; hideAllOverlays(); ic.classList.remove('hide'); $('skip').classList.remove('hide'); introT = 0; introFired = {}; let lastI = performance.now(); audio(); setTrack('menu');
-  const step = now=>{ const dt = Math.max(0, Math.min(0.05, (now-lastI)/1000)); lastI = now; introT += dt; try{ drawIntro(); }catch(e){ console.error(e); } if(introT >= INTRO_LEN){ endIntro(); return; } introRAF = requestAnimationFrame(step); };
-  introRAF = requestAnimationFrame(step); ic.onclick = endIntro; }
-function endIntro(){ if(state!=='intro') return; cancelAnimationFrame(introRAF); ic.classList.add('hide'); $('skip').classList.add('hide'); if('speechSynthesis' in window) speechSynthesis.cancel(); state = 'menu'; const d = introDone; introDone = null; if(d) d(); else toMenu(); }
+const CRAWL = ['Somewhere past the last arcade in the galaxy...', 'THE RULES: eat everything that isn\'t nailed down.', 'Ghosts chase. You eat. Towers fall.', 'Every boss you beat joins you.',
+  'THE STORY: the Emperor rules the arcade galaxy', 'with an iron joystick. His enforcer,', 'BARON KABOOM, answers only to him...'];
+const NARRATION = 'Somewhere past the last arcade in the galaxy, the rules are simple. Eat everything that isn\'t nailed down. Ghosts chase. You eat. Towers fall. The Emperor rules the arcade galaxy with an iron joystick, and his enforcer, Baron Kab';
 const once = (k, f) => { if(!introFired[k]){ introFired[k] = 1; f(); } };
 function speak(text, pitch=1, rate=1){ if(SAVE.set.muted || !('speechSynthesis' in window)) return; try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.pitch = pitch; u.rate = rate; speechSynthesis.speak(u); }catch(e){} }
-// ---------- ink drawing kit ----------
+
+// ---------------- the 3D sets ----------------
+function textSlab(text, w=26, col='#ffd84a'){ const c = document.createElement('canvas'); c.width = 2048; c.height = 128; const g = c.getContext('2d'); g.font = '700 74px Cinzel, Georgia'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.shadowColor = col; g.shadowBlur = 24; g.fillStyle = col; g.fillText(text, 1024, 66); g.shadowBlur = 0; g.fillStyle = '#fff6c8'; g.globalAlpha = 0.6; g.fillText(text, 1024, 66);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, w/16), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c), transparent:true, depthWrite:false, color:new THREE.Color(1.4,1.4,1.4)})); return m; }
+function neonSign(lines, w){ const c = document.createElement('canvas'); c.width = 1024; c.height = 512; const g = c.getContext('2d'); g.textAlign = 'center'; g.textBaseline = 'middle';
+  lines.forEach(([t, col, size, y])=>{ g.font = `900 ${size}px Cinzel, Georgia`; g.shadowColor = col; g.shadowBlur = 40; g.fillStyle = col; g.fillText(t, 512, y); g.shadowBlur = 8; g.fillStyle = '#fff'; g.globalAlpha = 0.55; g.fillText(t, 512, y); g.globalAlpha = 1; });
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, w/2), new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(c), transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, color:new THREE.Color(1.6,1.6,1.6)})); }
+function chromeMat(){ const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'); const gr = g.createLinearGradient(0,0,0,256);
+  [[0,'#ffffff'],[0.3,'#9aa6b8'],[0.48,'#2a3040'],[0.52,'#d8e0ec'],[0.75,'#6a7488'],[1,'#f0f4ff']].forEach(([s,cl])=>gr.addColorStop(s,cl)); g.fillStyle = gr; g.fillRect(0,0,256,256);
+  const r = g.createRadialGradient(128,128,90,128,128,128); r.addColorStop(0,'rgba(0,0,0,0)'); r.addColorStop(1,'rgba(0,0,0,.6)'); g.fillStyle = r; g.fillRect(0,0,256,256);
+  return new THREE.MeshMatcapMaterial({matcap:new THREE.CanvasTexture(c)}); }
+const IP = []; let ipPts = null, ipPos, ipCol; const IPMAX = 2500;   // the intro's own particles
+function ipBurst(x,y,z,col,n,spd,grav=6,life=1){ const c = new THREE.Color(col); for(let i=0;i<n;i++){ const a = Math.random()*6.28, u = Math.random()*2-1, q = Math.sqrt(1-u*u), s = spd*(0.3+Math.random());
+  IP.push({x,y,z, vx:Math.cos(a)*q*s, vy:u*s, vz:Math.sin(a)*q*s, life:life*(0.6+Math.random()*0.6), c, grav}); if(IP.length > IPMAX) IP.shift(); } }
+function buildIntro(){
+  if(IS) return; IS = new THREE.Scene(); IS.background = new THREE.Color(0x020106); IC = new THREE.PerspectiveCamera(45, 1, 0.1, 3000);
+  IS.add(new THREE.HemisphereLight(0x9a8aff, 0x200818, 0.8)); const key = new THREE.PointLight(0xffe8c8, 2.2, 80, 1.2); IS.add(key);
+  const O = IO = {key, sets:{}};
+  const set = n => { const g = new THREE.Group(); IS.add(g); O.sets[n] = g; return g; };
+  // stars (shared by the space beats)
+  { const n = 1800, g = new THREE.BufferGeometry(), p = new Float32Array(n*3), c = new Float32Array(n*3); for(let i=0;i<n;i++){ const u = rnd(-1,1), th = rnd(0,6.283), q = Math.sqrt(1-u*u), v = new THREE.Vector3(q*Math.cos(th), u, q*Math.sin(th)).multiplyScalar(rnd(300,900)); p.set([v.x,v.y,v.z], i*3); const b = rnd(0.5,1.4); c.set([b,b,b*1.1], i*3); }
+    g.setAttribute('position', new THREE.BufferAttribute(p,3)); g.setAttribute('color', new THREE.BufferAttribute(c,3)); O.stars = new THREE.Points(g, new THREE.PointsMaterial({size:2.2, sizeAttenuation:false, vertexColors:true})); IS.add(O.stars); }
+  // particles
+  { const g = new THREE.BufferGeometry(); ipPos = new Float32Array(IPMAX*3); ipCol = new Float32Array(IPMAX*3); g.setAttribute('position', new THREE.BufferAttribute(ipPos,3)); g.setAttribute('color', new THREE.BufferAttribute(ipCol,3));
+    ipPts = new THREE.Points(g, new THREE.PointsMaterial({size:0.5, vertexColors:true, map:glowTex, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false})); ipPts.frustumCulled = false; IS.add(ipPts); }
+  // 1 · the empty stage and one spotlight
+  { const S = set('stage'); const fl = new THREE.Mesh(new THREE.CircleGeometry(14, 48), new THREE.MeshStandardMaterial({color:0x14101c, roughness:0.4, metalness:0.3})); fl.rotation.x = -Math.PI/2; S.add(fl);
+    O.spot = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 4.5, 16, 32, 1, true), new THREE.MeshBasicMaterial({color:0xfff0d0, transparent:true, opacity:0.09, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide})); O.spot.position.y = 8; S.add(O.spot);
+    O.spotPool = pool(0xfff0d0, 10, 0.6); O.spotPool.position.y = 0.02; S.add(O.spotPool); }
+  // 2/5/6/7 · the crawl rows (upright glowing bars, read top to bottom)
+  { const S = set('crawl'); O.rows = CRAWL.map((t,i)=>{ const m = textSlab(t, 26, i===0 ? '#ffe9a0' : i===6 ? '#ff9a6a' : '#ffd84a'); m.userData.y0 = -i*1.9; S.add(m); return m; }); }
+  // 3 · the Emperor's throne room
+  { const S = set('throne'); const fl = new THREE.Mesh(new THREE.CircleGeometry(16, 48), new THREE.MeshStandardMaterial({color:0x1a0a22, roughness:0.3, metalness:0.5})); fl.rotation.x = -Math.PI/2; S.add(fl);
+    for(let i=0;i<8;i++){ const a = Math.PI*0.2 + i/7*Math.PI*0.6, p = new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.6,14,12), new THREE.MeshStandardMaterial({color:0x2a1438, roughness:0.5})); p.position.set(Math.cos(a)*12, 7, -Math.sin(a)*12); S.add(p); S.add(at(glow(0xff2a4a, 3, 0.5), p.position.x*0.95, 1.5, p.position.z*0.95)); }
+    O.emperor = LOOK.piece(MODELS,'story','story.emperor',{outline:0.03}); O.emperor.scale.setScalar(1.6); S.add(O.emperor);
+    O.redLight = new THREE.PointLight(0xff2a3a, 3, 20, 1.4); O.redLight.position.set(0, 0.8, 3.5); S.add(O.redLight); }
+  // 4 · space: the Quarter Moon, the arcade planet, Baron Kaboom
+  { const S = set('battle'); O.moon = LOOK.piece(MODELS,'story','story.moon',{outline:0.12}); S.add(O.moon); O.planet = LOOK.piece(MODELS,'story','story.arcade',{outline:0.08}); S.add(O.planet);
+    O.baron = LOOK.piece(MODELS,'story','story.baron',{outline:0.03}); S.add(O.baron);
+    O.beam = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 1, 12), new THREE.MeshBasicMaterial({color:new THREE.Color(0x7cff4f).multiplyScalar(2.2)})); O.beam.visible = false; S.add(O.beam); }
+  // 9 · the black hole
+  { const S = set('hole'); O.hole = new THREE.Group(); O.hole.add(new THREE.Mesh(new THREE.SphereGeometry(3, 32, 20), new THREE.MeshBasicMaterial({color:0x000000})));
+    O.holeRings = [0,1,2,3].map(i=>{ const r = new THREE.Mesh(new THREE.RingGeometry(3.3+i*1.6, 4.3+i*1.9, 64), new THREE.MeshBasicMaterial({color:new THREE.Color([0x7a3aff,0xff4fb8,0x41e4ff,0x7a3aff][i]).multiplyScalar(1.4), transparent:true, opacity:0.55-i*0.1, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, depthWrite:false})); O.hole.add(r); return r; });
+    S.add(O.hole); O.qwing = LOOK.piece(MODELS,'story','story.qwing',{outline:0.04}); const pilot = LOOK.piece(MODELS,'story','story.baron',{outline:0.01}); pilot.scale.setScalar(0.22); pilot.position.set(0,-0.2,0); O.qwing.add(pilot); S.add(O.qwing); }
+  // 11 · the Legendary Salty Dawg Saloon (outside sign, then the bar)
+  { const S = set('saloon'); const fl = new THREE.Mesh(new THREE.PlaneGeometry(40, 30), new THREE.MeshStandardMaterial({color:0x2a1810, roughness:0.6})); fl.rotation.x = -Math.PI/2; S.add(fl);
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(40, 12), new THREE.MeshStandardMaterial({color:0x2a1416, roughness:0.9})); back.position.set(0, 6, -4); S.add(back);
+    const shelf = LOOK.piece(MODELS,'story','story.shelf',{outline:0.02}); shelf.position.set(0, 0, -3.6); S.add(shelf);
+    for(const x of [-4.5,-1.5,1.5,4.5]){ const b = LOOK.piece(MODELS,'props','prop.bar',{outline:0.02}); b.position.set(x, 0, -1); b.rotation.y = Math.PI/2; S.add(b); }
+    for(const x of [-3,-1,1,3]){ const st = LOOK.piece(MODELS,'props','prop.stool',{outline:0.02}); st.position.set(x, 0, 1.2); S.add(st); }
+    O.shots = []; for(let i=0;i<7;i++){ const sh = LOOK.piece(MODELS,'story','story.shot',{outline:0.008}); sh.position.set(0.8 + i*0.32, 1.12, 0.35); sh.visible = false; S.add(sh); O.shots.push(sh); }
+    O.bottle = LOOK.piece(MODELS,'story','story.bottle',{outline:0.01}); O.bottle.position.set(-0.6, 1.12, 0.35); S.add(O.bottle);
+    O.salSign = neonSign([['THE LEGENDARY','#ff4fb8',86,150],['SALTY DAWG','#41e4ff',150,290],['SALOON','#ffd23f',96,420]], 12); O.salSign.position.set(0, 9, 12); S.add(O.salSign);
+    const front = new THREE.Mesh(new THREE.PlaneGeometry(26, 14), new THREE.MeshStandardMaterial({color:0x3a2014, roughness:0.8})); front.position.set(0, 7, 11.9); S.add(front);
+    S.add(at(glow(0xff9a40, 10, 0.35), 0, 5, 0)); O.barLight = new THREE.PointLight(0xffa860, 2.4, 18, 1.4); O.barLight.position.set(0, 4, 2); S.add(O.barLight); }
+  // 12-14 · the alley outside, the portal, the chrome assassin
+  { const S = set('alley'); const fl = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({color:0x101018, roughness:0.15, metalness:0.6})); fl.rotation.x = -Math.PI/2; S.add(fl);
+    const door = LOOK.piece(MODELS,'story','story.door',{outline:0.03}); door.position.set(0, 0, -2); S.add(door);
+    const sign = neonSign([['SALTY DAWG','#41e4ff',150,256]], 6); sign.position.set(-2.5, 3.6, -1.6); S.add(sign);
+    S.add(at(glow(0xffd8a0, 6, 0.5), 2.6, 3.6, -1.5)); O.alleyLight = new THREE.PointLight(0xffc890, 1.8, 14, 1.4); O.alleyLight.position.set(2.6, 3.6, -1); S.add(O.alleyLight);
+    O.portal = new THREE.Group(); O.portal.position.set(6, 1.6, 4); O.portal.rotation.y = -0.6; for(let i=0;i<4;i++){ const r = new THREE.Mesh(new THREE.TorusGeometry(1.1+i*0.12, 0.05, 8, 48), new THREE.MeshBasicMaterial({color:new THREE.Color(0x6cff6a).multiplyScalar(2), transparent:true, opacity:0.8-i*0.15, blending:THREE.AdditiveBlending, depthWrite:false})); O.portal.add(r); }
+    O.portalDisc = new THREE.Mesh(new THREE.CircleGeometry(1.1, 40), new THREE.MeshBasicMaterial({color:0x0a3a14, transparent:true, opacity:0.9})); O.portal.add(O.portalDisc, glow(0x6cff6a, 6, 0.6)); S.add(O.portal);
+    O.chrome = LOOK.rawPiece(MODELS,'story','story.chrome'); const cm = chromeMat(); O.chrome.traverse(o=>{ if(o.isMesh) o.material = cm; }); S.add(O.chrome); }
+  // Pac himself (with the story-only leather jacket + shades, switched on for the walk)
+  O.pac = LOOK.character(MODELS, 'pac', {story:true}); IS.add(O.pac.root);
+}
+const show = (...names) => { for(const k in IO.sets) IO.sets[k].visible = names.includes(k); };
+function pacPose(x, y, z, face, scale, o={}){ const R = IO.pac; R.extras.leatherB.visible = R.extras.leatherL.visible = R.extras.leatherR.visible = R.extras.shades.visible = !!o.cool;
+  R.root.rotation.set(0, 0, 0); animRig(R, x, z, face, o.spd||0, o.walk||0, scale, {y, chomp:!!o.chomp, armsUp:!!o.armsUp}); if(o.slump && R.bones.body){ R.bones.body.rotation.x = 0.38; if(R.bones.head) R.bones.head.rotation.x = 0.3; } R.root.visible = true; }
+const _mv = new THREE.Vector3();
+function mouthPos(){ IO.pac.root.updateMatrixWorld(true); return IO.pac.bones.jawL.getWorldPosition(_mv).clone(); }   // where his jaw is in the world (for things he eats)
+function cam(px, py, pz, lx, ly, lz){ IC.position.set(px, py, pz); IC.lookAt(lx, ly, lz); }
+const ease = f => f<0.5 ? 2*f*f : 1-Math.pow(-2*f+2,2)/2, mix = (a,b,f) => a+(b-a)*f;
+
+// ---------------- the director: one function per beat ----------------
+function direct(b, t, f){
+  const O = IO; O.pac.root.visible = false; O.stars.visible = [1,3,4,5,6,7,8,9].includes(b); IS.background.setHex(b===2 ? 0x0a0310 : b>=10 ? 0x05030a : 0x020106);
+  if(b===0){ show('stage'); const on = t > 1.4; O.spot.visible = O.spotPool.visible = on; once('spot', ()=>setTimeout(()=>{ noise(0.15, 0.4, null, {freq:3000}); tone(60,0.3,'sine',0.3,0.5); }, 1400));
+    cam(0, 5 + f*0.5, 14 - f*2, 0, 1.5, 0); O.key.position.set(0, 10, 2); }
+  else if(b===1 || (b>=4 && b<=6)){ show('crawl');
+    const T4 = BEAT_AT[b]-BEAT_AT[4] + t, rowsUp = b===1 ? f*10.5 - 3 : (-4 + 1.95 - 1.4) + Math.max(0, T4-2.4)*1.0;   // the crawl scrolls up; in beat 5 its top row starts just under his mouth
+    if(b===1){ once('narr', ()=>speak(NARRATION, 0.8, 0.92)); O.rows.forEach(r=>{ r.visible = true; r.position.set(0, r.userData.y0 + rowsUp, 0); r.scale.set(1,1,1); }); cam(0, 0.5, 22, 0, 0.5, 0); }
+    else { // Pac tumbles in, finds his feet, and starts eating the rows as they reach his mouth — growing with each one
+      const T = BEAT_AT[b]-BEAT_AT[4] + t; O.pac.grow = O.pac.grow || 1; const g = 1 + (O.eaten||0)*0.28, px = -9.5, py = -4;
+      let x = px, y = py, face = Math.PI/2, spin = 0;
+      if(T < 1.6){ const k = T/1.6; x = mix(-24, px, k); y = py + Math.sin(k*Math.PI)*4; spin = k*10; once('tumble', ()=>SFX.whoosh()); }
+      else if(T < 2.4){ once('land', ()=>{ SFX.boing(); ipBurst(px, py, 0, 0xffffff, 30, 6); }); y = py + Math.abs(Math.sin((T-1.6)*8))*0.4*(2.4-T); }
+      pacPose(x, y, 0, face, g, {chomp: O.chompT > 0, spd: T < 1.6 ? 4 : 0, walk:T*8}); O.pac.root.rotation.z = -spin;
+      const mouthY = py + 1.95*g;
+      O.chompT = Math.max(0, (O.chompT||0) - 1/60);
+      O.rows.forEach((r,i)=>{ if(r.userData.gone){ r.visible = false; return; } r.visible = true; let ry = r.userData.y0 + rowsUp;
+        if(T > 2.4 && ry >= mouthY - 0.3 && !r.userData.eat && !O.rows.some(q=>q.userData.eat && !q.userData.gone)){ r.userData.eat = T; }   // one row at a time
+        const mouthX = px + 0.75*g;
+        if(r.userData.eat){ const k = Math.min(1, (T - r.userData.eat)/0.7); ry = mouthY; r.scale.x = Math.max(0.001, 1-k); r.position.x = mouthX + 13*(1-k); O.chompT = 0.3;   // slurped in like spaghetti
+          if(Math.random()<0.6) ipBurst(px + 0.8*g, mouthY, 0, 0xffd84a, 2, 3, 4, 0.5); if(k >= 1){ r.userData.gone = true; O.eaten = (O.eaten||0)+1; SFX.chomp(); ipBurst(px+0.8*g, mouthY, 0, 0xffe9a0, 30, 5); } }
+        else r.position.x = mouthX + 13.3;
+        r.position.y = ry; });
+      if(b===5 && t > 1.2) once('cut', ()=>{ if('speechSynthesis' in window) speechSynthesis.cancel(); SFX.chomp(); });
+      const pull = b===6 ? ease(f) : 0; cam(-3, py + 3.2 + pull*3, 15 + pull*7, -2.5, py + 2.6 + pull*2, 0); }   // the camera holds still, so you see him grow
+    O.key.position.copy(IC.position).add(new THREE.Vector3(0, 6, 0)); }
+  else if(b===2){ show('throne'); const shake = t > 1 ? Math.sin(introT*40)*0.03 : 0; O.emperor.position.set(shake, 0, 0); O.emperor.rotation.y = 0;
+    O.redLight.intensity = 3 + Math.sin(introT*9)*1.2; cam(0.6 - f*0.6, 4.2 - f*0.6, 9 - f*3, 0, 3.6, 0); O.key.position.set(0, 6, 6);
+    if(t > 1) once('laugh', ()=>{ for(let i=0;i<8;i++) tone(220 - i*8, 0.12, 'sawtooth', 0.04, 0.8, null, i*0.13); speak('Ha ha ha ha ha!', 0.3, 0.9); });
+    if(t > 3.2) once('doit', ()=>speak('Do it.', 0.2, 0.7)); }
+  else if(b===3){ show('battle'); const fire = t > 3.2, boom = t > 4.4;
+    O.moon.position.set(-14, 2, -10); O.moon.rotation.set(0, 0.5, 0); O.planet.position.set(16, 0, -14); O.planet.rotation.y = introT*0.2; O.planet.visible = !boom || t < 4.6;
+    O.baron.position.set(-6, -3, 6); O.baron.rotation.y = 0.5; O.baron.visible = t < 3.0;
+    if(t < 3.0){ cam(-3.5, -0.5, 13, -6, -0.2, 6); if(t > 1.2) once('fist', ()=>speak('Fire!', 0.4, 0.9)); }
+    else cam(0, 4, 30, 1, 0, -12);
+    if(fire && t < 4.6){ O.moon.updateMatrixWorld(true); const k = Math.min(1, (t-3.2)/0.6), a = O.moon.localToWorld(new THREE.Vector3(0, 0.7, 0.45)), bpt = new THREE.Vector3(16, 0, -14), mid = a.clone().lerp(bpt, k*0.5), len = a.distanceTo(bpt)*k;
+      O.beam.visible = true; O.beam.scale.set(1, len, 1); O.beam.position.copy(a.clone().lerp(bpt, k*0.5)); O.beam.lookAt(bpt); O.beam.rotateX(Math.PI/2); once('laser', ()=>{ tone(880, 0.8, 'sawtooth', 0.06, 0.25); noise(0.8, 0.12, null, {freq:2000, sweep:400}); }); }
+    else O.beam.visible = false;
+    if(boom) once('kaboom', ()=>{ SFX.boom(1.6); ipBurst(16, 0, -14, 0xff4fb8, 400, 22, 0, 2.2); ipBurst(16, 0, -14, 0xffe14d, 300, 16, 0, 2); ipBurst(16, 0, -14, 0x41e4ff, 200, 26, 0, 1.6); });
+    O.key.position.set(0, 10, 10); }
+  else if(b===7){ show('battle'); O.planet.visible = false; O.baron.visible = false; O.beam.visible = false;   // the giant eats the Quarter Moon
+    const g = 14, k = ease(Math.min(1, t/4.2)); pacPose(-14, -30, 0, Math.PI/2*0.6, g, {chomp: t < 4.6}); const M = mouthPos().add(new THREE.Vector3(2.5, 0.5, 2));
+    O.moon.position.set(mix(10, M.x, k), mix(10, M.y, k), mix(-8, M.z, k)); O.moon.scale.setScalar(Math.max(0.01, mix(1, 0.05, Math.max(0, (t-3.6)/1.0))));
+    O.moon.rotation.y += 0.01; if(t > 4.4) once('gulp', ()=>{ SFX.chomp(); setTimeout(()=>SFX.chomp(), 180); ipBurst(M.x, M.y, M.z, 0x9a9aa8, 120, 10); });
+    cam(8, -2, 46, -7, -5, 0); O.key.position.set(20, 30, 40); }
+  else if(b===8){ show('hole'); const g = 14; O.qwing.visible = false;   // BURP — then he farts himself into a black hole
+    O.hole.position.set(-40, 2, -10); O.hole.lookAt(IC.position); O.holeRings.forEach((r,i)=>r.rotation.z = introT*(1.5 + i*0.6)); O.hole.scale.setScalar(t < 2.6 ? 0.01 : Math.min(1.6, (t-2.6)*1.2));
+    if(t < 2.4){ pacPose(-14, -30, 0, Math.PI/2*0.6, g, {chomp: t > 0.3 && t < 1.6}); if(t > 0.3) once('burp', ()=>{ SFX.burp(); const M = mouthPos(); ipBurst(M.x+2, M.y, M.z+1, 0x7cff8a, 160, 18, 0, 1.2); }); }
+    else { const k = Math.min(1, (t-2.6)/3), pos = new THREE.Vector3(-14, -30, 0).lerp(new THREE.Vector3(-40, -8, -10), ease(k));
+      pacPose(pos.x, pos.y, pos.z, Math.PI/2*0.6 + k*12, g*(1-k*0.95), {}); once('fart', ()=>{ SFX.fart(1.6); }); if(Math.random()<0.8) ipBurst(pos.x + 10*(1-k), pos.y + 20*(1-k), pos.z, 0x8adc5a, 4, 6, 0, 1.4); }
+    cam(10, 4, 70, -14, 2, -4); O.key.position.set(20, 30, 40); }
+  else if(b===9){ show('hole'); O.hole.position.set(-40, 2, -10); O.hole.scale.setScalar(Math.max(0.01, 1.6 - t*0.5)); O.holeRings.forEach((r,i)=>r.rotation.z = introT*(1.5 + i*0.6));
+    O.qwing.visible = true; O.qwing.position.set(mix(-30, 30, f), 3 + Math.sin(t*2)*0.6, 4); O.qwing.rotation.set(0, 0, 0.25*Math.sin(t*3)); if(Math.random()<0.7) ipBurst(O.qwing.position.x - 1.5, O.qwing.position.y, O.qwing.position.z, 0xff9a30, 3, 3, 0, 0.4);
+    once('engine', ()=>{ tone(110, 4, 'sawtooth', 0.03, 1.8); noise(4, 0.05, null, {freq:500}); }); if(t > 2) once('vow', ()=>speak('I will hunt you down, Pac!', 1.3, 1.05));
+    cam(0, 4, 18, O.qwing.position.x*0.6, 2.5, 0); O.key.position.set(0, 10, 15); }
+  else if(b===10){ show('saloon'); O.stars.visible = false; const out = t < 3;
+    if(out){ cam(0, 4, 30, 0, 8, 12); O.salSign.material.opacity = Math.sin(introT*7) > -0.85 ? 1 : 0.25; O.key.position.set(0, 6, 22); }
+    else { const k = (t-3)/5; O.salSign.material.opacity = 1; pacPose(0, 0, 1.15, Math.PI, 1, {slump:true}); const nShots = Math.min(7, Math.floor(k*9)); O.shots.forEach((s,i)=>s.visible = i < nShots);
+      if(Math.floor(k*9) > (O.lastShot||0)){ O.lastShot = Math.floor(k*9); O.pac.snapAt = rtime; tone(1200, 0.05, 'triangle', 0.03); }
+      if(Math.random()<0.04) ipBurst(0.12, 2.6, 1.45, 0x9fc8ff, 1, 0.3, 6, 1);
+      cam(1.3, 2.3, -2.3, 0, 2.0, 1.2); O.key.position.set(1, 4, -1); } }
+  else if(b>=11 && b<=13){ show('alley'); O.stars.visible = false; O.key.position.set(3, 5, 6);
+    if(b===11){ once('whistle', ()=>SFX.whistle(0)); const op = Math.max(0, Math.min(1, (t-2.6)*1.2)); O.portal.visible = op > 0; O.portal.scale.setScalar(op*1.4); O.portal.children.forEach((r,i)=>{ if(r.isMesh && r.geometry.type==='TorusGeometry') r.rotation.z = introT*(2+i); });
+      if(op > 0) once('portal', ()=>{ noise(1.2, 0.15, null, {freq:400, sweep:3000}); tone(55, 1.2, 'sawtooth', 0.08, 2); }); if(op > 0 && Math.random()<0.5) ipBurst(6, 1.6, 4, 0x6cff6a, 3, 3, 0, 0.6);
+      const w = Math.max(0, t-4.4); O.chrome.visible = t > 4.4; O.chrome.position.set(mix(6, 3.2, Math.min(1, w/2.5)), 0, mix(4, 2.6, Math.min(1, w/2.5))); O.chrome.rotation.y = -2.2; O.chrome.scale.setScalar(1.25);
+      cam(-4, 2.2, 10, 3, 1.6, 2); }
+    else if(b===12){ O.portal.visible = false; O.chrome.visible = t < 1.5; O.chrome.position.set(2.4, 0, 2.2); const lunge = Math.min(1, t/1.3);
+      pacPose(mix(0, 1.6, lunge), 0, mix(-0.6, 1.8, lunge), Math.atan2(2.4, 2.8), 1.15, {chomp: t > 0.5 && t < 1.8, spd:3, walk:t*8});
+      if(t > 1.3) once('eat', ()=>{ SFX.chomp(); setTimeout(()=>SFX.chomp(), 150); ipBurst(2.3, 1.4, 2.2, 0xd8e0ec, 120, 7, 6, 1); });
+      cam(-1.5, 2.2, 7.5, 1.4, 1.5, 1.6); }
+    else { const walkZ = mix(0, 6.5, f); pacPose(0, 0, walkZ, 0, 1.15, {cool:true, spd:2.2, walk:introT*4});   // the walk: slow, cool, toward you
+      once('bass', ()=>{ for(let i=0;i<6;i++) tone(55, 0.35, 'sawtooth', 0.08, 1, null, i*0.8); }); cam(0.6, 0.7, walkZ + 4.2, 0, 1.9, walkZ); O.key.position.set(1, 3, walkZ + 3); } }
+  else if(b===14){ show(); O.stars.visible = true; cam(0, 0, 30, 0, 0, 0); once('title', ()=>{ SFX.boom(1.2); [262,330,392,523].forEach((fq,i)=>tone(fq, 0.6, 'sawtooth', 0.04, 1, null, i*0.12, 0.6)); }); }
+}
+
+// ---------------- the comic overlay: captions, bubbles, sound words ----------------
 const INK = '#0c0a08';
-function hatch(path, gap, ang, col='#1a120a', alpha=0.5){ ix.save(); path(); ix.clip(); ix.strokeStyle = col; ix.lineWidth = 1.3; ix.globalAlpha = alpha; const W = ic.width, H = ic.height, s = Math.max(W,H)*1.5;
-  ix.translate(W/2, H/2); ix.rotate(ang); for(let y=-s; y<s; y+=gap){ ix.beginPath(); ix.moveTo(-s, y + Math.sin(y*0.3)*1.2); ix.lineTo(s, y + Math.cos(y*0.2)*1.2); ix.stroke(); } ix.restore(); }
-function shape(path, fill, lw=3, shade=true, sx=0.3, sy=0.3){ ix.fillStyle = fill; path(); ix.fill(); if(shade) hatch(path, 5, -0.7, '#1a120a', 0.35); ix.strokeStyle = INK; ix.lineWidth = lw; path(); ix.stroke(); }
-const circ = (x,y,r) => () => { ix.beginPath(); ix.arc(x,y,Math.max(0.5,r),0,Math.PI*2); };
-const ell = (x,y,rx,ry,rot=0) => () => { ix.beginPath(); ix.ellipse(x,y,Math.max(0.5,rx),Math.max(0.5,ry),rot,0,Math.PI*2); };
-const rect = (x,y,w,h) => () => { ix.beginPath(); ix.rect(x,y,w,h); };
-function bubble(x, y, text, size, tail=[0,1], col='#fff', tc=INK){ ix.font = `900 ${size|0}px Cinzel, Georgia`; const w = ix.measureText(text).width*1.2 + size*1.6, h = size*1.9;   // an ellipse needs extra width so the text clears its curved ends
-  ix.fillStyle = col; ix.strokeStyle = INK; ix.lineWidth = 3; ix.beginPath(); ix.ellipse(x, y, w/2, h/2, 0, 0, Math.PI*2); ix.fill(); ix.stroke();
+function bubble(x, y, text, size, tail=[0,1]){ ix.font = `900 ${size|0}px Cinzel, Georgia`; const w = ix.measureText(text).width*1.2 + size*1.6, h = size*1.9;
+  ix.fillStyle = '#fff'; ix.strokeStyle = INK; ix.lineWidth = 3; ix.beginPath(); ix.ellipse(x, y, w/2, h/2, 0, 0, Math.PI*2); ix.fill(); ix.stroke();
   ix.beginPath(); ix.moveTo(x - size*0.4, y + h*0.38); ix.lineTo(x + tail[0]*size*1.6, y + tail[1]*size*1.6); ix.lineTo(x + size*0.4, y + h*0.4); ix.fill(); ix.stroke();
-  ix.fillStyle = tc; ix.textAlign = 'center'; ix.textBaseline = 'middle'; ix.fillText(text, x, y+1); }
-function caption(x, y, w, text, size){ ix.font = `600 ${size|0}px Rajdhani, system-ui`; const h = size*1.9; ix.fillStyle = '#f2d878'; ix.strokeStyle = INK; ix.lineWidth = 3; ix.fillRect(x, y, w, h); ix.strokeRect(x, y, w, h);
-  ix.fillStyle = INK; ix.textAlign = 'left'; ix.textBaseline = 'middle'; ix.fillText(text, x + size*0.6, y + h/2); }
+  ix.fillStyle = INK; ix.textAlign = 'center'; ix.textBaseline = 'middle'; ix.fillText(text, x, y+1); }
 function sfxText(x, y, text, size, fill, rot=0){ ix.save(); ix.translate(x,y); ix.rotate(rot); ix.font = `900 ${size|0}px Cinzel, Georgia`; ix.textAlign = 'center'; ix.textBaseline = 'middle'; ix.lineWidth = size*0.14; ix.strokeStyle = INK; ix.strokeText(text, 0, 0); ix.fillStyle = fill; ix.fillText(text, 0, 0); ix.restore(); }
-// Pac in 2D, matching the 3D model: yellow ball, backwards red cap, cocky brows, white gloves, red sneakers
-function pac2d(x, y, r, open, o={}){ const face = o.face||1;
-  if(o.legs !== false){ for(const s of [-1,1]){ const lx = x + s*r*0.38, sw = Math.sin((o.walk||0) + (s>0?Math.PI:0))*r*0.18; ix.strokeStyle = INK; ix.lineWidth = r*0.2; ix.lineCap = 'round'; ix.beginPath(); ix.moveTo(lx, y + r*0.8); ix.lineTo(lx + sw, y + r*1.45); ix.stroke();
-    ix.strokeStyle = '#e0c24e'; ix.lineWidth = r*0.13; ix.stroke(); shape(ell(lx + sw + face*r*0.12, y + r*1.52, r*0.3, r*0.15), o.leather ? '#1a1414' : '#b8362e', 2.5, false); } }
-  const body = () => { ix.beginPath(); ix.moveTo(x, y); ix.arc(x, y, r, (face>0?0:Math.PI) + open, (face>0?0:Math.PI) + Math.PI*2 - open); ix.closePath(); };
-  shape(body, o.col||'#e3c24a', Math.max(3, r*0.06));
-  if(open > 0.05){ ix.fillStyle = '#4a1820'; ix.beginPath(); ix.moveTo(x, y); ix.arc(x, y, r*0.92, (face>0?0:Math.PI) - open*0.9 + Math.PI*2, (face>0?0:Math.PI) + open*0.9 + Math.PI*2); ix.closePath(); ix.globalAlpha = 0.0; ix.fill(); ix.globalAlpha = 1; }
-  if(o.leather){ shape(() => { ix.beginPath(); ix.arc(x, y, r, 0.25*Math.PI, 0.75*Math.PI); ix.lineTo(x, y + r*0.3); ix.closePath(); }, '#1c1818', 3); }
-  // backwards cap
-  if(!o.noCap){ shape(() => { ix.beginPath(); ix.arc(x, y, r*1.02, Math.PI*1.15, Math.PI*1.85); ix.lineTo(x + r*0.6, y - r*0.55); ix.lineTo(x - r*0.6, y - r*0.55); ix.closePath(); }, '#a8362e', 3);
-    shape(() => { ix.beginPath(); ix.ellipse(x - face*r*0.95, y - r*0.62, r*0.42, r*0.1, -face*0.35, 0, Math.PI*2); }, '#a8362e', 3, false); }
-  // eye + brow (or shades)
-  const ex = x + face*r*0.22, ey = y - r*0.42;
-  if(o.shades){ shape(rect(ex - r*0.42, ey - r*0.12, r*0.84, r*0.24), '#050505', 3, false); ix.fillStyle = 'rgba(160,200,255,.5)'; ix.fillRect(ex - r*0.3, ey - r*0.08, r*0.18, r*0.06); }
-  else { shape(ell(ex, ey, r*0.15, r*0.2), '#f3eee2', 2.5, false); ix.fillStyle = INK; ix.beginPath(); ix.ellipse(ex + face*r*0.05, ey + (o.sad?r*0.06:0), r*0.07, r*0.1, 0, 0, Math.PI*2); ix.fill();
-    ix.strokeStyle = '#5a3f14'; ix.lineWidth = r*0.07; ix.lineCap = 'round'; ix.beginPath(); if(o.sad){ ix.moveTo(ex - r*0.2, ey - r*0.2); ix.lineTo(ex + r*0.18, ey - r*0.32); } else { ix.moveTo(ex - r*0.2, ey - r*0.33); ix.lineTo(ex + r*0.2, ey - r*0.27); } ix.stroke(); }
-  if(o.arms !== false){ for(const s of [-1,1]){ const hx = x + s*r*1.08, hy = y + r*0.25 + (o.armUp && s===face ? -r*0.9 : 0); shape(circ(hx, hy, r*0.17), '#ebe5d6', 2.5, false); } }
+function captionBox(text, S, W, H){ const bh = S*0.07, by = H - bh - S*0.05, bx = S*0.04; ix.font = `700 ${Math.max(14, S*0.03)|0}px Rajdhani, system-ui`; const w = Math.min(W - bx*2, ix.measureText(text).width + S*0.05);
+  ix.fillStyle = '#f2d878'; ix.strokeStyle = INK; ix.lineWidth = 4; ix.fillRect(bx, by, w, bh); ix.strokeRect(bx, by, w, bh); ix.fillStyle = INK; ix.textAlign = 'left'; ix.textBaseline = 'middle'; ix.fillText(text, bx + S*0.025, by + bh/2); }
+function proj(x, y, z){ const v = new THREE.Vector3(x,y,z).project(IC); return [(v.x*0.5+0.5)*ic.width, (-v.y*0.5+0.5)*ic.height]; }
+function overlay(b, t, f){
+  const W = ic.width = ic.clientWidth, H = ic.height = ic.clientHeight, S = Math.min(W, H); ix.clearRect(0,0,W,H);
+  // letterbox bars: it's a film
+  ix.fillStyle = '#000'; ix.fillRect(0,0,W,H*0.07); ix.fillRect(0,H*0.93,W,H*0.07);
+  if(b===0 && t > 3){ ix.globalAlpha = Math.min(1, t-3); ix.fillStyle = '#f2d24a'; ix.font = `italic 700 ${S*0.04|0}px Cinzel, Georgia`; ix.textAlign = 'center'; ix.fillText(CRAWL[0], W/2, H*0.32); ix.globalAlpha = 1; }
+  if(b===2){ if(t > 1) sfxText(W*0.28, H*0.3, 'HA HA HA', S*0.06, '#c8b4ff', -0.2); if(t > 3.2){ const [x,y] = proj(0.4, 5.6, 0); bubble(x + S*0.12, y - S*0.04, 'DO IT.', S*0.07, [-0.8, 1]); } }
+  if(b===3){ if(t > 1.2 && t < 3){ const [x,y] = proj(-6, 0.6, 6); bubble(x + S*0.12, y - S*0.08, 'FIRE!', S*0.06, [-0.6, 1]); } if(t > 4.4){ const k = Math.min(1,(t-4.4)/0.6); sfxText(W*0.72, H*0.45, 'KA-BOOM!', S*0.1*(0.6+k*0.5), '#ffe14d', 0.1); } }
+  if(b===4 && IO.pac.root.visible && introT - BEAT_AT[4] > 1.4 && introT - BEAT_AT[4] < 2.6) sfxText(W*0.25, H*0.35, 'WHOA—', S*0.06, '#fff', -0.2);
+  if(b===5){ const said = NARRATION.slice(0, Math.floor(Math.min(1, t/1.2)*NARRATION.length)); captionBox(t < 1.2 ? 'NARRATOR: "...' + said.slice(-58) + '"' : 'NARRATOR: "...and his enforcer, Baron Kab—"', S, W, H); if(t > 1.2 && t < 2.2) sfxText(W*0.36, H*0.42, 'CHOMP!', S*0.08, '#ffe14d', -0.1); }
+  if(b===8){ if(t > 0.3 && t < 2.4) sfxText(W*0.42, H*0.3, 'BUUURRRP!', S*0.11, '#7cff8a', -0.12); if(t > 2.6) sfxText(W*0.3, H*0.68, 'PFFFRRRT!', S*0.09, '#b8e86a', 0.15); }
+  if(b===9 && t > 2){ const q = IO.qwing.position, [x,y] = proj(q.x, q.y + 1.5, q.z); bubble(x, y - S*0.06, 'I\'LL HUNT YOU DOWN, PAC!', S*0.04, [0, 1]); }
+  if(b===10 && t > 5){ const [x,y] = proj(0, 2.6, 1.15); bubble(x - S*0.2, y - S*0.08, '...another.', S*0.035, [0.9, 1]); }
+  if(b===12 && t > 1.3 && t < 3.2) sfxText(W*0.55, H*0.32, 'CHOMP!', S*0.12, '#ffe14d', -0.1);
+  if(b===14){ const k = Math.min(1, t/1.2); ix.save(); ix.globalAlpha = k; ix.fillStyle = 'rgba(0,0,0,.55)'; ix.fillRect(0,0,W,H); ix.textAlign = 'center'; ix.textBaseline = 'middle';
+    ix.fillStyle = '#f6dc95'; ix.shadowColor = '#ff4fb8'; ix.shadowBlur = 40; ix.font = `900 ${S*0.2|0}px Cinzel, Georgia`; ix.fillText('PAC', W/2, H/2 - S*0.04); ix.font = `700 ${S*0.05|0}px Cinzel, Georgia`; ix.fillStyle = '#ff4fb8'; ix.fillText('J U D G E M E N T   D A Y', W/2, H/2 + S*0.12); ix.restore(); }
+  if(BEATS[b].cap) captionBox(BEATS[b].cap.slice(0, Math.floor(BEATS[b].cap.length*Math.min(1, t*1.6/Math.max(1, BEATS[b].cap.length/24)))), S, W, H);
+  // a beat change flashes like a comic page turning
+  if(t < 0.18){ ix.fillStyle = `rgba(255,255,255,${0.35*(1-t/0.18)})`; ix.fillRect(0,0,W,H); }
 }
-function bomberguy(x, y, s, o={}){ // locked look v2: white bomb head, antenna + red ball/fuse, oval eyes, big grin; blue suit, white gloves, black belt + gold buckle, black cape with red lining
-  shape(() => { ix.beginPath(); ix.moveTo(x - s*0.55, y - s*0.1); ix.quadraticCurveTo(x - s*1.0 - Math.sin(rtime*3)*s*0.1, y + s*1.1, x - s*0.8, y + s*1.6); ix.lineTo(x + s*0.8, y + s*1.6); ix.quadraticCurveTo(x + s*1.0, y + s*1.1, x + s*0.55, y - s*0.1); ix.closePath(); }, '#121014', 3, false);
-  ix.fillStyle = '#7a1018'; ix.beginPath(); ix.moveTo(x - s*0.5, y + s*0.1); ix.lineTo(x - s*0.7, y + s*1.5); ix.lineTo(x + s*0.7, y + s*1.5); ix.lineTo(x + s*0.5, y + s*0.1); ix.fill();
-  shape(() => { ix.beginPath(); ix.roundRect ? ix.roundRect(x - s*0.45, y, s*0.9, s*1.0, s*0.25) : ix.rect(x - s*0.45, y, s*0.9, s*1.0); }, '#2a5ad8', 3);
-  shape(rect(x - s*0.47, y + s*0.55, s*0.94, s*0.12), '#111', 2, false); shape(rect(x - s*0.1, y + s*0.53, s*0.2, s*0.16), '#e8c040', 2, false);
-  for(const k of [-1,1]){ shape(ell(x + k*s*0.25, y + s*1.2, s*0.17, s*0.24), '#2a5ad8', 3, false); shape(ell(x + k*s*0.27, y + s*1.42, s*0.22, s*0.1), '#f0ece0', 2.5, false);
-    const hy = y + s*0.4 + (o.fist && k===1 ? -s*0.7 + Math.sin(rtime*14)*s*0.06 : 0); shape(circ(x + k*s*0.6, hy, s*0.16), '#f4f0e6', 2.5, false); }
-  shape(circ(x, y - s*0.35, s*0.5), '#f4f0e6', 3);
-  ix.strokeStyle = INK; ix.lineWidth = 3; ix.beginPath(); ix.moveTo(x, y - s*0.85); ix.lineTo(x + s*0.05, y - s*1.15); ix.stroke(); shape(circ(x + s*0.05, y - s*1.2, s*0.1), '#d82a2a', 2.5, false);
-  ix.fillStyle = 'rgba(255,200,60,'+(0.5+0.5*Math.sin(rtime*20))+')'; ix.beginPath(); ix.arc(x + s*0.08, y - s*1.33, s*0.06, 0, 7); ix.fill();
-  for(const k of [-1,1]){ ix.fillStyle = INK; ix.beginPath(); ix.ellipse(x + k*s*0.17, y - s*0.45, s*0.06, s*0.13, 0, 0, 7); ix.fill(); }
-  ix.strokeStyle = INK; ix.lineWidth = 3; ix.beginPath(); ix.arc(x, y - s*0.3, s*0.28, 0.15*Math.PI, 0.85*Math.PI); ix.stroke(); ix.fillStyle = '#fff'; ix.beginPath(); ix.arc(x, y - s*0.3, s*0.26, 0.2*Math.PI, 0.8*Math.PI); ix.closePath(); ix.fill(); ix.stroke();
-}
-function deathStar(x, y, r, o={}){ shape(circ(x,y,r), '#7a7a88', Math.max(3,r*0.03)); ix.strokeStyle = INK; ix.lineWidth = Math.max(2, r*0.03); ix.beginPath(); ix.moveTo(x - r, y); ix.quadraticCurveTo(x, y + r*0.12, x + r, y); ix.stroke();
-  shape(circ(x - r*0.38, y - r*0.38, r*0.22), '#4a4a58', 2.5, false); shape(circ(x - r*0.38, y - r*0.38, r*0.08), o.fire ? '#7cff4f' : '#2a2a34', 2, false);
-  for(let i=0;i<14;i++){ ix.fillStyle = 'rgba(20,20,30,.5)'; ix.fillRect(x + Math.cos(i*2.3)*r*0.6, y + Math.sin(i*1.7)*r*0.6, r*0.08, r*0.04); } }
-function arcadePlanet(x, y, s, t){ // the arcade-booth planet: a planet that IS an arcade cabinet
-  shape(() => { ix.beginPath(); ix.moveTo(x - s*0.5, y + s*0.8); ix.lineTo(x - s*0.5, y - s*0.4); ix.lineTo(x - s*0.35, y - s*0.8); ix.lineTo(x + s*0.35, y - s*0.8); ix.lineTo(x + s*0.5, y - s*0.4); ix.lineTo(x + s*0.5, y + s*0.8); ix.closePath(); }, '#c03a8a', 3);
-  shape(rect(x - s*0.36, y - s*0.45, s*0.72, s*0.5), '#101028', 3, false); ix.fillStyle = '#41e4ff'; for(let i=0;i<6;i++){ ix.fillRect(x - s*0.3 + i*s*0.1, y - s*0.2 + Math.sin(t*6+i)*s*0.04, s*0.05, s*0.05); }
-  pac2d(x - s*0.15 + ((t*0.3)%1)*s*0.3, y - s*0.2, s*0.06, Math.abs(Math.sin(t*12))*0.6, {legs:false, arms:false, noCap:true});
-  shape(rect(x - s*0.4, y + s*0.1, s*0.8, s*0.18), '#2a2a3a', 3, false); shape(circ(x - s*0.2, y + s*0.18, s*0.05), '#ff3b3b', 2, false); shape(circ(x + s*0.05, y + s*0.18, s*0.05), '#41e4ff', 2, false); shape(circ(x + s*0.2, y + s*0.18, s*0.05), '#ffe14d', 2, false);
-  ix.fillStyle = '#ffe14d'; ix.font = `900 ${s*0.12|0}px Cinzel`; ix.textAlign = 'center'; ix.fillText('ARCADE', x, y - s*0.6); }
-function chromeMan(x, y, s, walk){ const g = ix.createLinearGradient(x - s*0.4, y - s*1.2, x + s*0.4, y + s); g.addColorStop(0,'#f4f8ff'); g.addColorStop(0.35,'#8a98a8'); g.addColorStop(0.6,'#e0e8f0'); g.addColorStop(1,'#5a6878');
-  for(const k of [-1,1]){ const sw = Math.sin(walk + (k>0?Math.PI:0))*s*0.12; shape(() => { ix.beginPath(); ix.moveTo(x + k*s*0.12, y + s*0.2); ix.lineTo(x + k*s*0.14 + sw, y + s*1.0); ix.lineTo(x + k*s*0.04 + sw, y + s*1.0); ix.lineTo(x + k*s*0.04, y + s*0.2); ix.closePath(); }, g, 2.5, false); }
-  shape(ell(x, y - s*0.15, s*0.24, s*0.42), g, 3, false); for(const k of [-1,1]) shape(ell(x + k*s*0.3, y - s*0.1, s*0.07, s*0.36, k*0.1), g, 2.5, false); shape(ell(x, y - s*0.75, s*0.15, s*0.19), g, 3, false); }
-function blackHole(x, y, r, t){ for(let i=10;i>0;i--){ ix.strokeStyle = `rgba(${120+i*10},${40+i*6},${200},${0.08*i})`; ix.lineWidth = r*0.08; ix.beginPath(); ix.arc(x, y, r*i/10, t*2 + i, t*2 + i + Math.PI*1.4); ix.stroke(); }
-  const g = ix.createRadialGradient(x,y,0,x,y,r*0.55); g.addColorStop(0,'#000'); g.addColorStop(1,'rgba(0,0,0,0)'); ix.fillStyle = g; ix.beginPath(); ix.arc(x,y,r*0.55,0,7); ix.fill(); }
-function qWing(x, y, s){ shape(() => { ix.beginPath(); ix.ellipse(x, y, s*0.7, s*0.55, 0, 0, Math.PI*2); }, '#9aa8b8', 3); shape(ell(x, y, s*0.36, s*0.26), '#2a3a5a', 3, false);
-  shape(() => { ix.beginPath(); ix.moveTo(x + s*0.35, y + s*0.25); ix.lineTo(x + s*0.95, y + s*0.75); ix.lineTo(x + s*0.75, y + s*0.85); ix.lineTo(x + s*0.2, y + s*0.4); ix.closePath(); }, '#9aa8b8', 3, false);
-  ix.fillStyle = 'rgba(255,170,60,.9)'; ix.beginPath(); ix.ellipse(x - s*0.8 - Math.random()*s*0.2, y, s*0.2, s*0.1, 0, 0, 7); ix.fill(); bomberguy(x, y + s*0.02, s*0.14, {}); }
-// ---------- the page: one inked panel per beat, sliding in like a turned page ----------
-function drawIntro(){
-  const W = ic.width = ic.clientWidth, H = ic.height = ic.clientHeight; let b = 0; while(b < BEATS.length-1 && introT >= BEAT_AT[b+1]) b++;
-  const t = introT - BEAT_AT[b], f = t/BEATS[b].d, S = Math.min(W, H);
-  ix.fillStyle = '#0b0910'; ix.fillRect(0,0,W,H);
-  const slide = Math.max(0, 1 - t/0.55), ease = slide*slide; const G = Math.max(10, S*0.03), px = G + ease*W*0.9, py = G, pw = W - G*2, ph = H - G*2 - (BEATS[b].cap ? S*0.11 : 0);
-  ix.save(); ix.translate(px - G, 0); ix.beginPath(); ix.rect(G, py, pw, ph); ix.clip();
-  const cx = G + pw/2, cy = py + ph/2, s = Math.min(pw, ph), space = b <= 10 && b !== 10;
-  const bg = ix.createRadialGradient(cx, cy, 0, cx, cy, s); bg.addColorStop(0, b>=10&&b<=14 ? '#2a1222' : '#0e0c22'); bg.addColorStop(1, '#030206'); ix.fillStyle = bg; ix.fillRect(0, 0, W*2, H);
-  if(space && b>=1) for(const [sx,sy,sz] of STARS_I){ ix.fillStyle = `rgba(255,255,255,${0.25+sz*0.75})`; ix.fillRect(G + sx*pw, py + sy*ph, 1+sz*1.6, 1+sz*1.6); }
-  ix.textAlign = 'center'; ix.textBaseline = 'middle'; const chomp = Math.abs(Math.sin(introT*12))*0.65;
-  if(b===0){ const on = t > 1.4 ? 1 : 0; once('spot', ()=>setTimeout(()=>{ noise(0.15, 0.4, null, {freq:3000}); tone(60,0.3,'sine',0.3,0.5); }, 1400));
-    if(on){ const r = s*0.42; const sg = ix.createRadialGradient(cx, cy*1.1, 0, cx, cy*1.1, r); sg.addColorStop(0,'rgba(255,244,210,.55)'); sg.addColorStop(0.8,'rgba(255,244,210,.12)'); sg.addColorStop(1,'rgba(0,0,0,0)'); ix.fillStyle = sg; ix.fillRect(0,0,W*2,H);
-      ix.fillStyle = 'rgba(255,244,210,.06)'; ix.beginPath(); ix.moveTo(cx - s*0.05, py); ix.lineTo(cx + s*0.05, py); ix.lineTo(cx + r, cy*1.1 + r*0.3); ix.lineTo(cx - r, cy*1.1 + r*0.3); ix.fill();
-      if(t > 3){ ix.globalAlpha = Math.min(1, (t-3)); ix.fillStyle = '#f2d24a'; ix.font = `italic 700 ${s*0.04|0}px Cinzel, Georgia`; ix.fillText('In a galaxy far, far away...', cx, cy*1.1); ix.globalAlpha = 1; } } }
-  if(b===1 || b===5 || b===6 || b===4){ // the crawl, scrolling up through the spotlight (and later eaten)
-    const sg = ix.createRadialGradient(cx, cy, 0, cx, cy, s*0.55); sg.addColorStop(0,'rgba(255,244,210,.22)'); sg.addColorStop(1,'rgba(0,0,0,0)'); ix.fillStyle = sg; ix.fillRect(0,0,W*2,H);
-    const scroll = b===1 ? (1 - f)*ph*0.55 : 0, rowH = s*0.06;
-    const eaten = b===4 ? Math.max(0, Math.floor((f-0.35)*5)) : b===5 ? 2 + Math.floor(f*4) : b===6 ? 6 + Math.floor(f*3) : 0;
-    CRAWL.forEach((r,i)=>{ if(i < eaten || !r) return; const y = cy - rowH*3.5 + i*rowH + scroll, k = 0.6 + ((y-py)/ph)*0.6; ix.fillStyle = '#f2d24a'; ix.font = `700 ${Math.max(10, s*0.036*k)|0}px Cinzel, Georgia`; ix.fillText(r, cx, y); });
-    if(b===1) once('narr', ()=>speak(NARRATION, 0.8, 0.92));
-    if(b>=4){ const row = Math.min(CRAWL.length-1, eaten), gr = s*(0.05 + (b===6?0.07*f:0) + (b>=5?0.03:0) + eaten*0.004), y = cy - rowH*3.5 + row*rowH;
-      let x; if(b===4 && f < 0.35){ x = G + pw*0.1 + f/0.35*pw*0.25; const trip = f > 0.15 && f < 0.25; pac2d(x, cy + s*0.16 - (trip?Math.sin((f-0.15)*30)*s*0.06:0), s*0.13, chomp*0.6, {walk:introT*10, armUp:trip, face:1}); if(trip){ sfxText(x, cy - s*0.08, 'WHOA!', s*0.07, '#fff', -0.2); once('trip', ()=>{ SFX.boing(); }); } }
-      else { x = cx - pw*0.3 + ((introT*0.9)%1)*pw*0.6; pac2d(x, y, gr, chomp, {legs:false, face:1}); if(Math.random()<0.3) SFX.waka(Math.random()<.5); } }
-    if(b===5){ const said = NARRATION.slice(0, Math.floor(f*NARRATION.length*0.65)); caption(G + pw*0.05, py + ph*0.8, pw*0.9, 'NARRATOR: "...' + said.slice(-60) + (f > 0.92 ? '—"' : ''), s*0.032); }
-    if(b===6){ caption(G + pw*0.05, py + ph*0.8, pw*0.9, 'NARRATOR: "...and his enforcer, Darth Bomb—"', s*0.032); once('cut', ()=>{ if('speechSynthesis' in window) speechSynthesis.cancel(); SFX.chomp(); }); } }
-  if(b===2){ // the Emperor, laughing: DO IT
-    const sh = Math.sin(introT*30)*s*0.004*(f>0.2?1:0);
-    shape(() => { ix.beginPath(); ix.arc(cx + sh, cy - s*0.08, s*0.17, Math.PI, 0); ix.lineTo(cx + s*0.25, cy + s*0.4); ix.lineTo(cx - s*0.25, cy + s*0.4); ix.closePath(); }, '#16121e', 4);
-    shape(ell(cx + sh, cy - s*0.04, s*0.09, s*0.11), '#d8ccb4', 3); for(let i=0;i<5;i++){ ix.strokeStyle = 'rgba(60,40,30,.6)'; ix.lineWidth = 1.5; ix.beginPath(); ix.moveTo(cx - s*0.06 + sh, cy - s*0.1 + i*s*0.02); ix.lineTo(cx + s*0.06 + sh, cy - s*0.09 + i*s*0.02); ix.stroke(); }
-    for(const k of [-1,1]){ ix.fillStyle = '#ffd23f'; ix.beginPath(); ix.ellipse(cx + k*s*0.035 + sh, cy - s*0.06, s*0.014, s*0.009, 0, 0, 7); ix.fill(); }
-    ix.fillStyle = INK; ix.beginPath(); ix.ellipse(cx + sh, cy + s*0.02, s*0.035, s*0.02 + Math.abs(Math.sin(introT*18))*s*0.02, 0, 0, 7); ix.fill();
-    for(const k of [-1,1]){ shape(ell(cx + k*s*0.22, cy + s*0.12 - (f>0.2?Math.abs(Math.sin(introT*9))*s*0.03:0), s*0.04, s*0.03), '#d8ccb4', 2.5, false); }
-    if(f > 0.2){ once('laugh', ()=>{ for(let i=0;i<8;i++) tone(220 - i*8, 0.12, 'sawtooth', 0.04, 0.8, null, i*0.13); speak('Ha ha ha ha ha!', 0.3, 0.9); }); sfxText(cx - s*0.28, cy - s*0.25, 'HA HA HA', s*0.05, '#c8b4ff', -0.2); }
-    if(f > 0.55){ once('doit', ()=>speak('Do it.', 0.2, 0.7)); bubble(cx + s*0.22, cy - s*0.3, 'DO IT.', s*0.07, [-0.6, 1]); } }
-  if(b===3){ // Darth Bomberguy fires the Death Star at the arcade-booth planet
-    deathStar(G + pw*0.25, cy - s*0.05, s*0.2, {fire:f>0.35}); bomberguy(G + pw*0.12, cy + s*0.22, s*0.1, {fist:f>0.3});
-    if(f > 0.3 && f < 0.42) bubble(G + pw*0.2, cy - s*0.33, 'FIRE!', s*0.05, [-0.4, 1]);
-    const tx = G + pw*0.78, ty = cy;
-    if(f < 0.66) arcadePlanet(tx, ty, s*0.3, introT);
-    if(f > 0.4){ const k = Math.min(1, (f-0.4)/0.12); once('laser', ()=>{ tone(880, 0.8, 'sawtooth', 0.06, 0.25); noise(0.8, 0.12, null, {freq:2000, sweep:400}); });
-      ix.strokeStyle = '#7cff4f'; ix.shadowColor = '#7cff4f'; ix.shadowBlur = 30; ix.lineWidth = s*0.018; ix.beginPath(); ix.moveTo(G + pw*0.25 - s*0.076, cy - s*0.126); ix.lineTo(lerp(G + pw*0.25, tx, k), lerp(cy - s*0.126, ty, k)); ix.stroke(); ix.shadowBlur = 0; }
-    if(f > 0.6){ once('kaboom', ()=>SFX.boom(1.5)); const k = (f-0.6)/0.4; for(let i=0;i<140;i++){ ix.fillStyle = ['#ff4fb8','#ffe14d','#41e4ff','#fff','#ff7a20'][i%5]; const a = i*0.73, r = k*s*0.6*(0.3+(i%9)/9); ix.fillRect(tx + Math.cos(a)*r, ty + Math.sin(a)*r, 6, 6); }
-      sfxText(tx, ty - s*0.05, 'KA-BOOM!', s*0.09*(0.6+k*0.5), '#ffe14d', 0.1); } }
-  if(b===7){ // fully grown, eats the whole Death Star
-    const ds = Math.max(0.02, 1 - f*1.1); deathStar(cx + s*0.2, cy, s*0.22*ds); pac2d(cx - s*0.22 + f*s*0.22, cy, s*0.26, chomp, {legs:false, face:1}); if(Math.random()<0.2) SFX.chomp();
-    for(let i=0;i<20*f;i++){ ix.fillStyle = '#7a7a88'; ix.fillRect(cx + s*0.12 + Math.random()*s*0.2, cy - s*0.1 + Math.random()*s*0.2, 5, 5); } }
-  if(b===8){ // BURP — then farts himself into a black hole
-    const bx = cx + s*0.25; if(f > 0.4) blackHole(bx, cy, s*0.3*Math.min(1,(f-0.4)*3), introT);
-    const px2 = f < 0.45 ? cx - s*0.1 : lerp(cx - s*0.1, bx, Math.min(1,(f-0.45)/0.45)), pr = f < 0.45 ? s*0.24 : s*0.24*(1-Math.min(0.9,(f-0.45)/0.5));
-    pac2d(px2, cy, pr, f<0.3?0.5:0.1, {legs:false, face:1, armUp:f<0.3});
-    if(f < 0.42){ once('burp', ()=>SFX.burp()); sfxText(cx - s*0.1, cy - s*0.32, 'BUUURRRP!', s*0.1, '#7cff8a', -0.12); }
-    else { once('fart', ()=>SFX.fart(1.4)); ix.fillStyle = 'rgba(140,200,90,.5)'; for(let i=0;i<10;i++){ ix.beginPath(); ix.arc(px2 - pr*1.2 - i*s*0.03, cy + Math.sin(i+introT*5)*s*0.03, s*0.03 + i*s*0.006, 0, 7); ix.fill(); } sfxText(px2 - s*0.25, cy + s*0.25, 'PFFFRRRT!', s*0.08, '#b8e86a', 0.15); } }
-  if(b===9){ // escapes in the Q-Wing and vows to hunt Pac down
-    qWing(G + pw*(0.2 + f*0.55), cy - s*0.05 + Math.sin(introT*3)*s*0.02, s*0.22);
-    if(f > 0.35){ once('vow', ()=>speak('I will hunt you down, Pac!', 1.3, 1.05)); bubble(G + pw*(0.2 + f*0.55), cy - s*0.33, 'I WILL HUNT YOU DOWN, PAC!', s*0.042, [0, 1]); } }
-  if(b===10){ // the Legendary Salty Dawg Saloon: neon, shots, sad and depressed
-    if(f < 0.35){ ix.fillStyle = '#2a1414'; ix.fillRect(G, cy - s*0.05, pw, ph); shape(rect(cx - s*0.38, cy - s*0.25, s*0.76, s*0.5), '#3a2014', 4);
-      const fl = Math.sin(introT*7) > -0.8 ? 1 : 0.3; ix.globalAlpha = fl; ix.fillStyle = '#ff4fb8'; ix.shadowColor = '#ff4fb8'; ix.shadowBlur = 26; ix.font = `900 ${s*0.05|0}px Cinzel, Georgia`; ix.fillText('THE LEGENDARY', cx, cy - s*0.36); ix.fillStyle = '#41e4ff'; ix.shadowColor = '#41e4ff'; ix.font = `900 ${s*0.07|0}px Cinzel, Georgia`; ix.fillText('SALTY DAWG SALOON', cx, cy - s*0.28); ix.shadowBlur = 0; ix.globalAlpha = 1;
-      shape(rect(cx - s*0.08, cy - s*0.05, s*0.16, s*0.3), '#1a0e08', 3, false); }
-    else { const k = (f-0.35)/0.65; ix.fillStyle = '#1e0e14'; ix.fillRect(0,0,W*2,H); ix.fillStyle = 'rgba(255,79,184,.25)'; ix.fillRect(G, py, pw, ph*0.12);
-      for(let i=0;i<9;i++){ shape(rect(G + pw*0.05 + i*pw*0.1, py + ph*0.2, pw*0.03, ph*0.12), ['#7cff8a','#ffb340','#41e4ff','#ff4fb8'][i%4], 2, false); }
-      shape(rect(G, cy + s*0.1, pw, s*0.08), '#4a2a18', 4); pac2d(cx - s*0.05, cy - s*0.03, s*0.13, 0.08, {legs:false, face:1, sad:true});
-      for(let i=0;i<Math.floor(3 + k*5);i++){ shape(rect(cx + s*0.12 + i*s*0.045, cy + s*0.035, s*0.03, s*0.065), 'rgba(220,235,255,.85)', 2, false); }
-      ix.fillStyle = 'rgba(160,190,255,.7)'; ix.beginPath(); ix.ellipse(cx - s*0.0, cy - s*0.06 + ((introT*0.8)%1)*s*0.08, s*0.008, s*0.014, 0, 0, 7); ix.fill();
-      if(k > 0.4) bubble(cx - s*0.22, cy - s*0.25, '...another.', s*0.035, [0.8, 1]); } }
-  if(b===11){ // outside: the whistle, a portal tears open, a naked chrome assassin steps out
-    ix.fillStyle = '#0c0a12'; ix.fillRect(0,0,W*2,H); ix.fillStyle = '#1a0e10'; ix.fillRect(G, cy + s*0.25, pw, ph); shape(rect(G + pw*0.02, cy - s*0.3, pw*0.3, s*0.55), '#3a2014', 4);
-    ix.fillStyle = '#41e4ff'; ix.font = `900 ${s*0.03|0}px Cinzel`; ix.fillText('SALTY DAWG', G + pw*0.17, cy - s*0.22);
-    once('whistle', ()=>SFX.whistle(0));
-    if(f > 0.4){ const pr = s*0.22*Math.min(1, (f-0.4)*4); for(let i=8;i>0;i--){ ix.strokeStyle = `rgba(120,255,120,${0.12*i})`; ix.lineWidth = 4; ix.beginPath(); ix.ellipse(G + pw*0.72, cy, pr*i/8*0.6, pr*i/8, 0, introT*3+i, introT*3+i+5.5); ix.stroke(); }
-      once('portal', ()=>{ noise(1.2, 0.15, null, {freq:400, sweep:3000}); tone(55, 1.2, 'sawtooth', 0.08, 2); }); }
-    if(f > 0.6){ const k = (f-0.6)/0.4; chromeMan(G + pw*(0.72 - k*0.22), cy + s*0.05, s*0.3, introT*6); } }
-  if(b===12){ // Pac eats him
-    ix.fillStyle = '#0c0a12'; ix.fillRect(0,0,W*2,H); ix.fillStyle = '#1a0e10'; ix.fillRect(G, cy + s*0.25, pw, ph);
-    if(f < 0.45) chromeMan(cx + s*0.12, cy + s*0.05, s*0.3, introT*6); pac2d(cx - s*0.15 + Math.min(0.45,f)*s*0.5, cy + s*0.05, s*0.2, f<0.5?chomp:0.08, {face:1});
-    if(f > 0.4){ once('chomp', ()=>{ SFX.chomp(); setTimeout(()=>SFX.chomp(), 150); }); sfxText(cx + s*0.05, cy - s*0.28, 'CHOMP!', s*0.12, '#ffe14d', -0.1); for(let i=0;i<30*(1-f);i++){ ix.fillStyle = '#c8d4e0'; ix.beginPath(); ix.arc(cx + s*0.1 + Math.random()*s*0.2, cy + Math.random()*s*0.2, 4, 0, 7); ix.fill(); } } }
-  if(b===13){ // the walk: out of the saloon looking like Arnold in T2 — leathers, shades
-    ix.fillStyle = '#120c10'; ix.fillRect(0,0,W*2,H); ix.fillStyle = '#1e1014'; ix.fillRect(G, cy + s*0.28, pw, ph); shape(rect(G + pw*0.05, cy - s*0.35, pw*0.25, s*0.63), '#3a2014', 4); shape(rect(G + pw*0.13, cy - s*0.08, pw*0.09, s*0.36), '#0a0604', 3, false);
-    const x = G + pw*0.17 + f*pw*0.5; pac2d(x, cy + s*0.02, s*0.17, 0.06, {face:1, shades:true, leather:true, walk:introT*4});
-    once('bass', ()=>{ for(let i=0;i<6;i++) tone(55, 0.35, 'sawtooth', 0.08, 1, null, i*0.6); }); }
-  if(b===14){ ix.fillStyle = '#05030a'; ix.fillRect(0,0,W*2,H); const k = Math.min(1, t/1.2);
-    ix.save(); ix.globalAlpha = k; ix.fillStyle = '#f6dc95'; ix.shadowColor = '#ff4fb8'; ix.shadowBlur = 40; ix.font = `900 ${s*0.2|0}px Cinzel, Georgia`; ix.fillText('PAC', cx, cy - s*0.04); ix.font = `700 ${s*0.05|0}px Cinzel, Georgia`; ix.fillStyle = '#ff4fb8'; ix.fillText('J U D G E M E N T   D A Y', cx, cy + s*0.12); ix.restore();
-    once('title', ()=>{ SFX.boom(1.2); [262,330,392,523].forEach((fq,i)=>tone(fq, 0.6, 'sawtooth', 0.04, 1, null, i*0.12, 0.6)); }); }
-  ix.restore();
-  // panel frame + caption box below
-  ix.strokeStyle = INK; ix.lineWidth = Math.max(6, S*0.012); ix.strokeRect(px, py, pw, ph); ix.strokeStyle = '#6d5734'; ix.lineWidth = 1.5; ix.strokeRect(px + 6, py + 6, pw - 12, ph - 12);
-  if(BEATS[b].cap){ const bh = S*0.08, by = py + ph + S*0.015; ix.fillStyle = '#f2d878'; ix.strokeStyle = INK; ix.lineWidth = 4; ix.fillRect(px, by, pw, bh); ix.strokeRect(px, by, pw, bh);
-    const shown = BEATS[b].cap.slice(0, Math.floor(BEATS[b].cap.length*Math.min(1, t*1.4/Math.max(1, BEATS[b].cap.length/22)))); ix.fillStyle = INK; ix.textAlign = 'left'; ix.textBaseline = 'middle'; ix.font = `700 ${Math.max(14, S*0.032)|0}px Rajdhani, system-ui`; ix.fillText(shown, px + S*0.02, by + bh/2); }
-}
+
+// ---------------- play / stop ----------------
+function playIntro(done){ introDone = done; state = 'intro'; hideAllOverlays(); $('hud').classList.add('hide'); $('touch').classList.add('hide');
+  buildIntro(); IO.eaten = 0; IO.lastShot = 0; IO.rows.forEach(r=>{ r.userData.gone = false; r.userData.eat = 0; r.scale.set(1,1,1); }); IO.moon.scale.setScalar(1); IP.length = 0;
+  ic.classList.remove('hide'); $('skip').classList.remove('hide'); introT = 0; introFired = {}; let lastI = performance.now(); audio(); setTrack('menu');
+  renderPass.scene = IS; renderPass.camera = IC; afterimage.enabled = false; gradePass.enabled = false;
+  const step = now=>{ const dt = Math.max(0, Math.min(0.05, (now-lastI)/1000)); lastI = now; introT += dt;
+    try{ let b = 0; while(b < BEATS.length-1 && introT >= BEAT_AT[b+1]) b++; const t = introT - BEAT_AT[b], f = t/BEATS[b].d;
+      IC.aspect = SW/SH; IC.updateProjectionMatrix(); direct(b, t, f);
+      LOOK.hatchU.uLight.value.copy(IC.position).sub(IO.key.position.clone().multiplyScalar(0)).normalize().add(new THREE.Vector3(0,1.2,0)).normalize();   // ink light from the camera's side
+      for(let i=0;i<IPMAX;i++){ const p = IP[i]; if(p){ p.life -= dt; p.vy -= p.grav*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.z += p.vz*dt; const a = Math.max(0, Math.min(1, p.life*2)); ipPos[i*3] = p.x; ipPos[i*3+1] = p.y; ipPos[i*3+2] = p.z; ipCol[i*3] = p.c.r*a*1.6; ipCol[i*3+1] = p.c.g*a*1.6; ipCol[i*3+2] = p.c.b*a*1.6; } else ipPos[i*3+1] = -9999; }
+      for(let i=IP.length-1;i>=0;i--) if(IP[i].life <= 0) IP.splice(i,1);
+      ipPts.geometry.attributes.position.needsUpdate = true; ipPts.geometry.attributes.color.needsUpdate = true;
+      composer.render(dt); overlay(b, t, f); }catch(e){ console.error(e); }
+    if(introT >= INTRO_LEN){ endIntro(); return; } introRAF = requestAnimationFrame(step); };
+  introRAF = requestAnimationFrame(step); ic.onclick = endIntro; }
+function endIntro(){ if(state!=='intro') return; cancelAnimationFrame(introRAF); ic.classList.add('hide'); $('skip').classList.add('hide'); if('speechSynthesis' in window) speechSynthesis.cancel();
+  renderPass.scene = scene; renderPass.camera = camera; state = 'menu'; const d = introDone; introDone = null; if(d) d(); else toMenu(); }

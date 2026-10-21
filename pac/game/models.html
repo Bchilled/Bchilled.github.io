@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PAC Models</title>
-<!-- PAC model sheet (v0.7): every Blender-built model in the game's ink-hatch look, turning slowly under club light.
+<!-- PAC model sheet (v0.8: ?cam= and ?jaw= for close-ups): every Blender-built model in the game's ink-hatch look, turning slowly under club light.
      ?only=pac,ballboy limits the line-up; ?slow=1 freezes rotation (for screenshots). -->
 <style>html,body{margin:0;height:100%;background:#07050c;overflow:hidden;font-family:Georgia,serif;color:#d8b46a}
 #t{position:fixed;top:12px;left:0;right:0;text-align:center;letter-spacing:.3em;font-size:14px}
@@ -25,6 +25,8 @@ LOOK.loadAll().then(M=>{
   list.forEach((it,i)=>{ const o = it.obj; o.position.x = x0 + i*gap; scene.add(o); ITEMS.push({o, label:it.label, h:it.h||2});
     const d = document.createElement('div'); d.textContent = it.label; $labels.appendChild(d); ITEMS[ITEMS.length-1].el = d; });
   const W = list.length*gap; camera.position.set(0, 2.6, Math.max(7, W*0.62)); camera.lookAt(0, 1.0, 0);
+  if(Q.get('cam')){ const c = Q.get('cam').split(',').map(Number); camera.position.set(c[0],c[1],c[2]); camera.lookAt(c[3],c[4],c[5]); }   // ?cam=x,y,z,lookx,looky,lookz for close-ups
+  if(Q.get('jaw')) ITEMS.forEach(it=>it.o.traverse(o=>{ if(o.name==='pacjawL') o.rotation.x = +Q.get('jaw'); if(o.name==='pacjawU') o.rotation.x = -Q.get('jaw')*0.28; }));
   document.title = 'PAC Models'; window.__ready = true;
 }).catch(e=>{ document.getElementById('t').textContent = 'LOAD FAILED: '+e; console.error(e); });
 const $labels = document.getElementById('labels');

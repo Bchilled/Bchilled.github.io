@@ -1,4 +1,4 @@
-// PAC v0.7 — world.js: World 1, THE CLUB. One long, wide lane you travel UP (toward -z), room by room.
+// PAC v0.8 — world.js: World 1, THE CLUB. One long, wide lane you travel UP (toward -z), room by room.
 // Glossy satin neon world; characters are ink. Dots: static DOT HIGHWAYS that lead you room to room (runway-light
 // sparkle), plus a few MOVING set pieces per room that burst for a bonus. Fruit heals. Coins spin and carry out of the run.
 "use strict";
@@ -35,7 +35,11 @@ let gateA = null, gateBeams = [], gateGlow = null, tiles = null, air = null, air
 const TX = 15, TZ = 22, TILE = 3.6, TILE_COLS = [0xff4fb8, 0x2f6bff, 0x41e4ff, 0xffb340, 0x8a5cff].map(c=>new THREE.Color(c));
 const LSLOTS = [], PLIGHTS = [];
 const PROP_INST = {};   // kind -> {solid:InstancedMesh, neon:InstancedMesh, n}
-function blocked(x,z,r){ for(const w of WALLS){ if(w.solid && x>w.x0-r && x<w.x1+r && z>w.z0-r && z<w.z1+r) return w; } return null; }
+// walls are bucketed along the lane (8 m bands) so the hundreds of checks per frame only look at nearby walls; rebuilt when walls come and go
+let WGRID = null, wgLen = -1;
+function wgrid(){ if(WGRID && wgLen === WALLS.length) return WGRID; WGRID = new Map(); wgLen = WALLS.length;
+  for(const w of WALLS) for(let k=Math.floor((w.z0-2.5)/8); k<=Math.floor((w.z1+2.5)/8); k++){ let a = WGRID.get(k); if(!a){ a = []; WGRID.set(k, a); } a.push(w); } return WGRID; }
+function blocked(x,z,r){ const L = wgrid().get(Math.floor(z/8)); if(!L) return null; for(const w of L){ if(w.solid && x>w.x0-r && x<w.x1+r && z>w.z0-r && z<w.z1+r) return w; } return null; }
 const wallMat = new THREE.MeshStandardMaterial({color:0x1a1426, roughness:0.4, metalness:0.35});
 function neonStrip(x0,z0,x1,z1,y,color,w=0.1,glows=true){
   const len = hyp(x1-x0, z1-z0); const m = new THREE.Mesh(new THREE.BoxGeometry(len, w, w), neonMat(color));
@@ -49,6 +53,10 @@ function wallSeg(x0,z0,x1,z1,color,h=3.6){
   neonStrip(x0,z0,x1,z1,h+0.04,color); neonStrip(x0,z0,x1,z1,0.22,color,0.06,false);
   const A = {x0:Math.min(x0,x1)-t/2, x1:Math.max(x0,x1)+t/2, z0:Math.min(z0,z1)-t/2, z1:Math.max(z0,z1)+t/2, solid:true}; WALLS.push(A); return A;
 }
+function podium(x, z){ const g = new THREE.Group(); g.position.set(x, 0, z);
+  const b = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.45, 1.0, 24), wallMat); b.position.y = 0.5; g.add(b);
+  const r = new THREE.Mesh(new THREE.TorusGeometry(1.32, 0.05, 6, 40), neonMat(0xff4fb8)); r.rotation.x = Math.PI/2; r.position.y = 1.0; g.add(r, at(glow(0xff4fb8, 4, 0.35), 0, 1.2, 0)); scene.add(g);
+  WALLS.push({x0:x-1.3, x1:x+1.3, z0:z-1.3, z1:z+1.3, solid:true}); }
 function sign(text, color, x, y, z, w){
   const c = document.createElement('canvas'); c.width = 1024; c.height = 220; const g = c.getContext('2d'); const col = '#'+color.toString(16).padStart(6,'0');
   g.font = '900 150px Cinzel, Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -72,6 +80,13 @@ function buildWorld(M){
   wallSeg(-30,-290,-18,-290,0x41e4ff); wallSeg(-6,-290,6,-290,0x41e4ff); wallSeg(18,-290,30,-290,0x41e4ff);
   wallSeg(-30,STAGE_Z,-GATE_X,STAGE_Z,0xff3b4a); wallSeg(GATE_X,STAGE_Z,30,STAGE_Z,0xff3b4a);
   gateA = {x0:-GATE_X, x1:GATE_X, z0:STAGE_Z-0.6, z1:STAGE_Z+0.6, solid:true}; WALLS.push(gateA);
+  // v0.8 HALLWAYS + TERRAIN (Brent: "no hallways or use of terrain"): corridors between rooms, side lounges, an island bar, backstage lanes
+  wallSeg(-6.5,1,-6.5,14,0xff4fb8); wallSeg(6.5,1,6.5,14,0xff4fb8);                                  // the entrance hallway into the dance floor
+  for(const x of [-17,17]){ wallSeg(x,-18,x,-46,0x41e4ff,1.1); wallSeg(x,-62,x,-90,0x41e4ff,1.1); }   // low walls: lounges down both sides of the dance floor
+  wallSeg(17,-116,17,-136,0xffb340); wallSeg(17,-148,17,-172,0xffb340);                               // a side bar behind a wall, two ways in
+  wallSeg(-6,-201,-6,-216,0xb070ff); wallSeg(6,-201,6,-216,0xb070ff);                                 // the VIP hallway
+  wallSeg(-10,-298,-10,-340,0x41e4ff); wallSeg(10,-312,10,-362,0x41e4ff);                             // backstage: three lanes, staggered openings
+  for(const [x,z] of [[-9,-40],[9,-40],[-9,-72],[9,-72],[0,-56]]) podium(x, z);                     // go-go podiums on the dance floor
   for(let i=0;i<6;i++){ const b = new THREE.Mesh(new THREE.BoxGeometry(GATE_X*2,0.07,0.07), neonMat(0xff3b3b)); b.position.set(0,0.35+i*0.5,STAGE_Z); scene.add(b); gateBeams.push(b); }
   gateGlow = at(glow(0xff3b3b, 14, 0.45), 0, 1.5, STAGE_Z); scene.add(gateGlow);
   sign('CLUB PAC', 0x41e4ff, 0, 5.6, 48.5, 24); sign('DANCE FLOOR', 0xff4fb8, 0, 5.4, 0.6, 18); sign('THE BAR', 0xffb340, 0, 5.4, -109.4, 15);
@@ -116,21 +131,25 @@ function placeAll(){
   // entrance: a velvet-rope queue, coat check (a bar segment), tables
   for(let x=-20;x<=20;x+=5) if(Math.abs(x)>5) P('post', x, 22);
   P('bar', -24, 36, Math.PI); P('bar', -24, 30, Math.PI);
-  for(const [x,z] of [[20,38],[24,30],[16,28],[-14,10],[14,8]]) P('table', x, z);
+  const T = (x, z) => { P('table', x, z); for(const [dx,dz] of [[1.2,0],[-1.2,0],[0,1.2]]) P('stool', x+dx, z+dz); };   // a table with its stools
+  for(const [x,z] of [[20,38],[24,30],[16,28],[-14,10],[14,8],[-20,40],[-24,31]]) T(x, z);
   // dance floor: DJ booth up top, speaker stacks, trusses at the corners
   P('dj', 0, -100); for(const x of [-9,9]) P('speaker', x, -100); for(const [x,z] of [[-27,-25],[27,-25],[-27,-65],[27,-65]]) P('speaker', x, z);
   for(const [x,z] of [[-28,-4],[28,-4],[-28,-106],[28,-106]]) P('truss', x, z);
+  for(const [x,z] of [[-23,-24],[-23,-36],[-23,-70],[-23,-82],[23,-26],[23,-40],[23,-68],[23,-84]]) T(x, z);   // lounge tables
   // bar: long counter on the left wall, short one on the right, stools, high tables
   for(let z=-124; z>=-184; z-=6) P('bar', -26.5, z, Math.PI);
   for(let z=-140; z>=-164; z-=6) P('bar', 26.5, z);
   for(let z=-122; z>=-186; z-=4) P('stool', -22.6, z);
-  for(const [x,z] of [[-8,-122],[6,-130],[-4,-150],[10,-160],[-10,-176],[4,-188],[16,-124],[16,-182]]) P('table', x, z);
+  for(const [x,z] of [[-8,-124],[-10,-176],[4,-188],[-11,-140],[10,-182]]) T(x, z);
+  for(const z of [-149,-155]){ P('bar', -2.6, z); P('bar', 2.6, z, Math.PI); }                     // the island bar (a bartender works inside it)
+  for(const z of [-126,-160,-168]) T(23, z);
   // VIP: booths on both walls facing in, a centre island, rope lines
   for(const z of [-215,-235,-255,-275]){ P('booth', -26, z, Math.PI/2); P('booth', 26, z, -Math.PI/2); }
   P('booth', 0, -238, 0); P('booth', 0, -252, Math.PI);
   for(const z of [-208,-282]) for(let x=-12;x<=12;x+=4) P('post', x, z);
   // backstage: road-case clusters, trusses
-  for(const [x,z] of [[-20,-300],[-17,-302],[-22,-318],[16,-306],[20,-322],[22,-340],[-6,-330],[-9,-332],[8,-352],[-18,-356],[14,-360],[0,-312]]) P('case', x, z, (x*13+z)%3*0.4);
+  for(const [x,z] of [[-20,-300],[-17,-302],[-22,-318],[16,-306],[20,-322],[22,-340],[-5,-330],[-3,-334],[6,-352],[-18,-356],[16,-360],[0,-306]]) P('case', x, z, (x*13+z)%3*0.4);
   for(const [x,z] of [[-28,-294],[28,-294],[-28,-366],[28,-366]]) P('truss', x, z);
   // main stage: riser across the back, trusses, speaker walls
   for(const x of [-20,-10,0,10,20]) P('stage', x, -444.5);
@@ -235,9 +254,22 @@ function buildPickups(){
   coinMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.07,20), new THREE.MeshStandardMaterial({color:0xffc830, metalness:0.9, roughness:0.25, emissive:0x3a2800}));
 }
 function addPick(kind, x, z){ const o = kind==='fruit' ? fruitMesh.clone() : coinMesh.clone(); if(kind==='coin'){ o.rotation.x = Math.PI/2; o.add(at(glow(0xffd040,1.4,0.5),0,0,0)); } const g = new THREE.Group(); g.add(o); g.position.set(x, 0.6, z); scene.add(g); PICKS.push({kind, x, z, g, t:Math.random()*6}); }
-function seedPickups(ri){ const R = ROOMS[ri]; for(let i=0;i<2;i++){ for(let tr=0;tr<20;tr++){ const x = rnd(-24,24), z = rnd(R.z0+6, R.z1-6); if(!blocked(x,z,1)){ addPick('fruit', x, z); break; } } }
+function seedPickups(ri){ const R = ROOMS[ri]; for(let i=0;i<3;i++){ for(let tr=0;tr<20;tr++){ const x = rnd(-24,24), z = rnd(R.z0+6, R.z1-6); if(!blocked(x,z,1)){ addPick('fruit', x, z); break; } } }
   for(let i=0;i<6;i++){ for(let tr=0;tr<20;tr++){ const x = rnd(-26,26), z = rnd(R.z0+4, R.z1-4); if(!blocked(x,z,0.8)){ addPick('coin', x, z); break; } } } }
-function clearPickups(){ PICKS.forEach(p=>scene.remove(p.g)); PICKS.length = 0; }
+function clearPickups(){ PICKS.forEach(p=>scene.remove(p.g)); PICKS.length = 0; clearBuffs(); }
+
+// ---------------- POWER-UPS: glowing capsules that turn up now and then (Brent: more random buffs) ----------------
+const BUFF_TYPES = {dmg:{n:'RAGE', ic:'😡', col:0xff4a2a, d:'+25% damage'}, speed:{n:'SPEED', ic:'⚡', col:0x6cff3a, d:'+30% speed'}, magnet:{n:'MAGNET', ic:'🧲', col:0x22d6a0, d:'pull everything in'},
+  cd:{n:'RAPID FIRE', ic:'⏩', col:0xffb020, d:'abilities recharge 40% faster'}, shield:{n:'SHIELD', ic:'🛡️', col:0xa45cff, d:'a bubble soaks the next hits'}, xp:{n:'DOUBLE XP', ic:'✖️', col:0x5ab4ff, d:'twice the XP'}};
+const BUFFS = [], buffTex = {};
+function iconTex(ic){ if(!buffTex[ic]){ const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'); g.font = '84px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ic, 64, 70); buffTex[ic] = new THREE.CanvasTexture(c); } return buffTex[ic]; }
+function spawnBuff(x, z, type){ const T = BUFF_TYPES[type], g = new THREE.Group(); g.position.set(x, 1.1, z);
+  const cap = new THREE.Group(), m = neonMat(T.col), b = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.7, 18), m), t1 = new THREE.Mesh(new THREE.SphereGeometry(0.34, 18, 10), m), t2 = t1.clone();
+  t1.position.y = 0.35; t2.position.y = -0.35; cap.add(b, t1, t2); cap.rotation.z = 0.5; g.add(cap, glow(T.col, 4.5, 0.75));
+  const icon = new THREE.Sprite(new THREE.SpriteMaterial({map:iconTex(T.ic), transparent:true, depthTest:false})); icon.scale.set(1.3, 1.3, 1); icon.position.y = 1.4; icon.renderOrder = 9; g.add(icon);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.2, 36), new THREE.MeshBasicMaterial({color:new THREE.Color(T.col).multiplyScalar(1.4), transparent:true, opacity:0.6, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide})); ring.rotation.x = -Math.PI/2; ring.position.y = -1.0; g.add(ring);
+  scene.add(g); BUFFS.push({g, cap, ring, x, z, type, t:0}); }
+function clearBuffs(){ BUFFS.forEach(b=>scene.remove(b.g)); BUFFS.length = 0; }
 
 // ---------------- HAZARDS: Mario-style fire bars guarding a stash (a small challenge with a prize) ----------------
 const FIREBARS = [];

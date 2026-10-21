@@ -6,9 +6,11 @@
 (function(){
 const LIGHT_DIR = new THREE.Vector3(-0.4, 1, 0.45).normalize();
 const hatchU = {uTime:{value:0}, uLight:{value:LIGHT_DIR}};
-const HATCH_VS = `varying vec3 vN; varying vec3 vW; varying vec3 vC;
+const HATCH_VS = `varying vec3 vN; varying vec3 vW; varying vec3 vC; uniform float uWave; uniform float uTime;
   void main(){ vec4 p = vec4(position,1.0); vec3 n = normal;
     #ifdef USE_INSTANCING
+      if(uWave > 0.0){ vec3 ip = instanceMatrix[3].xyz; float w = clamp(1.0 - p.y/0.7, 0.0, 1.0);   // ghost hem ripples, each ghost on its own phase
+        p.x += sin(uTime*6.0 + p.z*9.0 + ip.x*1.7)*0.07*w*uWave; p.z += cos(uTime*5.0 + p.x*9.0 + ip.z*1.3)*0.07*w*uWave; p.y += sin(uTime*7.0 + atan(p.z,p.x)*6.0 + ip.x)*0.05*w*uWave; }
       p = instanceMatrix * p; n = mat3(instanceMatrix) * n;
     #endif
     vC = vec3(1.0);
@@ -19,7 +21,7 @@ const HATCH_VS = `varying vec3 vN; varying vec3 vW; varying vec3 vC;
       vC *= instanceColor;
     #endif
     vec4 w = modelMatrix * p; vW = w.xyz; vN = normalize(mat3(modelMatrix) * n); gl_Position = projectionMatrix * viewMatrix * w; }`;
-const HATCH_FS = `uniform vec3 uTint; uniform vec3 uInk; uniform vec3 uLight; uniform float uTime; uniform float uGloss; uniform vec3 uEmit; uniform float uDensity; uniform float uFlash; uniform vec3 uRim;
+const HATCH_FS = `uniform vec3 uTint; uniform vec3 uInk; uniform vec3 uLight; uniform float uTime; uniform float uGloss; uniform vec3 uEmit; uniform float uDensity; uniform float uFlash; uniform vec3 uRim; uniform float uGlow;
   varying vec3 vN; varying vec3 vW; varying vec3 vC;
   float h(float n){ return fract(sin(n)*43758.5453); }
   float strokes(vec2 p, float ang, float gap, float seed){ vec2 d = vec2(cos(ang), sin(ang)), q = vec2(-d.y, d.x);
@@ -37,20 +39,22 @@ const HATCH_FS = `uniform vec3 uTint; uniform vec3 uInk; uniform vec3 uLight; un
     vec3 base = uTint*vC;
     vec3 col = mix(base*(0.78 + 0.42*tone), uInk, ink*0.78);
     vec3 H = normalize(normalize(uLight) + V);
-    col += vec3(1.0)*pow(clamp(dot(n,H),0.0,1.0), 36.0)*uGloss*1.2 + rim*uGloss*0.35 + uEmit*(0.6+0.4*rim) + vec3(uFlash) + uRim*rim*0.9;
+    col += vec3(1.0)*pow(clamp(dot(n,H),0.0,1.0), 36.0)*uGloss*1.2 + rim*uGloss*0.35 + uEmit*(0.6+0.4*rim) + vec3(uFlash) + uRim*rim*0.9 + vC*uTint*rim*uGlow*1.6;
     gl_FragColor = vec4(col, 1.0); }`;
 function hatchMat(tint, o={}){ const m = new THREE.ShaderMaterial({uniforms:Object.assign({uTint:{value:new THREE.Color(tint)}, uInk:{value:new THREE.Color(o.ink||0x15110d)},
-  uGloss:{value:o.gloss||0}, uEmit:{value:new THREE.Color(o.emit||0)}, uDensity:{value:o.density||1}, uFlash:{value:0}, uRim:{value:new THREE.Color(o.rim||0x000000)}}, hatchU),
+  uGloss:{value:o.gloss||0}, uEmit:{value:new THREE.Color(o.emit||0)}, uDensity:{value:o.density||1}, uFlash:{value:0}, uRim:{value:new THREE.Color(o.rim||0x000000)}, uWave:{value:o.wave||0}, uGlow:{value:o.glow||0}}, hatchU),
   vertexShader:HATCH_VS, fragmentShader:HATCH_FS}); if(o.vertexColors) m.vertexColors = true; return m; }
-const OUT_VS = `uniform float uTime; uniform float uW; float h(float n){ return fract(sin(n)*43758.5453); }
+const OUT_VS = `uniform float uTime; uniform float uW; uniform float uWave; float h(float n){ return fract(sin(n)*43758.5453); }
   void main(){ vec3 p = position; vec3 n = normal;
     #ifdef USE_INSTANCING
+      if(uWave > 0.0){ vec3 ip = instanceMatrix[3].xyz; float w = clamp(1.0 - p.y/0.7, 0.0, 1.0);
+        p.x += sin(uTime*6.0 + p.z*9.0 + ip.x*1.7)*0.07*w*uWave; p.z += cos(uTime*5.0 + p.x*9.0 + ip.z*1.3)*0.07*w*uWave; p.y += sin(uTime*7.0 + atan(p.z,p.x)*6.0 + ip.x)*0.05*w*uWave; }
       p = (instanceMatrix * vec4(p,1.0)).xyz; n = mat3(instanceMatrix) * n;
     #endif
     float s = floor(uTime*8.0); float j = 0.75 + 0.5*h(dot(position, vec3(12.9,78.2,37.7)) + s);
     gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(p + normalize(n)*uW*j, 1.0); }`;
 const outMats = {};
-function outlineMat(w=0.03){ const k = w.toFixed(3); if(!outMats[k]) outMats[k] = new THREE.ShaderMaterial({uniforms:{uTime:hatchU.uTime, uW:{value:w}}, vertexShader:OUT_VS,
+function outlineMat(w=0.03, wave=0){ const k = w.toFixed(3)+'/'+wave; if(!outMats[k]) outMats[k] = new THREE.ShaderMaterial({uniforms:{uTime:hatchU.uTime, uW:{value:w}, uWave:{value:wave}}, vertexShader:OUT_VS,
   fragmentShader:`void main(){ gl_FragColor = vec4(0.045,0.038,0.03,1.0); }`, side:THREE.BackSide}); return outMats[k]; }
 function inked(geo, mat, w=0.03){ const g = new THREE.Group(); g.add(new THREE.Mesh(geo, outlineMat(w)), new THREE.Mesh(geo, mat)); return g; }
 
@@ -78,7 +82,7 @@ function mergeColored(root, keep){
   G.computeBoundingSphere(); return G;
 }
 // --- load every model file once
-const FILES = ['pac','ballboy','crowd','ghost','creatures','props'];
+const FILES = ['pac','ballboy','crowd','ghost','creatures','props','story'];
 let cache = null;
 function loadAll(base='assets/'){
   if(cache) return cache; const L = new THREE.GLTFLoader(); const M = {};
@@ -95,9 +99,11 @@ function character(M, key, opt={}){
   const p = key==='pac' ? 'pac.' : 'bb.'; const B = {};
   for(const n of ['hips','body','head','jawU','jawL','armL','armR','handL','handR','legL','legR','footL','footR']){ const o = node(body, p+n); if(o){ B[n] = o; o.userData.rest = {p:o.position.clone(), r:o.rotation.clone()}; } }
   if(!B.head) B.head = B.jawU || B.body;
-  const rig = {root, bones:B, mats, kind:key==='pac'?'pac':'bb', height:key==='pac'?1.85:2.0, jawU:B.jawU, jawL:B.jawL,
-    anchors:{headpiece:B.head, chest:B.body, gloveL:B.handL, gloveR:B.handR, weaponR:B.handR, bootL:B.footL, bootR:B.footR},
-    p: key==='pac' ? {legLen:0.55, armLen:0.5, headR:0.62, bodyY:B.body?B.body.position.y:0.59} : {legLen:0.82, armLen:0.62, headR:0.3, bodyY:B.body?B.body.position.y:0.42}};
+  // story-only pieces (Pac's leather jacket + shades) start hidden; the intro switches them on
+  const extras = {}; for(const n of ['leatherB','leatherL','leatherR','shades']){ const o = node(body, p+n); if(o){ o.visible = !!opt.story; extras[n] = o; } }
+  const rig = {root, bones:B, mats, extras, kind:key==='pac'?'pac':'bb', height:key==='pac'?2.35:2.0, jawU:B.jawU, jawL:B.jawL,
+    anchors:{headpiece:key==='pac' ? (B.jawU||B.head) : B.head, chest:B.body, gloveL:B.handL, gloveR:B.handR, weaponR:B.handR, bootL:B.footL, bootR:B.footR},
+    p: key==='pac' ? {legLen:1.0, armLen:0.7, headR:0.27, bodyY:B.body?B.body.position.y:0.38} : {legLen:0.82, armLen:0.62, headR:0.3, bodyY:B.body?B.body.position.y:0.42}};
   return rig;
 }
 // --- pieces for crowds/props: returns a fresh inked clone of a named node
@@ -110,7 +116,8 @@ function showcase(M){
   const bb = character(M, 'ballboy'); if(bb) add('ballboy', 'BALL BOY', bb.root);
   for(const [n,l] of [['crowd.raver','RAVER'],['crowd.dancer','DANCER'],['crowd.bouncer','BOUNCER'],['crowd.bro','BRO']]){ const o = piece(M,'crowd',n); add(n.split('.')[1], l, o); }
   const g = piece(M,'ghost','ghost.body'); if(g){ const e = piece(M,'ghost','ghost.eyes', {outline:0}); if(e) g.add(e); g.traverse(o=>{ if(o.isMesh && o.material.uniforms && o.material.userData.base && o.material.userData.base.r>0.9 && o.material.userData.base.g>0.9 && o.material.userData.base.b>0.9 && o.parent && o.parent.name!=='ghosteyes') o.material.uniforms.uTint.value.set(0xc0453f); }); add('ghost','GHOST', g); }
-  for(const [n,l] of [['cre.cindercub','CINDERCUB'],['cre.boulderbud','BOULDERBUD'],['cre.gloomoth','GLOOMOTH']]) add(n.split('.')[1], l, piece(M,'creatures',n));
+  for(const [n,l] of [['cre.cindercub','CINDERCUB'],['cre.splashpup','SPLASHPUP'],['cre.voltmoth','VOLTMOTH'],['cre.bramblebud','BRAMBLEBUD']]) add(n.split('.')[1], l, piece(M,'creatures',n));
+  for(const [n,l] of [['story.emperor','THE EMPEROR'],['story.baron','BARON KABOOM'],['story.chrome','CHROME GUY'],['story.qwing','Q-WING'],['story.moon','QUARTER MOON'],['story.arcade','ARCADE PLANET']]) add(n.split('.')[1], l, piece(M,'story',n));
   return out;
 }
 window.LOOK = {hatchU, hatchMat, outlineMat, inked, inkify, mergeColored, loadAll, character, piece, rawPiece, node, showcase, tick:t=>{ hatchU.uTime.value = t; }, LIGHT_DIR};

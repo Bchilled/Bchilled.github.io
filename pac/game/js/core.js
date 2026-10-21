@@ -1,4 +1,4 @@
-// PAC v0.7 — core.js: helpers, save, settings, renderer + bloom, camera, audio engine (techno + SFX), voice lines.
+// PAC v0.8 — core.js: helpers, save, settings, renderer + bloom, camera, audio engine (techno + SFX), voice lines.
 "use strict";
 const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => v<a?a:v>b?b:v, rnd = (a,b) => a+Math.random()*(b-a), pick = a => a[Math.floor(Math.random()*a.length)], hyp = Math.hypot;
@@ -15,6 +15,7 @@ const DEF_SAVE = () => ({unlocked:['pac'], beaten:{}, char:'pac', seenIntro:fals
 function merge(a,b){ for(const k in b){ const v = b[k]; if(v && typeof v==='object' && !Array.isArray(v) && a[k] && typeof a[k]==='object' && !Array.isArray(a[k])) merge(a[k], v); else a[k] = v; } return a; }
 let SAVE = DEF_SAVE(); try{ const s = JSON.parse(localStorage.getItem(SAVE_KEY)); if(s) SAVE = merge(DEF_SAVE(), s); }catch(e){}
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(SAVE)); }catch(e){} }
+{ const ren = {zap:'tilt', bramble:'lawn', buddy:'exwife'}; SAVE.pac.bought = [...new Set(SAVE.pac.bought.map(k=>ren[k]||k))]; }   // v0.7 → v0.8 ability names
 const DIFF = {easy:{hp:0.7, dmg:0.55, spawn:0.75, score:0.75, label:'Easy'}, normal:{hp:1, dmg:1, spawn:1, score:1, label:'Normal'}, hard:{hp:1.45, dmg:1.4, spawn:1.3, score:1.5, label:'Hard'}};
 const diff = () => DIFF[SAVE.set.diff] || DIFF.normal;
 const scoreMult = () => diff().score * (0.5 + 0.5*SAVE.set.speed);
@@ -34,6 +35,11 @@ const composer = new THREE.EffectComposer(renderer, new THREE.WebGLRenderTarget(
 const renderPass = new THREE.RenderPass(scene, camera); composer.addPass(renderPass);
 const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(512, 512), 0.8, 0.5, 0.82); composer.addPass(bloom);
 const afterimage = new THREE.AfterimagePass(0.0); afterimage.enabled = false; composer.addPass(afterimage);   // HYPER motion blur
+// blue-orb "inverted" look (v0.8): a cheap shader pass instead of a CSS filter on the canvas (that filter made phones crawl)
+const gradePass = new THREE.ShaderPass({uniforms:{tDiffuse:{value:null}, uAmt:{value:0}},
+  vertexShader:'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+  fragmentShader:'uniform sampler2D tDiffuse; uniform float uAmt; varying vec2 vUv; void main(){ vec4 c = texture2D(tDiffuse, vUv); float l = dot(c.rgb, vec3(0.299,0.587,0.114)); vec3 inv = clamp(c.rgb + (1.0 - 2.0*l), 0.0, 1.0); inv = mix(inv, inv*vec3(0.7,0.9,1.3), 0.5); gl_FragColor = vec4(mix(c.rgb, inv, uAmt), c.a); }'});
+gradePass.enabled = false; composer.addPass(gradePass);
 let SW = 1, SH = 1;
 function resize(){ const r = $('screen').getBoundingClientRect(); SW = Math.max(1, r.width); SH = Math.max(1, r.height);
   renderer.setSize(SW, SH, false); composer.setSize(SW, SH); bloom.resolution.set(SW*(isMobile?0.4:0.5), SH*(isMobile?0.4:0.5));
@@ -100,9 +106,26 @@ const SFX = {
   zap:()=>{ noise(0.12, 0.08, null, {type:'highpass', freq:3000}); tone(1400, 0.08, 'sawtooth', 0.03, 0.4); },
   coin:()=>{ tone(988, 0.06, 'square', 0.04); tone(1318, 0.2, 'square', 0.04, 0, null, 0.06); },
   whoosh:()=>noise(0.3, 0.1, null, {type:'bandpass', freq:600, sweep:3000, q:1.5}),
-  whistle:(when=0)=>{ if(!AC||SAVE.set.muted) return; const notes = [[880,0.5],[1046,0.25],[880,0.25],[784,0.6],[0,0.3],[880,0.5],[1046,0.25],[1318,0.8]]; let tt = when;
+  // an eerie whistled motif (our own tune) — falling, then hanging on a high note
+  whistle:(when=0)=>{ if(!AC||SAVE.set.muted) return; const notes = [[988,0.6],[932,0.3],[740,0.7],[0,0.25],[831,0.35],[784,0.35],[622,0.9],[0,0.3],[1245,1.1]]; let tt = when;
     for(const [f,d] of notes){ if(f){ const t = AC.currentTime+tt, o = AC.createOscillator(), g = AC.createGain(), v = AC.createOscillator(), vg = AC.createGain(); o.type = 'sine'; o.frequency.value = f; v.frequency.value = 6; vg.gain.value = 9; v.connect(vg); vg.connect(o.frequency);
-      env(g, t, 0.05, 0.07, d); o.connect(g); g.connect(sfxGain); const w = AC.createGain(); w.gain.value = 0.8; g.connect(w); w.connect(verb); o.start(t); v.start(t); o.stop(t+d+0.1); v.stop(t+d+0.1); } tt += d; } }
+      env(g, t, 0.05, 0.07, d); o.connect(g); g.connect(sfxGain); const w = AC.createGain(); w.gain.value = 0.8; g.connect(w); w.connect(verb); o.start(t); v.start(t); o.stop(t+d+0.1); v.stop(t+d+0.1); } tt += d; } },
+  // every element (the game's 7 colours) has its own cast sound
+  el:(e)=>{ if(e==='fire'){ noise(0.45, 0.16, null, {freq:900, sweep:200, wet:0.3}); tone(110, 0.35, 'sawtooth', 0.06, 0.5); }
+    else if(e==='toxic'){ for(let i=0;i<5;i++) tone(300+Math.random()*500, 0.07, 'sine', 0.05, 1.8, null, i*0.05); noise(0.3, 0.06, null, {type:'bandpass', freq:700, q:3}); }
+    else if(e==='frost'){ [1760,2349,2637,3520].forEach((f,i)=>tone(f, 0.25, 'triangle', 0.03, 1, null, i*0.04, 0.6)); noise(0.35, 0.07, null, {type:'highpass', freq:5000}); }
+    else if(e==='void'){ tone(600, 0.6, 'sine', 0.08, 0.25, null, 0, 0.8); tone(906, 0.5, 'sine', 0.04, 0.3, null, 0.05, 0.8); }
+    else if(e==='shock'){ SFX.zap(); tone(2200, 0.06, 'square', 0.03, 0.3, null, 0.06); noise(0.15, 0.1, null, {type:'highpass', freq:2500}); }
+    else if(e==='nature'){ noise(0.4, 0.12, null, {type:'bandpass', freq:1200, q:2, sweep:500}); tone(196, 0.3, 'triangle', 0.05, 1.5); }
+    else if(e==='shadow'){ tone(70, 0.6, 'sawtooth', 0.08, 0.6, null, 0, 0.5); noise(0.5, 0.1, null, {freq:600, sweep:120}); } },
+  // creature calls (each creature yells its own way when it pops out)
+  cry:(t)=>{ if(t==='cindercub'){ tone(160, 0.35, 'sawtooth', 0.09, 0.55); noise(0.4, 0.1, null, {freq:700, sweep:150}); }
+    else if(t==='splashpup'){ [620, 820, 620].forEach((f,i)=>tone(f, 0.09, 'square', 0.05, 1.3, null, i*0.11)); noise(0.3, 0.08, null, {type:'bandpass', freq:2400, q:1, when:0.3}); }
+    else if(t==='voltmoth'){ const o = 0; for(let i=0;i<10;i++) tone(140 + (i%2)*20, 0.05, 'sawtooth', 0.05, 1, null, i*0.04); tone(1800, 0.2, 'square', 0.03, 0.4, null, 0.35); }
+    else if(t==='bramblebud'){ noise(0.5, 0.12, null, {type:'bandpass', freq:400, q:4, sweep:900}); tone(98, 0.4, 'triangle', 0.08, 1.4); } },
+  // level-up: a jackpot — coin shower and a rising arpeggio
+  jackpot:()=>{ for(let i=0;i<14;i++) tone(1200 + Math.random()*900, 0.06, 'square', 0.03, 1, null, i*0.045); [523,659,784,1046,1318,1568].forEach((f,i)=>tone(f, 0.22, 'square', 0.05, 0, null, 0.1+i*0.07, 0.4)); noise(0.6, 0.06, null, {type:'highpass', freq:6000, when:0.1}); },
+  pick:()=>{ tone(196, 0.5, 'sawtooth', 0.08, 2, null, 0, 0.3); [784,988,1175,1568].forEach((f,i)=>tone(f, 0.3, 'triangle', 0.05, 0, null, 0.05+i*0.05, 0.6)); noise(0.4, 0.1, null, {freq:3000, sweep:300, wet:0.5}); }
 };
 // --- techno sequencer: 16-step patterns; a track per scene (menu, club, boss) ---
 const TRACKS = {
@@ -142,7 +165,7 @@ const LINES = {
     civ:["Oops. Wrong snack.","Sorry, buddy. You looked crunchy.","That one's coming out of my energy bill."], smash:["Excuse me. Coming through. Rudely.","Furniture is just food that gave up."]},
   bb:{start:["Ball Boy, reporting for violence.","Six balls on the belt and zero chill."], streak:["Catch 'em all. The dots, I mean."], ghostEat:["Blue ball power!"], level:["My creatures leveled. I just watched."],
     hurt:["Ow! Not the face!"], near:["Mom said I could stay out till level twenty-five!"], bossIn:["Time for a gym battle."], bossKill:["Badge acquired."], death:["My team... carry me..."], idle:["I choose... you. Probably."], civ:["Wasn't me. It was the moth."], smash:["Sorry! Union rates on furniture."]},
-  boss:{intro:["You wanna get to the stage? Beat my team first!","Ball Boy, front and centre! Let's battle!"], cub:["Go, Cindercub! Roast him!"], bud:["Boulderbud! Shove him back!"], moth:["Gloomoth! Nap time!"], noDie:["You can't beat me till you've seen my whole team!"], die:["My creatures... they're just... resting..."]}};
+  boss:{intro:["You wanna get to the stage? Beat my team first!","Ball Boy, front and centre! Let's battle!"], cub:["Go, Cindercub! Roast him!","Cindercub — light him up!"], pup:["Splashpup! Wash him out!","Splashpup, hose this guy!"], moth:["Voltmoth! Zap him stiff!","Voltmoth — lights out!"], bud:["Bramblebud! Tie him down!","Bramblebud — thorns!"], noDie:["You can't beat me till you've seen my team!"], die:["My creatures... they're just... resting..."]}};
 let sayUntil = 0;
 function say(cat, key, force){ const pool2 = (LINES[cat]||{})[key]; if(!pool2 || !pool2.length) return; if(!force && performance.now() < sayUntil) return;
   const l = pick(pool2), el = $('say'); el.textContent = '"'+l+'"'; el.className = cat==='boss' ? 'boss' : ''; el.style.opacity = 1; sayUntil = performance.now()+4200;

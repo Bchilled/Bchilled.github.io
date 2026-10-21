@@ -1,4 +1,4 @@
-// PAC v0.7 — ui.js: input (keyboard, mouse, gamepad, phone overlay), HUD, edge markers, level-up jackpot,
+// PAC v0.8 — ui.js: input (keyboard, mouse, gamepad, phone overlay), HUD, edge markers, level-up jackpot,
 // menus (main, worlds, characters, endless, PvP, settings), the character sheet (pause + loadout), end-of-run tally.
 "use strict";
 // ================= INPUT =================
@@ -10,6 +10,7 @@ addEventListener('keydown', e=>{ const k = e.key.toLowerCase(); audio();
   if(k==='m'){ setMute(!SAVE.set.muted); return; }
   if(e.key==='Tab'){ e.preventDefault(); inspect = true; }
   if(k===' '){ e.preventDefault(); if(state==='play') useMove(player()); }
+  if(k==='e' && state==='play') useActive(player(), 2);      // the third active button
   keys[k] = true; });
 addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; if(e.key==='Tab') inspect = false; });
 cv.addEventListener('contextmenu', e=>e.preventDefault());
@@ -25,11 +26,12 @@ function moveInput(){
   if(gp && P0){ const ax = gp.axes[0]||0, az = gp.axes[1]||0; if(hyp(ax,az) > 0.2){ x = ax; z = az; }
     const rx = gp.axes[2]||0, rz = gp.axes[3]||0; if(hyp(rx,rz) > 0.3){ P0.ax = rx/hyp(rx,rz); P0.az = rz/hyp(rx,rz); P0.gpAim = true; } else P0.gpAim = false;
     const b = i => gp.buttons[i] && gp.buttons[i].pressed;
-    if(b(0) && !moveInput.a) useMove(P0); moveInput.a = b(0); if(b(7)||b(5)) useActive(P0,'off'); if(b(6)||b(4)) useActive(P0,'def'); if(b(9) && !moveInput.st) openPause(); moveInput.st = b(9); }
+    if(b(0) && !moveInput.a) useMove(P0); moveInput.a = b(0); if(b(7)||b(5)) useActive(P0,0); if(b(6)||b(4)) useActive(P0,1); if(b(1)||b(3)) useActive(P0,2); if(b(9) && !moveInput.st) openPause(); moveInput.st = b(9); }
   if(padVec){ x = padVec[0]; z = padVec[1]; }
   const l = hyp(x,z); return l > 0.08 ? [x/Math.max(1,l), z/Math.max(1,l)] : [0,0];
 }
-// phone: a floating stick under the left thumb; A / B / MOVE clustered under the right thumb. Everything sits over the game.
+// phone: a floating stick under the left thumb; A / B / C under the right thumb; a quick SWIPE on the right side fires the movement ability
+// in the direction you swipe (a tap there fires it the way you're moving). Everything sits over the game, see-through.
 (()=>{ const zone = $('tLeft'), base = $('stickBase'), knob = $('stickKnob'); let id = null, ox = 0, oy = 0; const R = 48;
   zone.addEventListener('pointerdown', e=>{ audio(); e.preventDefault(); id = e.pointerId; try{ zone.setPointerCapture(id); }catch(er){} const r = zone.getBoundingClientRect(); ox = e.clientX; oy = e.clientY;
     base.style.left = (ox - r.left)+'px'; base.style.top = (oy - r.top)+'px'; base.classList.add('on'); knob.style.transform = ''; padVec = [0,0]; });
@@ -38,8 +40,12 @@ function moveInput(){
   const end = e=>{ if(e.pointerId!==id) return; id = null; padVec = null; base.classList.remove('on'); }; zone.addEventListener('pointerup', end); zone.addEventListener('pointercancel', end);
   const hold = (el, fn)=>{ let tm = null; el.addEventListener('pointerdown', e=>{ audio(); e.preventDefault(); e.stopPropagation(); el.classList.add('on'); fn(); clearInterval(tm); tm = setInterval(fn, 100); });
     const up = ()=>{ el.classList.remove('on'); clearInterval(tm); }; el.addEventListener('pointerup', up); el.addEventListener('pointerleave', up); el.addEventListener('pointercancel', up); };
-  hold($('bA'), ()=>{ if(state==='play') useActive(player(),'off'); }); hold($('bB'), ()=>{ if(state==='play') useActive(player(),'def'); });
-  $('bM').addEventListener('pointerdown', e=>{ e.preventDefault(); e.stopPropagation(); audio(); if(state==='play') useMove(player()); });
+  hold($('bA'), ()=>{ if(state==='play') useActive(player(),0); }); hold($('bB'), ()=>{ if(state==='play') useActive(player(),1); }); hold($('bC'), ()=>{ if(state==='play') useActive(player(),2); });
+  const sw = $('tRight'); let sid = null, sx = 0, sy = 0, st = 0;
+  sw.addEventListener('pointerdown', e=>{ audio(); e.preventDefault(); sid = e.pointerId; sx = e.clientX; sy = e.clientY; st = performance.now(); });
+  const swEnd = e=>{ if(e.pointerId !== sid) return; sid = null; const dx = e.clientX-sx, dy = e.clientY-sy, d = hyp(dx,dy); if(state!=='play' || performance.now()-st > 600) return;
+    if(d > 26){ useMove(player(), [dx/d, dy/d]); $('swipeHint').classList.add('fire'); setTimeout(()=>$('swipeHint').classList.remove('fire'), 200); } else useMove(player()); };   // screen right = +x, screen down = +z
+  sw.addEventListener('pointerup', swEnd); sw.addEventListener('pointercancel', e=>{ if(e.pointerId===sid) sid = null; });
 })();
 function playerAim(P0){
   if(!isMobile && mouseAim && !P0.gpAim){ const dx = mouseAim.x-P0.x, dz = mouseAim.z-P0.z, d = hyp(dx,dz)||1; P0.ax = dx/d; P0.az = dz/d; P0.aimPx = mouseAim.x; P0.aimPz = mouseAim.z; return; }
@@ -50,17 +56,21 @@ function playerAim(P0){
 }
 
 // ================= HUD =================
+// slots: p0-p2 passives, a0-a2 actives, move
 function slotInfo(h, slot){ if(slot==='move'){ const M = MOVES[CHARS[h.char].move]; return h.moveOk ? {ic:M.ic, nm:M.name, cd:Math.max(0,h.moveCd), cdMax:M.cd} : null; }
-  const k = h.slots[slot]; if(!k) return null; const A = ABIL[k], rk = h.rank[k]||0; return {ic:A.ic, nm:A.name+(rk?' +'+rk:''), cd:Math.max(0,h.cd[k]||0), cdMax:cdOf(h,k)}; }
-const SLOT_DEF = [['passive','AUTO','Lv 2'],['off', isMobile?'A':'L·CLICK','Lv 4'],['def', isMobile?'B':'R·CLICK','Lv 3'],['move', isMobile?'MOVE':'SPACE','Lv 1']];
+  const k = (slot[0]==='a' ? h.act : h.pas)[+slot[1]]; if(!k) return null; const A = ABIL[k], rk = h.rank[k]||0; return {k, el:A.el, ic:A.ic, nm:A.name+(rk?' +'+rk:''), cd:Math.max(0,h.cd[k]||0), cdMax:cdOf(h,k)}; }
+const KEYLAB = isMobile ? ['A','B','C'] : ['L·CLICK','R·CLICK','E'];
+const SLOT_DEF = [['p0','AUTO','',1],['p1','AUTO','',1],['p2','AUTO','',1],['a0',KEYLAB[0],''],['a1',KEYLAB[1],''],['a2',KEYLAB[2],''],['move', isMobile?'SWIPE':'SPACE','']];
+const hexc = c => '#'+c.toString(16).padStart(6,'0');
 function buildSkillHud(){ const P0 = player(); if(!P0) return;
-  $('skills').innerHTML = SLOT_DEF.map(([s,key,lab])=>{ const I = slotInfo(P0, s); return `<div class="slot${I?'':' empty'}" id="sl_${s}"><span class="key">${key}</span><div class="ic">${I?I.ic:'🔒'}</div><div class="nm">${I?I.nm:lab}</div><div class="cdv"></div><div class="cdn"></div></div>`; }).join('');
-  $('microRow').innerHTML = Object.keys(P0.micro).map(k=>`<div class="micro" title="${ABIL[k].name}">${ABIL[k].ic}<b>${P0.micro[k]}</b></div>`).join('');
-  const a = slotInfo(P0,'off'), b = slotInfo(P0,'def'), m = slotInfo(P0,'move');
-  $('bAi').textContent = a ? a.ic : '🔒'; $('bBi').textContent = b ? b.ic : '🔒'; $('bMi').textContent = m ? m.ic : '🔒';
-  $('bA').classList.toggle('locked', !a); $('bB').classList.toggle('locked', !b); $('bM').classList.toggle('locked', !m);
+  $('skills').innerHTML = SLOT_DEF.map(([s,key,lab,small],i)=>{ const I = slotInfo(P0, s); const col = I && I.el ? hexc(EL[I.el].col) : '#6d5734';
+    return (i===3?'<div class="sdiv"></div>':'')+`<div class="slot${small?' small':''}${I?'':' empty'}" id="sl_${s}" style="--el:${col}"><span class="key">${key}</span><div class="ic">${I?I.ic:'·'}</div><div class="nm">${I?I.nm:lab}</div><div class="cdv"></div><div class="cdn"></div></div>`; }).join('');
+  $('microRow').innerHTML = Object.keys(P0.perk).map(k=>`<div class="micro" title="${PERKS[k].n}">${PERKS[k].ic}</div>`).join('');
+  [['bA','bAi','a0'],['bB','bBi','a1'],['bC','bCi','a2']].forEach(([b,ic,s])=>{ const I = slotInfo(P0, s); $(ic).textContent = I ? I.ic : '🔒'; $(b).classList.toggle('locked', !I); $(b).style.setProperty('--el', I ? hexc(EL[I.el].col) : '#888'); });
+  const m = slotInfo(P0,'move'); $('swipeHint').classList.toggle('locked', !m); $('swI').textContent = m ? m.ic : '🔒';
+  $('pasRow').innerHTML = P0.pas.map(k=>k ? `<span style="--el:${hexc(EL[ABIL[k].el].col)}">${ABIL[k].ic}</span>` : '<span class="e">·</span>').join('');
 }
-function flashSlot(s){ const el = $('sl_'+s); if(el){ el.classList.add('fire'); setTimeout(()=>el.classList.remove('fire'), 160); } const pb = {off:'bA', def:'bB', move:'bM'}[s]; if(pb){ $(pb).classList.add('fire'); setTimeout(()=>$(pb).classList.remove('fire'), 160); } }
+function flashSlot(s){ const el = $('sl_'+s); if(el){ el.classList.add('fire'); setTimeout(()=>el.classList.remove('fire'), 160); } const pb = {a0:'bA', a1:'bB', a2:'bC', move:'swipeHint'}[s]; if(pb){ $(pb).classList.add('fire'); setTimeout(()=>$(pb).classList.remove('fire'), 160); } }
 function setCd(el, I){ if(!el) return; const f = I && I.cdMax ? clamp(I.cd/I.cdMax,0,1) : 0; el.querySelector('.cdv').style.setProperty('--cd', (f*100).toFixed(0)+'%'); const n = el.querySelector('.cdn'); if(n) n.textContent = I && I.cdMax >= 2 && I.cd > 0.05 ? (I.cd < 1 ? I.cd.toFixed(1) : Math.ceil(I.cd)) : ''; }
 const MARKS = []; function mark(i){ if(!MARKS[i]){ const d = document.createElement('div'); d.className = 'mark'; d.innerHTML = '<i></i><span></span>'; $('marks').appendChild(d); MARKS[i] = d; } return MARKS[i]; }
 function updateHud(){
@@ -72,7 +82,7 @@ function updateHud(){
   $('xpBar').firstChild.style.width = (clamp(xf,0,1)*100)+'%'; $('lvN').textContent = 'LV '+P0.level;
   $('mHp').style.width = hp*100+'%'; $('mEn').style.width = en*100+'%'; $('mXp').style.width = clamp(xf,0,1)*100+'%'; $('mLv').textContent = 'LV '+P0.level;
   for(const [s] of SLOT_DEF) setCd($('sl_'+s), slotInfo(P0, s));
-  setCd($('bA'), slotInfo(P0,'off')); setCd($('bB'), slotInfo(P0,'def')); setCd($('bM'), slotInfo(P0,'move'));
+  setCd($('bA'), slotInfo(P0,'a0')); setCd($('bB'), slotInfo(P0,'a1')); setCd($('bC'), slotInfo(P0,'a2')); setCd($('swipeHint'), slotInfo(P0,'move'));
   const bl = []; if(hyper>0) bl.push(`<span style="color:#ff4fb8">HYPER ×${hyper}</span>`); if(blueT>0) bl.push(`<span style="color:#6ab0ff">EAT MODE ${blueT.toFixed(1)}</span>`);
   for(const [k,v] of Object.entries(P0.buff)) if(v>0) bl.push(`<span>${{dmg:'DMG+',speed:'SPEED+',xp:'XP×2',cd:'FAST CD',magnet:'MAGNET'}[k]||k} ${v.toFixed(0)}</span>`);
   $('buffs').innerHTML = bl.join('');
@@ -88,6 +98,7 @@ function updateHud(){
   $('obj').textContent = obj;
   // edge markers: coloured triangles toward things that matter (not every mob)
   const L = [];
+  for(const b of BUFFS) L.push({x:b.x, z:b.z, col:hexc(BUFF_TYPES[b.type].col), lab:'', small:true});
   if(MODE==='campaign' && BOSS && BOSS.alive){ if(gateOpen && !BOSS.intro) L.push({x:0, z:STAGE_Z, col:'#ffd23f', lab:'STAGE'}); if(BOSS.awake) L.push({x:BOSS.x, z:BOSS.z, col:'#ff4a2a', lab:'BALL BOY'}); }
   for(const o of ORBS) L.push({x:o.x, z:o.z, col:'#4aa8ff', lab:'ORB'});
   for(const g of G) if(g.big) L.push({x:g.x, z:g.z, col:'#'+GHOST_TYPES[g.type].col.toString(16).padStart(6,'0'), lab:''});
@@ -111,33 +122,48 @@ function updateTags(){ const live = new Set();
     el.querySelector('.tn').textContent = `${h.name} · ${h.level}`; el.querySelector('.tn').style.color = h.team?'#ff8a8a':'#8ae8ff'; const i = el.querySelector('i'); i.style.width = clamp(h.hp/h.maxhp,0,1)*100+'%'; i.style.background = h.team?'#ff4a4a':'#41e4ff'; }
   for(const [id, el] of TAGS) if(!live.has(id)){ el.remove(); TAGS.delete(id); } }
 
-// ================= LEVEL-UP JACKPOT =================
+// ================= LEVEL-UP JACKPOT (v0.8: big and splashy — flash, confetti, slow-mo, cards slam in, the pick explodes in its colour) =================
 let jackOffers = null, reelTimer = null;
-function offerHtml(o, h, i){
-  let k = '', n = '', d = '', ic = '', cls = '';
-  if(o.kind==='move'){ const M = MOVES[CHARS[h.char].move]; k = 'MOVEMENT · '+(isMobile?'MOVE button':'SPACE'); n = M.name; d = M.d; ic = M.ic; cls = 'r-move'; }
-  else if(o.kind==='ab'){ const A = ABIL[o.k]; k = {passive:'COMMON · PASSIVE · fights by itself', def:'RARE · DEFENCE · '+(isMobile?'B button':'right click'), off:'MYTHIC · ATTACK · '+(isMobile?'A button':'left click')}[A.slot]; n = A.name; d = A.d; ic = A.ic; cls = 'r-'+A.r; }
-  else if(o.kind==='swap'){ const A = ABIL[o.k], old = h.slots[A.slot]; k = `NEW ${A.r.toUpperCase()} · REPLACES ${old?ABIL[old].name.toUpperCase():''}`; n = A.name; d = A.d; ic = A.ic; cls = 'r-'+A.r; }
-  else if(o.kind==='rank'){ const A = ABIL[o.k], r = (h.rank[o.k]||0)+1; k = 'UPGRADE · '+A.r.toUpperCase(); n = `${A.name} +${r}`; d = 'Hits 25% harder, reaches 10% further, recharges faster.'; ic = A.ic; cls = 'r-'+A.r; }
-  else if(o.kind==='micro'){ const A = ABIL[o.k], lv = (h.micro[o.k]||0)+1; k = lv===1?'NEW MICRO PASSIVE':'MICRO PASSIVE · level '+lv; n = A.name; d = A.d; ic = A.ic; cls = 'r-micro'; }
-  else { const S = STATUP[o.k]; k = 'STAT'; n = S.n; d = 'Lasts the whole run.'; ic = S.ic; cls = 'r-stat'; }
-  return `<div class="card" data-i="${i}"><div class="ic">${ic}</div><div class="k ${cls}">${k}</div><div class="n">${n}</div><div class="d">${d}</div><div class="k" style="margin-top:8px">${isMobile?'tap':'press '+(i+1)}</div></div>`;
-}
+// confetti: a full-screen canvas burst (its own little loop, runs only while there's confetti)
+const CONF = []; let confOn = false;
+function confetti(n=120, cols=['#ffe14d','#ff4fb8','#41e4ff','#7cff8a','#ffffff']){ const c = $('confetti'); c.width = c.clientWidth; c.height = c.clientHeight; const W = c.width, H = c.height;
+  for(let i=0;i<n;i++) CONF.push({x:W/2 + rnd(-W*0.1, W*0.1), y:H*0.45, vx:rnd(-9,9), vy:rnd(-15,-4), r:rnd(0,6.28), vr:rnd(-0.3,0.3), w:rnd(6,12), h:rnd(3,7), c:pick(cols), life:rnd(1.4,2.4)});
+  if(!confOn){ confOn = true; let last = performance.now(); const g = c.getContext('2d');
+    const step = now=>{ const dt = Math.min(0.05,(now-last)/1000); last = now; g.clearRect(0,0,c.width,c.height);
+      for(let i=CONF.length-1;i>=0;i--){ const p = CONF[i]; p.life -= dt; p.vy += 22*dt; p.vx *= 0.99; p.x += p.vx*60*dt; p.y += p.vy*60*dt*0.5; p.r += p.vr; if(p.life <= 0){ CONF.splice(i,1); continue; }
+        g.save(); g.translate(p.x, p.y); g.rotate(p.r); g.globalAlpha = Math.min(1, p.life*2); g.fillStyle = p.c; g.fillRect(-p.w/2, -p.h/2, p.w, p.h*Math.abs(Math.cos(p.r*2))); g.restore(); }
+      if(CONF.length) requestAnimationFrame(step); else { confOn = false; g.clearRect(0,0,c.width,c.height); } };
+    requestAnimationFrame(step); } }
+function screenFlash(col='#fff3c0', o=0.65){ const f = $('flash'); f.style.background = col; f.style.transition = 'none'; f.style.opacity = o; void f.offsetWidth; f.style.transition = 'opacity .55s'; f.style.opacity = 0; }
+function levelBurst(h){ SFX.level(); big('LEVEL '+h.level, 1000, 'lvl'); slowmo = Math.max(slowmo, 0.45); screenFlash('#fff1b0', 0.55); confetti(90);
+  ringFx(h.x, h.z, 7, 0xffe14d, 0.6); ringFx(h.x, h.z, 4, 0xffffff, 0.4); burst(h.x, 1.5, h.z, 0xffe14d, 80, 14); burst(h.x, 1.5, h.z, 0xffffff, 30, 8); addShake(0.2); }
+function offerInfo(o, h){
+  if(o.kind==='move'){ const M = MOVES[CHARS[h.char].move]; return {k:'MOVEMENT · '+(isMobile?'swipe':'SPACE'), n:M.name, d:M.d, ic:M.ic, el:'void', badge:'NEW'}; }
+  if(o.kind==='ab'){ const A = ABIL[o.k], slot = (A.side==='act'?h.act:h.pas).indexOf(null); return {k:A.side==='pas' ? 'PASSIVE · fights by itself' : 'ACTIVE · '+(isMobile?'button ':'')+KEYLAB[slot], n:A.name, d:A.d, ic:A.ic, el:A.el, badge:'NEW'}; }
+  if(o.kind==='swap'){ const A = ABIL[o.k], old = (A.side==='act'?h.act:h.pas)[o.slot], r = h.rank[old]||0; return {k:`REPLACES ${old?ABIL[old].name.toUpperCase():''}${r?' (+'+r+' LOST)':''}`, n:A.name, d:A.d, ic:A.ic, el:A.el, badge:'SWAP'}; }
+  if(o.kind==='rank'){ const A = ABIL[o.k], r = (h.rank[o.k]||0)+1; return {k:'UPGRADE', n:`${A.name} +${r}`, d:'Hits 25% harder, reaches 10% further, recharges 8% faster.', ic:A.ic, el:A.el, badge:'+'+r}; }
+  if(o.kind==='perk'){ const P = PERKS[o.k]; return {k:'PERK · lasts the run', n:P.n, d:P.d, ic:P.ic, el:null, col:'#ffd23f', badge:'PERK'}; }
+  const S = STATUP[o.k]; return {k:'STAT · lasts the run', n:S.n, d:'Permanent for this run.', ic:S.ic, el:null, badge:'STAT'}; }
+function offerHtml(o, h, i){ const I = offerInfo(o, h), col = I.el ? hexc(EL[I.el].col) : (I.col || '#9ad0c8');
+  return `<div class="card offer" data-i="${i}" style="--el:${col};animation-delay:${i*0.13}s"><span class="badge">${I.badge}</span>${I.el?`<span class="chip">${EL[I.el].label}</span>`:''}<div class="ic">${I.ic}</div><div class="k">${I.k}</div><div class="n">${I.n}</div><div class="d">${I.d}</div><div class="k" style="margin-top:8px">${isMobile?'tap':'press '+(i+1)}</div></div>`; }
 function openJack(){
   if(!pendingLv.length){ state = 'play'; return; } const lv = pendingLv[0], h = player(); state = 'jack'; $('jack').classList.remove('hide'); mouseDown[0] = mouseDown[2] = false;
   const offers = offersFor(h); jackOffers = null; $('offers').innerHTML = '';
-  $('jackT').textContent = 'LEVEL '+lv; $('jackS').textContent = !h.moveOk ? 'Your movement' : !h.slots.passive ? 'Pick a passive. It fights for you on its own.' : !h.slots.def ? 'Pick your defence' : !h.slots.off ? 'Pick your attack' : 'Pick an upgrade';
-  const syms = ['🍒','👻','⭐','💎','7','🔵','🍕'], reels = [$('r0'),$('r1'),$('r2')]; const stopAt = SAVE.set.fastReels || lv > 4 ? [0.18,0.3,0.42] : [0.55,0.85,1.15]; const t0 = performance.now(); let skip = false;
-  clearInterval(reelTimer);
-  reelTimer = setInterval(()=>{ const el = skip ? 9 : (performance.now()-t0)/1000; reels.forEach((r,i)=>{ if(el < stopAt[i]) r.textContent = pick(syms); else { const o = offers[Math.min(i, offers.length-1)]; r.textContent = o.kind==='move'?MOVES[CHARS[h.char].move].ic : o.kind==='stat'?STATUP[o.k].ic : ABIL[o.k].ic; } });
-    if(el >= stopAt[2]){ clearInterval(reelTimer); jackOffers = offers; $('offers').innerHTML = offers.map((o,i)=>offerHtml(o,h,i)).join(''); $('offers').querySelectorAll('.card').forEach(c=>c.onclick = ()=>chooseOffer(offers[+c.dataset.i])); tone(1320,0.2,'square',0.05); }
+  $('jackT').textContent = 'LEVEL '+lv; $('jackS').textContent = !h.moveOk ? 'Your movement' : offers[0] && offers[0].kind==='ab' && offers.every(o=>o.kind==='ab') ? (ABIL[offers[0].k].side==='pas' ? 'Pick a passive — it fights on its own' : 'Pick an active ability') : 'Pick one';
+  const syms = ['🍒','👻','⭐','💎','7','🔵','🍉'], reels = [$('r0'),$('r1'),$('r2')]; const stopAt = SAVE.set.fastReels || lv > 4 ? [0.2,0.32,0.44] : [0.5,0.8,1.1]; const t0 = performance.now(); let skip = false;
+  reels.forEach(r=>r.classList.remove('stop')); clearInterval(reelTimer);
+  reelTimer = setInterval(()=>{ const el = skip ? 9 : (performance.now()-t0)/1000; reels.forEach((r,i)=>{ if(el < stopAt[i]) r.textContent = pick(syms); else { const o = offers[Math.min(i, offers.length-1)]; if(!r.classList.contains('stop')){ r.classList.add('stop'); tone(700+i*200, 0.06, 'square', 0.04); } r.textContent = offerInfo(o, h).ic; } });
+    if(el >= stopAt[2]){ clearInterval(reelTimer); jackOffers = offers; $('offers').innerHTML = offers.map((o,i)=>offerHtml(o,h,i)).join(''); $('offers').querySelectorAll('.card').forEach(c=>c.onclick = ()=>chooseOffer(offers[+c.dataset.i])); SFX.jackpot(); confetti(60); }
     else tone(500+Math.random()*400, 0.02, 'square', 0.02); }, 55);
   $('spd').onclick = ()=>{ skip = true; };
 }
-function chooseOffer(o){ if(!jackOffers || !o) return; jackOffers = null; const h = player(); applyChoice(h, o); pendingLv.shift(); $('jack').classList.add('hide');
-  // the pick is sacred: a moment of grace, and the swarm is pushed back, so a choice never costs health
-  h.grace = 1.6; for(const g of G){ const dx = g.x-h.x, dz = g.z-h.z, d = hyp(dx,dz)||1; if(d < 7){ g.kvx += dx/d*10; g.kvz += dz/d*10; } } ringFx(h.x, h.z, 7, 0xffe14d, 0.5);
-  state = 'play'; if(pendingLv.length) setTimeout(()=>{ if(state==='play') openJack(); }, 300); }
+function chooseOffer(o){ if(!jackOffers || !o) return; const offers = jackOffers; jackOffers = null; const h = player(), I = offerInfo(o, h), i = offers.indexOf(o);
+  $('offers').querySelectorAll('.card').forEach((c,j)=>c.classList.add(j===i?'chosen':'gone')); SFX.pick();
+  setTimeout(()=>{ if(state!=='jack' || player()!==h) return; applyChoice(h, o); pendingLv.shift(); $('jack').classList.add('hide');   // (the run may have ended meanwhile)
+    // the pick is sacred: a moment of grace, the swarm is pushed back, and the choice goes off in its own colour
+    h.grace = 1.6; for(const g of G){ const dx = g.x-h.x, dz = g.z-h.z, d = hyp(dx,dz)||1; if(d < 8){ g.kvx += dx/d*12; g.kvz += dz/d*12; } }
+    const col = I.el ? EL[I.el].col : 0xffe14d; ringFx(h.x, h.z, 8, col, 0.6); if(I.el) elBurst(I.el, h.x, 1.2, h.z, 70, 12); screenFlash(I.el ? hexc(EL[I.el].col) : '#fff1b0', 0.35); big(I.n.toUpperCase(), 900, 'small'); addShake(0.25);
+    state = 'play'; if(pendingLv.length) setTimeout(()=>{ if(state==='play') openJack(); }, 350); }, 280); }
 
 // ================= MENUS =================
 function hideAllOverlays(){ ['mainMenu','subOv','sheetOv','jack','tally'].forEach(id=>$(id).classList.add('hide')); sheetMode = null; camera.clearViewOffset(); }
@@ -222,28 +248,31 @@ function renderSheet(){
     if(sheetTab==='stats') h = `<table><tr><td>Run level</td><td>${P0.level} / 25</td></tr><tr><td>Health</td><td>${Math.round(P0.hp)} / ${P0.maxhp}</td></tr><tr><td>Energy</td><td>${Math.round(P0.energy)} / ${P0.maxEnergy}</td></tr>
       <tr><td>Damage</td><td>×${P0.mods.dmg.toFixed(2)}</td></tr><tr><td>Area</td><td>×${P0.mods.area.toFixed(2)}</td></tr><tr><td>Cooldowns</td><td>×${P0.mods.cdr.toFixed(2)}</td></tr><tr><td>Speed</td><td>×${P0.mods.speed.toFixed(2)}</td></tr>
       <tr><td>Crit</td><td>${Math.round(P0.mods.crit*100)}%</td></tr><tr><td>Damage taken</td><td>-${Math.round(P0.mods.armor*100)}%</td></tr><tr><td>Score</td><td>${Math.round(ST.score).toLocaleString()}</td></tr></table>`;
-    if(sheetTab==='abil'){ const row = (lab, I, d)=>`<tr><td>${lab}</td><td>${I?`<b>${I.ic} ${I.nm}</b><br><span class="note">${d}</span>`:'<span class="note">not learned yet</span>'}</td></tr>`;
-      const ab = s => P0.slots[s] ? ABIL[P0.slots[s]].d : '';
-      h = `<table>${row('Passive', slotInfo(P0,'passive'), ab('passive'))}${row(isMobile?'Attack (A)':'Attack (L-click)', slotInfo(P0,'off'), ab('off'))}${row(isMobile?'Defend (B)':'Defend (R-click)', slotInfo(P0,'def'), ab('def'))}${row('Move', slotInfo(P0,'move'), MOVES[CHARS[P0.char].move].d)}
-        ${Object.keys(P0.micro).map(k=>`<tr><td>Micro</td><td><b>${ABIL[k].ic} ${ABIL[k].name}</b> level ${P0.micro[k]}<br><span class="note">${ABIL[k].d}</span></td></tr>`).join('')}</table>`; }
+    if(sheetTab==='abil'){ const row = (lab, I, d)=>`<tr><td>${lab}</td><td>${I?`<b style="color:${I.el?hexc(EL[I.el].col):'inherit'}">${I.ic} ${I.nm}</b><br><span class="note">${d}</span>`:'<span class="note">empty</span>'}</td></tr>`;
+      h = `<table>${[0,1,2].map(i=>row('Active · '+KEYLAB[i], slotInfo(P0,'a'+i), P0.act[i]?ABIL[P0.act[i]].d:'')).join('')}${[0,1,2].map(i=>row('Passive', slotInfo(P0,'p'+i), P0.pas[i]?ABIL[P0.pas[i]].d:'')).join('')}
+        ${row('Move · '+(isMobile?'swipe':'SPACE'), slotInfo(P0,'move'), MOVES[CHARS[P0.char].move].d)}${Object.keys(P0.perk).map(k=>`<tr><td>Perk</td><td><b>${PERKS[k].ic} ${PERKS[k].n}</b><br><span class="note">${PERKS[k].d}</span></td></tr>`).join('')}</table>
+        <div class="note" style="margin-top:8px">A run holds 3 actives and 3 passives. Once a side is full, a new one only comes as a swap — and the swapped slot loses its upgrades.</div>`; }
     if(sheetTab==='rules') h = `<table><tr><td>Dots</td><td>Eat them to grow. Finish a whole moving pattern and its last dot explodes for a bonus and stacks HYPER.</td></tr>
-      <tr><td>Levels</td><td>Level 1 gives your move. Levels 2, 3 and 4 give a passive, a defence and an attack. After that, every level is an upgrade — sometimes a new ability that replaces one you have.</td></tr>
+      <tr><td>Levels</td><td>Level 1 gives your move. Level 2 a passive, levels 3 and 4 your first two actives. After that each level is a random mix: new abilities while you have room (3 actives, 3 passives), upgrades, stats, perks — and swaps once a side is full (the swapped slot loses its upgrades).</td></tr>
+      <tr><td>Colours</td><td>Every ability is one of the 7 colours: fire, toxic, frost, void, shock, nature, shadow. Its effects look and sound like it.</td></tr>
+      <tr><td>Power-ups</td><td>Glowing capsules show up now and then: rage, speed, magnet, rapid fire, a shield, double XP. Ten seconds each.</td></tr>
       <tr><td>Ghosts</td><td>Seven colours, one per stat. Each colour drops its own bonus. A new colour first shows up as one BIG ghost.</td></tr>
       <tr><td>Blue orb</td><td>The ghosts scatter and you can eat them for a few seconds.</td></tr><tr><td>Fruit</td><td>Heals you.</td></tr><tr><td>Coins</td><td>Kept after the run. Spend them in Loadout.</td></tr>
       <tr><td>Clubgoers</td><td>They run from you. Eating one costs energy and scores nothing.</td></tr><tr><td>Furniture</td><td>Walk into it to tear through (costs energy), or blow it up.</td></tr>
-      <tr><td>Main stage</td><td>Opens at level 4. Ball Boy can't go down until you've faced all three of his creatures.</td></tr></table>`;
+      <tr><td>Main stage</td><td>Opens at level 4. Ball Boy throws four creatures — fire, water, shock, plant. He can't go down until you've faced three of them.</td></tr></table>`;
     if(sheetTab==='set') h = settingsHtml();
     $('sheetFoot').innerHTML = `<button class="btn" id="fRes">Resume</button><button class="btn" id="fMenu">Quit to Menu</button><button class="btn" id="fQuit">Quit Game</button>`;
     $('fRes').onclick = closePause; $('fMenu').onclick = ()=>{ $('sheetOv').classList.add('hide'); toMenu(); }; $('fQuit').onclick = ()=>{ try{ window.close(); }catch(e){} toast(null,'A browser tab can only be closed by you.',3000); }; }
   else {
-    if(!C.loadout) h = `<p>${C.name} has no loadout options yet. Gear, stats and talents for him come later.</p><p class="note">He plays with his starting kit: ${['passive','def','off'].map(s=>ABIL[C.start[s]].name).join(', ')}.</p>`;
+    if(!C.loadout) h = `<p>${C.name} has no loadout options yet. Gear, stats and talents for him come later.</p><p class="note">He plays with his starting kit: ${C.start.map(k=>ABIL[k].name).join(', ')}.</p>`;
     else if(sheetTab==='stats'){ const pts = L.level - 1, used = WHEEL.reduce((a,k)=>a+(SAVE.pac.stats[k]||0),0), eff = {Strength:'+2% damage',Vitality:'+6 health',Spirit:'+6% energy regen',Intellect:'-2% cooldowns',Agility:'+1.5% speed',Speciality:'+2% area',Nature:'+5% pickup range'};
       h = `<div class="note">1 point per character level. Points left: <b style="color:#f6dc95">${pts-used}</b></div><table style="margin-top:8px">${WHEEL.map(k=>`<tr><td style="color:${STAT_COL[k]}">${k}</td><td><button class="btn pm" data-s="${k}" data-d="-1">−</button> <b style="display:inline-block;min-width:26px;text-align:center">${SAVE.pac.stats[k]||0}</b> <button class="btn pm" data-s="${k}" data-d="1">+</button> <span class="note">${eff[k]} per point</span></td></tr>`).join('')}</table>`; }
     else if(sheetTab==='gear') h = `<div class="note">Test sets until items and crafting are built. The same pieces fit every character.</div><div class="seg" style="margin:10px 0">${['none','crude','quality','epic'].map(t=>`<button class="btn ${(gear||'none')===t?'sel':''}" data-g="${t}">${t}</button>`).join('')}</div>
       <table><tr><td>Crude</td><td>Matte. +3% damage, +10 health.</td></tr><tr><td>Quality</td><td>Glossy. +7% damage, +20 health.</td></tr><tr><td>Epic</td><td>Radiates. +12% damage, +35 health.</td></tr></table>`;
-    else if(sheetTab==='abil'){ const base = `<tr><td>Starting pool</td><td>${['passive','def','off'].map(s=>C.pools[s].map(k=>ABIL[k].ic+' '+ABIL[k].name).join(', ')).join('<br>')}<br>${BASE_MICRO.map(k=>ABIL[k].ic+' '+ABIL[k].name).join(', ')} (micro)</td></tr>`;
-      const extras = Object.keys(ABIL).filter(k=>ABIL[k].extra==='pac').map(k=>ABIL[k].ic+' '+ABIL[k].name).join(', ');
-      h = `<div class="note">Buy extra micro abilities so they can show up in your games. Better ones unlock at higher character levels.</div><table style="margin-top:8px">${base}<tr><td>Can show up later</td><td>${extras}</td></tr>${Object.keys(ABIL).filter(k=>ABIL[k].req).map(k=>{ const A = ABIL[k], owned = SAVE.pac.bought.includes(k), lock = L.level < A.req;
+    else if(sheetTab==='abil'){ const nm = k=>`<span style="color:${hexc(EL[ABIL[k].el].col)}">${ABIL[k].ic} ${ABIL[k].name}</span>`;
+      const base = `<tr><td>Level 2</td><td>${C.ladder[0][1].map(nm).join(', ')}</td></tr><tr><td>Level 3</td><td>${C.ladder[1][1].map(nm).join(', ')}</td></tr><tr><td>Level 4</td><td>${C.ladder[2][1].map(nm).join(', ')}</td></tr>`;
+      const later = Object.keys(ABIL).filter(k=>!ABIL[k].req && (ABIL[k].who==='pac'||ABIL[k].who==='all') && !C.ladder.some(l=>l[1].includes(k))).map(nm).join(', ');
+      h = `<div class="note">Buy abilities so they can show up in your games. Better ones unlock at higher character levels.</div><table style="margin-top:8px">${base}<tr><td>Can show up later</td><td>${later}</td></tr>${Object.keys(ABIL).filter(k=>ABIL[k].req).map(k=>{ const A = ABIL[k], owned = SAVE.pac.bought.includes(k), lock = L.level < A.req;
         return `<tr><td>${A.ic} ${A.name}</td><td>${A.d}<br>${owned?'<b style="color:#7cff8a">Owned</b>':lock?`<span class="note">Unlocks at level ${A.req}</span>`:`<button class="btn" data-buy="${k}" ${SAVE.coins<A.cost?'disabled style="opacity:.4"':''}>Buy · ${A.cost} coins</button>`}</td></tr>`; }).join('')}</table>`; }
     else if(sheetTab==='tal'){ const pts = Math.floor(L.level/2), used = Object.keys(SAVE.pac.talents).length;
       h = `<div class="note">1 talent point every 2 character levels. Points left: <b style="color:#f6dc95">${pts-used}</b>. Trees are drafts.</div><table style="margin-top:8px">${Object.entries(TALENTS).map(([tree, nodes])=>`<tr><td>${tree}</td><td>${nodes.map((n,i)=>{ const key = tree+i, has = SAVE.pac.talents[key], req = 2+i*4, lock = L.level < req;

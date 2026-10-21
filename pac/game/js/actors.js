@@ -1,4 +1,4 @@
-// PAC v0.7 — actors.js: effects, heroes (Blender rigs), clubgoers, ghosts (temperaments + packs), gems, blue orb,
+// PAC v0.8 — actors.js: effects, heroes (Blender rigs), clubgoers, ghosts (temperaments + packs), gems, blue orb,
 // Ball Boy's creatures (shared by the player and the boss), and the BALL BOY boss.
 "use strict";
 let MODELS = null;   // filled by LOOK.loadAll()
@@ -18,8 +18,12 @@ function spray(x,z,ang,range,arc,color,n,y=0.9){ const c = new THREE.Color(color
 function puff(x,y,z,color,n=6,spread=1.2){ const c = new THREE.Color(color); for(let i=0;i<n;i++){ const p = PART[pNext]; pNext = (pNext+1)%PMAX;
   Object.assign(p, {x:x+rnd(-spread,spread), y:y+rnd(0,spread*0.6), z:z+rnd(-spread,spread), vx:rnd(-0.6,0.6), vy:rnd(0.3,1.2), vz:rnd(-0.6,0.6), life:rnd(0.6,1.1), r:c.r, g:c.g, b:c.b, grav:-0.4}); } }
 const FX = [];
-function ringFx(x, z, r, color, life=0.45, y=0.25){ const m = new THREE.Mesh(new THREE.RingGeometry(0.85,1,56), new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(1.6), transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, depthWrite:false}));
-  m.rotation.x = -Math.PI/2; m.position.set(x,y,z); scene.add(m); FX.push({m, mat:m.material, t:0, life, r0:0.5, r1:r}); }
+function ringFx(x, z, r, color, life=0.45, y=0.25, implode=false){ const m = new THREE.Mesh(new THREE.RingGeometry(0.85,1,56), new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(1.6), transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, depthWrite:false}));
+  m.rotation.x = -Math.PI/2; m.position.set(x,y,z); scene.add(m); FX.push({m, mat:m.material, t:0, life, r0:implode?r:0.5, r1:implode?0.3:r}); }
+// ectoplasm: a ragged glowing puddle left where a ghost dies, in its colour
+function splatFx(x, z, color, r=1.2){ const n = 18, pts = []; for(let i=0;i<n;i++){ const a = i/n*6.283, rr = r*(0.6+Math.random()*0.6); pts.push(new THREE.Vector2(Math.cos(a)*rr, Math.sin(a)*rr)); }
+  const m = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(pts)), new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(1.2), transparent:true, opacity:0.5, blending:THREE.AdditiveBlending, depthWrite:false}));
+  m.rotation.x = -Math.PI/2; m.position.set(x, 0.06, z); scene.add(m); FX.push({m, mat:m.material, t:0, life:2.6, fan:true, o0:0.45}); }
 function discFx(x, z, r, color, life=0.3){ const m = new THREE.Mesh(new THREE.CircleGeometry(1,40), new THREE.MeshBasicMaterial({color:new THREE.Color(color).multiplyScalar(1.3), transparent:true, opacity:0.5, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, depthWrite:false}));
   m.rotation.x = -Math.PI/2; m.position.set(x,0.2,z); m.scale.setScalar(r); scene.add(m); FX.push({m, mat:m.material, t:0, life, fan:true, o0:0.5}); }
 // a flat fan (attack cone) on the floor; angle convention: 0 = +z, atan2(x,z)
@@ -46,23 +50,24 @@ function updateDn(rdt){ for(const D of DN){ if(D.life <= 0) continue; D.life -= 
 // ================= HEROES (player + PvP bots) — Blender rigs =================
 let HEROES = []; const player = () => HEROES[0]; let heroId = 0;
 const CHARS = {
-  pac:{name:'Pac', sub:'Original Pac', desc:'Balanced, strong and tough. Eats everything.', hp:110, speed:6.4, r:0.6, move:'backdoor', start:null, loadout:true,
-    pools:{passive:['poop','spit','prickly'], def:['glove','bang','flop'], off:['balls','gob','farts']}},
-  ballboy:{name:'Ball Boy', sub:'The Trainer', desc:'Throws capsule balls. A creature pops out, does one move, and comes back.', hp:95, speed:6.6, r:0.45, move:'peaceout', start:{passive:'sleepover', def:'rockbottom', off:'hottake'}, loadout:false}};
-function makeRig(char, team){ const r = LOOK.character(MODELS, char==='pac'?'pac':'ballboy', team===1 ? {tint:0x7a3a3a, tintMat:char==='pac'?'pac_cap':'jacket'} : {}); return r; }
+  pac:{name:'Pac', sub:'The Ghost Killer', desc:'A tattooed, broken man who\'s done eating your fruit salad. His jaw unhinges.', hp:110, speed:6.4, r:0.55, move:'warp', loadout:true,
+    ladder:[['pas',['numbertwo','puke','shank']], ['act',['insurance','ragequit','deaddrop']], ['act',['binge','unhinged','glitter']]]},
+  ballboy:{name:'Ball Boy', sub:'The Trainer', desc:'Throws capsule balls. A creature pops out, does one move, and comes back.', hp:95, speed:6.6, r:0.45, move:'peaceout', start:['hottake','splashzone','jolt'], loadout:false,
+    ladder:[['pas',['bramble','habit','tilt']]]}};
+function makeRig(char, team){ const r = LOOK.character(MODELS, char==='pac'?'pac':'ballboy', team===1 ? {tint:0x7a3a3a, tintMat:char==='pac'?'pac_vest':'jacket'} : {}); return r; }
 function newHero(char, team, isPlayer, x, z){
   const C = CHARS[char];
   const h = {kind:'hero', id:heroId++, char, team, isPlayer, x, z, vx:0, vz:0, face:Math.PI, walk:0, ax:0, az:-1, r:C.r, maxhp:C.hp, hp:C.hp, energy:100, maxEnergy:100,
-    level:0, xp:0, moveOk:false, moveCd:0, iframes:0, shieldHP:0, shieldT:0, absorbed:0, grow:1, slots:{passive:null, def:null, off:null}, rank:{}, micro:{},
+    level:0, xp:0, moveOk:false, moveCd:0, iframes:0, shieldHP:0, shieldT:0, absorbed:0, grow:1, act:[null,null,null], pas:[null,null,null], rank:{}, perk:{},
     mods:{dmg:1, area:1, cdr:1, speed:1, pickup:1, regen:1, armor:0, crit:0.05, hpRegen:0.4}, cd:{}, buff:{}, dead:false, respawnT:0, kills:0, deaths:0,
     stunT:0, slowT:0, hopT:0, hopY:0, hop:null, ballT:0, sugarT:0, lungeT:0, dashT:0, dash:null, hurtT:0, ai:{}, fx:{}, throwT:0, kvx:0, kvz:0, name:C.name, grace:0};
-  if(C.start) Object.assign(h.slots, C.start);
+  if(C.start) C.start.forEach((k,i)=>h.act[i] = k);
   h.rig = makeRig(char, team); scene.add(h.rig.root);
   h.ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.0, 40), new THREE.MeshBasicMaterial({color:isPlayer?0xf6dc95:(team===0?0x41e4ff:0xff4a4a), transparent:true, opacity:0.6, blending:THREE.AdditiveBlending, side:THREE.DoubleSide, depthWrite:false}));
   h.ring.rotation.x = -Math.PI/2; h.ring.position.y = 0.05; h.rig.root.add(h.ring);
   h.bubble = new THREE.Mesh(new THREE.SphereGeometry(1.35, 24, 16), new THREE.MeshStandardMaterial({color:0xff8ad0, emissive:0x501030, transparent:true, opacity:0.28, roughness:0.1, metalness:0.2, depthWrite:false}));
   h.bubble.position.y = 1; h.bubble.visible = false; h.rig.root.add(h.bubble);
-  h.spikes = []; for(let i=0;i<2;i++){ const g = new THREE.Group(); const s = new THREE.Mesh(new THREE.ConeGeometry(0.2, 1, 7), LOOK.hatchMat(0xe8e2d0)); s.rotation.x = Math.PI/2; g.add(s); g.visible = false; scene.add(g); h.spikes.push(g); }
+  h.spikes = []; for(let i=0;i<2;i++){ const g = new THREE.Group(); const s = new THREE.Mesh(new THREE.ConeGeometry(0.14, 1, 4), LOOK.hatchMat(0xc8ccd8, {gloss:0.8})); s.rotation.x = Math.PI/2; g.add(s, at(glow(0xff3050, 1.4, 0.5), 0, 0, 0.4)); g.visible = false; scene.add(g); h.spikes.push(g); }
   return h;
 }
 // animate a Blender rig: rest pose + swings
@@ -74,7 +79,10 @@ function animRig(rig, x, z, face, spd, walk, grow, extra={}){
   if(B.armL){ B.armL.rotation.x = -sw*0.65*k + (extra.armsUp?-2.6:0); B.armR.rotation.x = sw*0.65*k + (extra.armsUp?-2.6:0); B.armL.rotation.z = -0.12; B.armR.rotation.z = 0.12; }
   if(extra.throwT > 0 && B.armR) B.armR.rotation.x = -2.7 + (0.35-extra.throwT)*7;
   if(B.body && R('body')){ B.body.position.y = R('body').p.y + Math.abs(Math.sin(walk))*0.06*k + (extra.bounce||0); B.body.rotation.x = 0.1*k; B.body.rotation.z = Math.sin(walk*0.5)*0.04*k; }
-  if(rig.kind==='pac' && B.jawU){ const open = 0.05 + (0.5+0.5*Math.sin(rtime*16))*(spd>0.5||extra.chomp?0.55:0.1) + (extra.chomp?0.25:0); B.jawU.rotation.x = -open; B.jawL.rotation.x = open*0.55; }
+  if(rig.kind==='pac' && B.jawL){ // v0.8 Pac: mouth shut while he walks; it SNAPS on every bite and UNHINGES wide for the big eats
+    const k = rtime - (rig.snapAt||-9), snap = k < 0.17 ? Math.sin(k/0.17*Math.PI)*0.5 : 0;
+    const open = extra.chomp ? 1.05 + 0.12*Math.sin(rtime*30) : 0.015 + snap + (extra.open||0);
+    B.jawL.rotation.x = open; B.jawU.rotation.x = -open*0.28; if(B.head && R('head')) B.head.rotation.y = extra.chomp ? 0 : Math.sin(rtime*0.6)*0.12; }
   if(rig.kind==='bb' && B.head) B.head.rotation.y = Math.sin(rtime*0.7)*0.18;
   if(rig.auraPulse) rig.auraPulse.material.opacity = 0.32 + 0.18*Math.sin(rtime*5);
   const fl = extra.flash ? 0.55 : 0; for(const m of rig.mats) m.uniforms.uFlash.value = fl;
@@ -85,7 +93,7 @@ function equipSet(rig, tier){
   (rig.gear||[]).forEach(o=>o.parent && o.parent.remove(o)); rig.gear = []; rig.auraPulse = null; if(!tier || !rig) return;
   const T = TIERS[tier], p = rig.p, A = rig.anchors, M = LOOK.hatchMat(T.tint, {gloss:T.gloss, emit:T.emit}), hr = p.headR;
   const add = (a,o)=>{ if(A[a]){ A[a].add(o); rig.gear.push(o); } };
-  const helm = LOOK.inked(new THREE.SphereGeometry(hr*1.1,24,12,0,Math.PI*2,0,Math.PI*0.34), M, 0.03); helm.position.y = rig.kind==='pac'?0.03:0.06; add('headpiece', helm);
+  const helm = LOOK.inked(new THREE.SphereGeometry(hr*1.1,24,12,0,Math.PI*2,0,Math.PI*0.34), M, 0.03); if(rig.kind==='pac') helm.position.set(0, 0.1, 0.05); else helm.position.y = 0.06; add('headpiece', helm);
   for(const k of ['L','R']){ const boot = LOOK.inked(new THREE.CylinderGeometry(p.legLen*0.24, p.legLen*0.28, p.legLen*0.45, 12), M, 0.025); boot.position.y = p.legLen*0.25; add('boot'+k, boot);
     const gl = LOOK.inked(new THREE.CylinderGeometry(0.11, 0.13, 0.16, 12), M, 0.02); gl.position.y = 0.1; add('glove'+k, gl); }
   const L = p.armLen*2.1, blade = new THREE.Group(); const b = LOOK.inked(new THREE.BoxGeometry(0.08, L, 0.03), M, 0.025); b.position.y = L*0.55; blade.add(b);
@@ -94,20 +102,27 @@ function equipSet(rig, tier){
 }
 
 // ================= CLUBGOERS (Blender crowd, instanced per look) =================
-const CIV_KINDS = ['raver','dancer','bouncer','bro'], CIVMAX = 50; const CIVM = {}; let CIV = [];
+const CIV_KINDS = ['raver','dancer','bouncer','bro'], CIVMAX = 70; const CIVM = {}; let CIV = [];
 function buildCrowd(){ for(const k of CIV_KINDS){ const src = LOOK.rawPiece(MODELS, 'crowd', 'crowd.'+k); if(!src) continue; const g = LOOK.mergeColored(src);
   const body = new THREE.InstancedMesh(g, LOOK.hatchMat(0xffffff, {vertexColors:true}), CIVMAX), out = new THREE.InstancedMesh(g, LOOK.outlineMat(0.022), CIVMAX);
   initColors(body, CIVMAX); [body, out].forEach(m=>{ m.frustumCulled = false; m.count = 0; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); }); CIVM[k] = {body, out}; } }
-function seedCivilians(){ CIV = []; const spots = [[0,32,8],[16,10,5],[-14,12,4],[0,-35,14],[-14,-20,8],[14,-60,10],[-12,-80,6],[-12,-140,6],[10,-170,6],[0,-230,6],[-8,-265,5]];
-  for(const [cx,cz,n] of spots) for(let i=0;i<n;i++){ const x = cx+rnd(-8,8), z = cz+rnd(-8,8); if(blocked(x,z,0.6) || !inLane(x,z)) continue;
-    const kind = cz > 30 && i < 2 ? 'bouncer' : pick(['raver','dancer','bro','raver','dancer']);
-    CIV.push({x, z, hx:x, hz:z, ph:Math.random()*6, kind, sp:rnd(3.2,4.4), panic:0, hp:8, face:rnd(0,6.28), tint:rnd(0.85,1.1)}); } }
+// v0.8: the club is PACKED — dancing groups in every room, bouncers on the doors, bartenders, a DJ, podium dancers, a band
+const PERFORMERS = [ // [kind, x, z, y, face] — they stay where they are and dance
+  ['bro',0,-103.5,1.0,0], ['dancer',-9,-40,1.05,0], ['dancer',9,-40,1.05,0], ['dancer',-9,-72,1.05,0], ['dancer',9,-72,1.05,0], ['raver',0,-56,1.05,0],
+  ['bro',-28.6,-130,0,Math.PI/2], ['bro',-28.6,-160,0,Math.PI/2], ['bro',28.6,-150,0,-Math.PI/2], ['bro',0,-152,0,0],
+  ['bouncer',-9.6,3,0,Math.PI], ['bouncer',9.6,3,0,Math.PI], ['bouncer',-7.6,-198,0,Math.PI], ['bouncer',7.6,-198,0,Math.PI], ['bouncer',-10,-367,0,Math.PI], ['bouncer',10,-367,0,Math.PI],
+  ['raver',-16,-444,1.25,0], ['bro',-6,-444,1.25,0], ['dancer',6,-444,1.25,0], ['raver',16,-444,1.25,0]];
+function seedCivilians(){ CIV = [];
+  const spots = [[0,32,10],[16,10,6],[-15,12,6],[18,28,5],[-18,30,5],[0,-22,14],[-16,-30,9],[16,-35,9],[0,-80,12],[-14,-88,8],[15,-62,8],[-14,-128,8],[10,-180,8],[-8,-188,6],[20,-125,6],[0,-225,8],[-14,-262,7],[14,-270,7],[-20,-305,5],[20,-330,5],[0,-345,6]];
+  for(const [cx,cz,n] of spots) for(let i=0;i<n;i++){ const x = cx+rnd(-6,6), z = cz+rnd(-6,6); if(blocked(x,z,0.6) || !inLane(x,z)) continue;
+    CIV.push({x, z, hx:x, hz:z, y:0, ph:Math.random()*6, kind:pick(['raver','dancer','bro','raver','dancer']), sp:rnd(3.2,4.4), panic:0, hp:8, face:rnd(0,6.28), tint:rnd(0.85,1.1)}); }
+  for(const [kind,x,z,y,face] of PERFORMERS) CIV.push({x, z, hx:x, hz:z, y, ph:Math.random()*6, kind, sp:0, panic:0, hp:12, face, tint:1, fixed:true}); }
 function killCiv(i, h){ const c = CIV[i]; burst(c.x, 1, c.z, 0xff4060, 18, 7); CIV.splice(i,1); if(h && h.isPlayer){ ST.civ++; } }
 function renderCrowd(rtNow, onBeat){
   const n = {}; for(const k of CIV_KINDS) n[k] = 0;
   for(const c of CIV){ const M = CIVM[c.kind]; if(!M) continue; const i = n[c.kind]++; if(i >= CIVMAX) continue; const panic = c.panic > 0;
     const bob = panic ? Math.abs(Math.sin(c.ph*2.4))*0.18 : Math.abs(Math.sin(c.ph + (onBeat?0.4:0)))*0.12;
-    dummy.position.set(c.x, bob, c.z); dummy.rotation.set(panic?0.25:0, c.face + (panic?0:Math.sin(c.ph*0.5)*0.5), panic?0:Math.sin(c.ph)*0.08); dummy.scale.set(1, 1 - (panic?0:Math.sin(c.ph*2)*0.03), 1); dummy.updateMatrix();
+    dummy.position.set(c.x, (c.y||0) + bob, c.z); dummy.rotation.set(panic?0.25:0, c.face + (panic||c.fixed?Math.sin(c.ph*0.5)*0.15:Math.sin(c.ph*0.5)*0.5), panic?0:Math.sin(c.ph)*0.08); dummy.scale.set(1, 1 - (panic?0:Math.sin(c.ph*2)*0.03), 1); dummy.updateMatrix();
     M.body.setMatrixAt(i, dummy.matrix); M.out.setMatrixAt(i, dummy.matrix); tmpC.setRGB(c.tint, c.tint, c.tint); M.body.setColorAt(i, tmpC); }
   for(const k of CIV_KINDS){ const M = CIVM[k]; if(!M) continue; M.body.count = M.out.count = Math.min(CIVMAX, n[k]); M.body.instanceMatrix.needsUpdate = M.out.instanceMatrix.needsUpdate = true; M.body.instanceColor.needsUpdate = true; }
 }
@@ -123,7 +138,8 @@ const TEMPER = ['chaser','ambusher','flanker','wildcard'];
 const GMAX = 260; let ghostM, ghostO, eyesM, G = []; const debuted = new Set();
 function buildGhosts(){ const body = LOOK.rawPiece(MODELS,'ghost','ghost.body'), eyes = LOOK.rawPiece(MODELS,'ghost','ghost.eyes');
   const gb = LOOK.mergeColored(body), ge = LOOK.mergeColored(eyes);
-  ghostM = new THREE.InstancedMesh(gb, LOOK.hatchMat(0xffffff, {vertexColors:true, density:1.1}), GMAX); ghostO = new THREE.InstancedMesh(gb, LOOK.outlineMat(0.04), GMAX);
+  // v0.8: the hem ripples (uWave) and each ghost's edge glows in its own colour (uGlow)
+  ghostM = new THREE.InstancedMesh(gb, LOOK.hatchMat(0xffffff, {vertexColors:true, density:1.1, wave:1, glow:0.9}), GMAX); ghostO = new THREE.InstancedMesh(gb, LOOK.outlineMat(0.04, 1), GMAX);
   eyesM = new THREE.InstancedMesh(ge, new THREE.MeshBasicMaterial({vertexColors:true}), GMAX); initColors(ghostM, GMAX);
   [ghostM, ghostO, eyesM].forEach(m=>{ m.frustumCulled = false; m.count = 0; m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); scene.add(m); }); }
 function ghostHP(isBig){ const P0 = player(), lv = MODE==='endless' ? Math.max(P0.level, wave*2) : P0.level, D = diff(); return (isBig ? 60+lv*16 : 7+lv*2.4) * D.hp * (MODE==='endless' ? 1+wave*0.12 : 1); }
@@ -141,10 +157,13 @@ function spawnGhost(type, isBig=false, at2=null, temper){
 function spawnPack(n, cols){ const P0 = player(); let cx, cz, tries = 0; // a pack enters together from just off-screen
   do { const a = rnd(0, 6.283), d = rnd(24, 30); cx = P0.x + Math.cos(a)*d; cz = P0.z + Math.sin(a)*d*0.85 - 8; tries++; } while((!inLane(cx,cz) || blocked(cx,cz,1) || (MODE==='campaign' && !gateOpen && cz < STAGE_Z+2)) && tries < 30);
   if(tries >= 30) return; for(let i=0;i<n;i++) spawnGhost(pick(cols), false, [clamp(cx+rnd(-3,3), BOUNDS.x0+2, BOUNDS.x1-2), cz+rnd(-3,3)], TEMPER[i%4]); }
-let eatChain = 0;
+let eatChain = 0, overkillDepth = 0;
 function killGhost(g, h, eaten){
   if(g.dead) return; g.dead = true; const T = GHOST_TYPES[g.type];
-  burst(g.x, 1, g.z, T.col, g.big?60:16, g.big?12:8); puff(g.x, 1, g.z, 0xffffff, 3, 0.6); if(g.big) addShake(0.4);
+  burst(g.x, 1, g.z, T.col, g.big?60:16, g.big?12:8); puff(g.x, 1, g.z, 0xffffff, 3, 0.6); splatFx(g.x, g.z, T.col, g.big?3:1.1); if(g.big) addShake(0.4);
+  if(g.hitEl) elBurst(g.hitEl, g.x, 1, g.z, g.big?30:8, 6);
+  if(g.big || Math.random() < 0.035) addPick('fruit', g.x + rnd(-0.5,0.5), g.z + rnd(-0.5,0.5));      // more heals around (Brent)
+  if(h && h.perk && h.perk.overkill && overkillDepth < 2){ overkillDepth++; areaHit(h, g.x, g.z, 2.6, g.maxhp*0.35 + 6, {el:'fire'}); ringFx(g.x, g.z, 2.6, 0xff7a20, 0.3); overkillDepth--; }
   GEMS.push({x:g.x, z:g.z, type:g.type, xp:g.big?14:2, bonus:g.big || Math.random()<0.1, t:0});
   if(g.big) debuted.add(g.type);
   if(h && h.isPlayer){ ST.ghosts++; addScore(g.big?600:40); if(eaten){ eatChain = Math.min(eatChain*2||200, 1600); addScore(eatChain); big(eatChain+'', 500, 'small'); SFX.eatGhost(Math.log2(eatChain/200)); if(Math.random()<0.3) heroSay(h,'ghostEat'); } }
@@ -175,54 +194,79 @@ function eatOrb(i, h){ const o = ORBS[i]; scene.remove(o.g); ORBS.splice(i,1); b
   if(h.isPlayer){ blueT = 8; eatChain = 0; heroSay(h, 'ghostEat', true); SFX.whoosh(); tone(200, 0.6, 'sawtooth', 0.08, 4);
     for(const g of G){ if(g.big) continue; const dx = g.x-h.x, dz = g.z-h.z, d = hyp(dx,dz)||1; g.kvx += dx/d*14; g.kvz += dz/d*14; } } else h.buff.dmg = 8; }
 
-// ================= BALL BOY'S CREATURES (player + boss) =================
+// ================= BALL BOY'S CREATURES (player + boss): one per element =================
+// Cindercub FIRE breathes a cone · Splashpup WATER blasts a shove wave · Voltmoth SHOCK stuns a crowd · Bramblebud NATURE roots + thorns.
+// Each one: a capsule ball arcs out, POP, the creature calls its name (sound + label), shows a clear warning, does its move, beams home.
 const CRE = [];
+const CRE_INFO = {cindercub:{model:'cre.cindercub', el:'fire', name:'CINDERCUB', col:0xff7a20}, splashpup:{model:'cre.splashpup', el:'frost', name:'SPLASHPUP', col:0x5ad8ff},
+  voltmoth:{model:'cre.voltmoth', el:'shock', name:'VOLTMOTH', col:0xffd040}, bramblebud:{model:'cre.bramblebud', el:'nature', name:'BRAMBLEBUD', col:0x6fe08a}};
+const CRE_STATS = {cindercub:{range:9, arc:1.1, dps:60, dur:2.2}, splashpup:{range:9, arc:1.4, dmg:16, knock:11}, voltmoth:{rad:5.5, stun:1.4, dmg:14}, bramblebud:{rad:5, dmg:10, root:2.2}};
+const LABELS = {};
+function labelSprite(text, col){ if(!LABELS[text]){ const c = document.createElement('canvas'); c.width = 512; c.height = 128; const g = c.getContext('2d'); g.font = '900 72px Cinzel, Georgia'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineWidth = 12; g.strokeStyle = '#0b0910'; g.strokeText(text, 256, 66); g.fillStyle = '#'+col.toString(16).padStart(6,'0'); g.fillText(text, 256, 66); LABELS[text] = new THREE.CanvasTexture(c); }
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({map:LABELS[text], transparent:true, depthTest:false})); s.scale.set(4, 1, 1); s.renderOrder = 10; return s; }
 function throwCreature(owner, type, tx, tz, isBoss){
   const ball = LOOK.piece(MODELS,'creatures','cre.ball',{outline:0.015}) || new THREE.Mesh(new THREE.SphereGeometry(0.24), new THREE.MeshBasicMaterial({color:0x41c4dc}));
   ball.position.set(owner.x, 1.6, owner.z); scene.add(ball); ball.add(glow(0x41e4ff, 1.4, 0.6));
   const c = {type, owner, isBoss:!!isBoss, state:'ball', t:0, sx:owner.x, sz:owner.z, tx, tz, x:tx, z:tz, ball, model:null, ang:Math.atan2(tx-owner.x, tz-owner.z), did:false, tele:false};
   CRE.push(c); owner.throwT = 0.35; tone(700, 0.08, 'triangle', 0.05, 1.6); return c;
 }
-const CRE_MODEL = {cindercub:'cre.cindercub', boulderbud:'cre.boulderbud', gloomoth:'cre.gloomoth'};
 const creFoes = c => c.isBoss ? HEROES.filter(h=>h.team===0 && !h.dead) : ENEMY[c.owner.team];
+function creBig(c){ return c.isBoss ? 1.45 : 1; }
 function updateCreatures(dt){
-  for(let i=CRE.length-1;i>=0;i--){ const c = CRE[i]; c.t += dt;
+  for(let i=CRE.length-1;i>=0;i--){ const c = CRE[i]; c.t += dt; const I = CRE_INFO[c.type], A = CRE_STATS[c.type];
     if(c.state==='ball'){ const f = Math.min(1, c.t/0.45); c.ball.position.set(c.sx+(c.tx-c.sx)*f, 1.6+Math.sin(f*Math.PI)*3, c.sz+(c.tz-c.sz)*f); c.ball.rotation.x += dt*12;
-      if(f >= 1){ scene.remove(c.ball); c.model = LOOK.piece(MODELS,'creatures',CRE_MODEL[c.type],{outline:0.025}); if(c.isBoss) c.model.scale.setScalar(1.25); c.model.position.set(c.tx, 0, c.tz); c.model.rotation.y = c.ang; scene.add(c.model);
-        c.wings = c.type==='gloomoth' ? [LOOK.node(c.model,'cre.gloomoth.wingL'), LOOK.node(c.model,'cre.gloomoth.wingR')] : null;
-        burst(c.tx, 1, c.tz, 0xffffff, 30, 9); burst(c.tx, 1, c.tz, 0x41e4ff, 20, 6); c.state = 'act'; c.t = 0; SFX.pop(); }
+      if(f >= 1){ scene.remove(c.ball); c.model = LOOK.piece(MODELS,'creatures',I.model,{outline:0.025}); c.model.scale.setScalar(creBig(c)); c.model.position.set(c.tx, 0, c.tz); c.model.rotation.y = c.ang; scene.add(c.model);
+        c.wings = c.type==='voltmoth' ? [LOOK.node(c.model,'cre.voltmoth.wingL'), LOOK.node(c.model,'cre.voltmoth.wingR')] : null;
+        c.halo = new THREE.Mesh(new THREE.RingGeometry(1.0, 1.25, 40), new THREE.MeshBasicMaterial({color:new THREE.Color(I.col).multiplyScalar(1.5), transparent:true, opacity:0.8, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide}));
+        c.halo.rotation.x = -Math.PI/2; c.halo.position.y = 0.08; c.model.add(c.halo); c.label = labelSprite(I.name+'!', I.col); c.label.position.y = 3.2; c.model.add(c.label);
+        burst(c.tx, 1, c.tz, 0xffffff, 30, 9); elBurst(I.el, c.tx, 1, c.tz, 30, 7); c.state = 'act'; c.t = 0; SFX.pop(); SFX.cry(c.type); }
       continue; }
-    if(c.state==='act'){ const o = c.owner, A = CRE_STATS[c.type];
-      if(c.type==='cindercub'){ const foes = creFoes(c); let tg = null, bd = 14; for(const e of foes){ if(e.dead) continue; const d = hyp(e.x-c.x, e.z-c.z); if(d < bd){ bd = d; tg = e; } }
-        if(tg){ c.ang += angDiff(c.ang, Math.atan2(tg.x-c.x, tg.z-c.z))*Math.min(1, (c.isBoss?2.0:8)*dt); }
-        c.model.rotation.y = c.ang; const tele = c.isBoss ? 0.8 : 0;
-        if(c.t < tele){ c.teleT = (c.teleT||0) - dt; if(c.teleT <= 0){ c.teleT = 0.14; fanFx(c.x, c.z, c.ang, A.range, A.arc, 0xff3b1a, 0.16, 0.35); } }
-        else { spray(c.x + Math.sin(c.ang)*0.8, c.z + Math.cos(c.ang)*0.8, c.ang, A.range*0.35, A.arc, Math.random()<.5?0xff7a20:0xffd040, 6, 1.0); if(Math.random()<0.3) puff(c.x + Math.sin(c.ang)*A.range*0.6, 1, c.z + Math.cos(c.ang)*A.range*0.6, 0x553322, 1, 1.5);
+    if(c.state==='act'){ const o = c.owner, foes = creFoes(c); if(c.label) c.label.material.opacity = clamp(1.6 - c.t, 0, 1); c.halo.material.opacity = 0.5 + 0.3*Math.sin(gt*10);
+      if(c.type==='cindercub'){ let tg = null, bd = 14; for(const e of foes){ if(e.dead) continue; const d = hyp(e.x-c.x, e.z-c.z); if(d < bd){ bd = d; tg = e; } }
+        if(tg && c.t < (c.isBoss?0.8:0)) c.ang += angDiff(c.ang, Math.atan2(tg.x-c.x, tg.z-c.z))*Math.min(1, (c.isBoss?2.5:8)*dt);
+        else if(tg && !c.isBoss) c.ang += angDiff(c.ang, Math.atan2(tg.x-c.x, tg.z-c.z))*Math.min(1, 8*dt);
+        c.model.rotation.y = c.ang; const tele = c.isBoss ? 0.9 : 0;
+        if(c.t < tele){ c.teleT = (c.teleT||0) - dt; if(c.teleT <= 0){ c.teleT = 0.15; fanFx(c.x, c.z, c.ang, A.range, A.arc, 0xff3b1a, 0.17, 0.4); } }
+        else { if(!c.roared){ c.roared = true; SFX.el('fire'); } spray(c.x + Math.sin(c.ang)*0.8, c.z + Math.cos(c.ang)*0.8, c.ang, A.range*0.35, A.arc, Math.random()<.5?0xff7a20:0xffd040, 7, 1.0); if(Math.random()<0.3) puff(c.x + Math.sin(c.ang)*A.range*0.6, 1, c.z + Math.cos(c.ang)*A.range*0.6, 0x553322, 1, 1.5);
+          if(Math.random()<0.15) tone(rnd(80,140), 0.12, 'sawtooth', 0.03, 0.6);
           if(c.isBoss){ for(const e of foes){ const dx = e.x-c.x, dz = e.z-c.z, d = hyp(dx,dz); if(d < A.range && Math.abs(angDiff(c.ang, Math.atan2(dx,dz))) < A.arc/2) hurtHero(e, 16*dt, null); } }
-          else coneHit(o, c.x, c.z, c.ang, areaOf(o,'hottake',A.range), A.arc, dmgOf(o,'hottake',A.dps)*dt, {}); }
+          else coneHit(o, c.x, c.z, c.ang, areaOf(o,'hottake',A.range), A.arc, dmgOf(o,'hottake',A.dps)*dt, {el:'fire'}); }
         if(c.t > tele + A.dur){ c.state = 'back'; c.t = 0; } }
-      else if(c.type==='boulderbud'){ if(!c.tele){ c.tele = true; if(c.isBoss) { discFx(c.x, c.z, A.rad, 0xff3b1a, 0.6); } ringFx(c.x, c.z, A.rad, c.isBoss?0xff3b1a:0xc0b8a8, 0.6); }
-        c.model.position.y = Math.max(0, Math.sin(Math.min(1,c.t/0.6)*Math.PI)*1.8);
-        if(c.t > 0.6 && !c.did){ c.did = true; addShake(c.isBoss?0.5:0.3); burst(c.x, 0.5, c.z, 0xa8a090, 60, 11); ringFx(c.x, c.z, A.rad, 0xd8d0c0, 0.4); SFX.boom(0.8);
-          if(c.isBoss){ for(const e of creFoes(c)){ if(hyp(e.x-c.x, e.z-c.z) < A.rad){ hurtHero(e, 12, null); knock(e, c.x, c.z, 9); } } }
-          else areaHit(o, c.x, c.z, areaOf(o,'rockbottom',A.rad), dmgOf(o,'rockbottom',A.dmg), {knock:A.knock}); }
-        if(c.t > 1.1){ c.state = 'back'; c.t = 0; } }
-      else if(c.type==='gloomoth'){ if(c.wings) c.wings.forEach((w,k)=>{ if(w) w.rotation.y = (k?-1:1)*Math.sin(gt*20)*0.6; }); c.model.position.y = 0.3+Math.sin(gt*3)*0.25;
-        if(Math.random()<0.7) burst(c.x+rnd(-A.rad,A.rad)*0.7, rnd(0.3,1.6), c.z+rnd(-A.rad,A.rad)*0.7, 0xc09aff, 1, 1, -0.5, 1);
-        if(!c.tele){ c.tele = true; ringFx(c.x, c.z, A.rad, 0xb070ff, 0.7); if(c.isBoss) discFx(c.x, c.z, A.rad, 0xb070ff, 0.9); }
-        if(c.t > (c.isBoss?0.9:0.2)){ if(c.isBoss){ if(!c.did){ for(const e of creFoes(c)) if(hyp(e.x-c.x, e.z-c.z) < A.rad){ e.slowT = Math.max(e.slowT, 1.6); e.stunT = Math.max(e.stunT, 0.5); } c.did = true; } }
-          else areaHit(o, c.x, c.z, areaOf(o,'sleepover',A.rad), dmgOf(o,'sleepover',A.dmg)*dt*2, {stun:A.stun*(1+0.15*(o.rank.sleepover||0)), slow:2}); }
-        if(c.t > 2.1){ c.state = 'back'; c.t = 0; } }
-      if(c.state==='back' && c.isBoss && BOSS){ BOSS.faced++; if(BOSS.faced===3) toast(null,'You have seen his whole team. Ball Boy can go down now.'); } }
-    if(c.state==='back'){ if(!c.beamed){ c.beamed = true; zapLine(c.x, c.z, c.owner.x, c.owner.z, 0xff4a4a, 1); } c.model.scale.setScalar(Math.max(0.01, (c.isBoss?1.25:1)*(1 - c.t*4)));
+      else if(c.type==='splashpup'){ let tg = null, bd = 16; for(const e of foes){ if(e.dead) continue; const d = hyp(e.x-c.x, e.z-c.z); if(d < bd){ bd = d; tg = e; } }
+        if(tg && c.t < 0.5) c.ang += angDiff(c.ang, Math.atan2(tg.x-c.x, tg.z-c.z))*Math.min(1, 6*dt); c.model.rotation.y = c.ang; c.model.position.y = Math.abs(Math.sin(c.t*6))*0.15;
+        const tele = c.isBoss ? 0.9 : 0.3;
+        if(c.t < tele){ c.teleT = (c.teleT||0) - dt; if(c.teleT <= 0){ c.teleT = 0.15; fanFx(c.x, c.z, c.ang, A.range, A.arc, c.isBoss?0xff3b1a:0x5ad8ff, 0.17, 0.35); } }
+        else if(!c.did){ c.did = true; SFX.el('frost'); noise(0.5, 0.18, null, {freq:1800, sweep:300}); fanFx(c.x, c.z, c.ang, A.range, A.arc, 0x5ad8ff, 0.45, 0.6); spray(c.x, c.z, c.ang, A.range*0.4, A.arc, 0xbfeeff, 40, 0.8); spray(c.x, c.z, c.ang, A.range*0.3, A.arc, 0x5ab4ff, 30, 0.5); addShake(0.25);
+          if(c.isBoss){ for(const e of foes){ const dx = e.x-c.x, dz = e.z-c.z, d = hyp(dx,dz); if(d < A.range && Math.abs(angDiff(c.ang, Math.atan2(dx,dz))) < A.arc/2){ hurtHero(e, 10, null); knock(e, c.x, c.z, A.knock); } } }
+          else coneHit(o, c.x, c.z, c.ang, areaOf(o,'splashzone',A.range), A.arc, dmgOf(o,'splashzone',A.dmg), {knock:A.knock, el:'frost', slow:1}); }
+        if(c.t > tele + 0.8){ c.state = 'back'; c.t = 0; } }
+      else if(c.type==='voltmoth'){ if(c.wings) c.wings.forEach((w,k)=>{ if(w) w.rotation.y = (k?-1:1)*Math.sin(gt*24)*0.6; }); c.model.position.y = 0.4+Math.sin(gt*3)*0.25; const R = c.isBoss ? A.rad : areaOf(o,'jolt',A.rad);
+        if(Math.random()<0.5) zapLine(c.x+rnd(-R,R)*0.6, c.z+rnd(-R,R)*0.6, c.x+rnd(-R,R)*0.6, c.z+rnd(-R,R)*0.6, 0xffd040, rnd(0.3,1.5));
+        if(!c.tele){ c.tele = true; ringFx(c.x, c.z, R, 0xffd040, 0.9); if(c.isBoss) discFx(c.x, c.z, R, 0xff3b1a, 1.0); }
+        if(c.t > (c.isBoss?1.0:0.35) && !c.did){ c.did = true; SFX.el('shock'); SFX.zap(); burst(c.x, 1, c.z, 0xfff3a0, 60, 12, 0, 0.3); for(let k=0;k<8;k++){ const a = k/8*6.283; zapLine(c.x, c.z, c.x+Math.cos(a)*R, c.z+Math.sin(a)*R, 0xffd040, 1); }
+          if(c.isBoss){ for(const e of foes) if(hyp(e.x-c.x, e.z-c.z) < R){ e.slowT = Math.max(e.slowT, 1.4); e.stunT = Math.max(e.stunT, 0.55); hurtHero(e, 8, null); } }
+          else areaHit(o, c.x, c.z, R, dmgOf(o,'jolt',A.dmg), {stun:A.stun*(1+0.15*(o.rank.jolt||0)), el:'shock'}); }
+        if(c.t > 1.9){ c.state = 'back'; c.t = 0; } }
+      else if(c.type==='bramblebud'){ const R = c.isBoss ? A.rad : areaOf(o,'bramble',A.rad);
+        if(!c.tele){ c.tele = true; ringFx(c.x, c.z, R, c.isBoss?0xff3b1a:0x6fe08a, 0.8); if(c.isBoss) discFx(c.x, c.z, R, 0xff3b1a, 0.9); }
+        c.model.position.y = c.t < 0.6 ? Math.max(0, Math.sin(Math.min(1,c.t/0.6)*Math.PI)*1.4) : 0;
+        if(c.t > 0.6 && !c.did){ c.did = true; addShake(c.isBoss?0.45:0.25); SFX.el('nature'); SFX.boom(0.5); elBurst('nature', c.x, 0.5, c.z, 60, 10); ringFx(c.x, c.z, R, 0x22d6a0, 0.5); discFx(c.x, c.z, R, 0x2a8a50, A.root);
+          for(let k=0;k<10;k++){ const a = rnd(0,6.283), r = rnd(0.5, R); const sp = new THREE.Mesh(new THREE.ConeGeometry(0.16, 1.3, 5), LOOK.hatchMat(0x3a6a2a)); sp.position.set(c.x+Math.cos(a)*r, 0.6, c.z+Math.sin(a)*r); scene.add(sp); setTimeout(()=>scene.remove(sp), A.root*1000); }
+          if(c.isBoss){ for(const e of foes) if(hyp(e.x-c.x, e.z-c.z) < R){ e.slowT = Math.max(e.slowT, A.root); hurtHero(e, 10, null); } }
+          else areaHit(o, c.x, c.z, R, dmgOf(o,'bramble',A.dmg*3), {slow:A.root, stun:0.6, el:'nature'}); }
+        if(c.did && !c.isBoss && c.t < 0.6 + A.root) for(const e of foes) if(!e.dead && hyp(e.x-c.x, e.z-c.z) < R) hit(e, dmgOf(o,'bramble',A.dmg)*dt, o, {slow:0.3});
+        if(c.t > 1.3){ c.state = 'back'; c.t = 0; } }
+      if(c.state==='back' && c.isBoss && BOSS){ BOSS.faced++; if(BOSS.faced===3) toast(null,'You\'ve seen enough of his team. Ball Boy can go down now.'); } }
+    if(c.state==='back'){ if(!c.beamed){ c.beamed = true; zapLine(c.x, c.z, c.owner.x, c.owner.z, 0xff4a4a, 1); } c.model.scale.setScalar(Math.max(0.01, creBig(c)*(1 - c.t*4)));
       if(c.t > 0.25){ scene.remove(c.model); CRE.splice(i,1); } } }
 }
-const CRE_STATS = {cindercub:{range:9, arc:1.1, dps:60, dur:2.2}, boulderbud:{rad:7, dmg:26, knock:9}, gloomoth:{rad:5, stun:1.6, dmg:6}};
 
 // ================= THE BOSS: BALL BOY =================
 let BOSS = null; const SHOTS = [];
+const BOSS_TEAM = ['cindercub','splashpup','voltmoth','bramblebud'];
 function makeBoss(){ const rig = makeRig('ballboy', 1); scene.add(rig.root); const D = diff();
-  BOSS = {kind:'boss', x:0, z:-415, r:1.3, hp:1500*D.hp, maxhp:1500*D.hp, rig, awake:false, intro:false, alive:true, dead:false, faced:0, seq:0, throwT:2.0, ballT:2.5, spawnT:10, face:0, walk:0, hitT:0, throwPose:0}; }
+  BOSS = {kind:'boss', x:0, z:-415, r:1.3, hp:1500*D.hp, maxhp:1500*D.hp, rig, awake:false, intro:false, alive:true, dead:false, faced:0, seq:0, throwT:2.0, ballT:2.5, spawnT:14, face:0, walk:0, hitT:0, throwPose:0}; }
 function bossDamage(d){ if(!BOSS || !BOSS.alive || !BOSS.awake) return; BOSS.hp -= d; BOSS.hitT = 0.08;
   if(BOSS.faced < 3 && BOSS.hp < BOSS.maxhp*0.1){ BOSS.hp = BOSS.maxhp*0.1; if(!BOSS.noDieSaid){ BOSS.noDieSaid = true; say('boss','noDie',true); } }
   if(BOSS.hp <= 0) bossDie(); }
@@ -234,13 +278,14 @@ function updateBoss(dt){
   const mx = dx/(d||1)*s + (-dz/(d||1))*0.6*Math.sin(gt*0.7), mz = dz/(d||1)*s + (dx/(d||1))*0.6*Math.sin(gt*0.7);
   const nx = BOSS.x + mx*4.5*dt, nz = BOSS.z + mz*4.5*dt; if(!blocked(nx, BOSS.z, 1) && Math.abs(nx) < 26) BOSS.x = nx; if(!blocked(BOSS.x, nz, 1) && nz < STAGE_Z-4 && nz > -438) BOSS.z = nz;
   BOSS.walk += hyp(mx,mz)*dt*7; BOSS.face = Math.atan2(dx, dz); BOSS.moving = hyp(mx,mz) > 0.2;
-  BOSS.throwT -= dt; if(BOSS.throwT <= 0 && !CRE.some(c=>c.isBoss)){ BOSS.throwT = 3.4; const type = ['cindercub','boulderbud','gloomoth'][BOSS.seq%3]; BOSS.seq++;
-    say('boss', type==='cindercub'?'cub':type==='boulderbud'?'bud':'moth', true);
-    if(type==='cindercub'){ const a = Math.atan2(BOSS.x-P0.x, BOSS.z-P0.z); throwCreature(BOSS, type, P0.x+Math.sin(a)*5, P0.z+Math.cos(a)*5, true); }
+  BOSS.throwT -= dt; if(BOSS.throwT <= 0 && !CRE.some(c=>c.isBoss)){ BOSS.throwT = 3.2; const type = BOSS_TEAM[BOSS.seq%4]; BOSS.seq++;
+    say('boss', {cindercub:'cub', splashpup:'pup', voltmoth:'moth', bramblebud:'bud'}[type], true);
+    if(type==='cindercub' || type==='splashpup'){ const a = Math.atan2(BOSS.x-P0.x, BOSS.z-P0.z); throwCreature(BOSS, type, P0.x+Math.sin(a)*5.5, P0.z+Math.cos(a)*5.5, true); }
     else throwCreature(BOSS, type, P0.x + P0.vx*0.25, P0.z + P0.vz*0.25, true); }
-  BOSS.ballT -= dt; if(BOSS.ballT <= 0){ BOSS.ballT = 1.8; const m = LOOK.piece(MODELS,'creatures','cre.ball',{outline:0.015}); m.position.set(BOSS.x, 2.4, BOSS.z); m.add(glow(0x41e4ff,1.2,0.6)); scene.add(m);
+  BOSS.ballT -= dt; if(BOSS.ballT <= 0){ BOSS.ballT = 2.0; const m = LOOK.piece(MODELS,'creatures','cre.ball',{outline:0.015}); m.position.set(BOSS.x, 2.4, BOSS.z); m.add(glow(0x41e4ff,1.4,0.7)); scene.add(m);
     const a = Math.atan2(P0.x-BOSS.x, P0.z-BOSS.z); SHOTS.push({m, vx:Math.sin(a)*13, vz:Math.cos(a)*13, life:2.4, dmg:8}); BOSS.throwPose = 0.3; }
-  BOSS.spawnT -= dt; if(BOSS.spawnT <= 0){ BOSS.spawnT = 11; for(let i=0;i<4;i++) spawnGhost(pick(['red','green','blue']), false, [BOSS.x+Math.cos(i*1.6)*4, BOSS.z+Math.sin(i*1.6)*4]); }
+  // the boss room stays clean: only a few ghosts at a time, and only now and then
+  BOSS.spawnT -= dt; if(BOSS.spawnT <= 0){ BOSS.spawnT = 15; if(G.length < 6) for(let i=0;i<3;i++) spawnGhost(pick(['red','green','blue']), false, [BOSS.x+Math.cos(i*2.1)*4, BOSS.z+Math.sin(i*2.1)*4]); }
   $('bossHp').style.width = Math.max(0, BOSS.hp/BOSS.maxhp*100)+'%';
   $('bossNote').textContent = BOSS.faced < 3 ? `Creatures faced: ${BOSS.faced} / 3` : 'He is open. Take him down!';
 }
