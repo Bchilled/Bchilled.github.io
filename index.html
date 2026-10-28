@@ -1,8 +1,14 @@
 <!doctype html>
 <!--
   brentsnow.ca — homepage
-  Version: 2.1.0
+  Version: 2.2.0
   CHANGELOG
+  2.2.0 (2026-10-28) — Removed: services for products that don't exist yet, slogan
+         lines, "Found on Google", unpromised reply time, "AI tools". Fixed: "run job
+         sites for 30 years" (overstated) now "in construction since 1995"; snow crews
+         dated 2011 to 2025. Services section now lists only the two built products.
+         Files touched: index.html (changelog, meta description, hero lede, services
+         section, background snow line, closer).
   2.1.0 (2026-10-28) — Changed: title "AI Operations Manager · Construction and Field
          Service"; headline is Brent's line "I find the problems in your operation and
          build the solutions". Added: free website demo links (nav, Websites tier).
@@ -21,7 +27,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Brent Snow</title>
-  <meta name="description" content="Brent Snow builds apps and websites for service and construction companies: crew tracking, GPS site check-ins, photo proof of work, routes and customer portals. 30 years in construction. Aurora, Ontario.">
+  <meta name="description" content="Brent Snow builds apps and websites for service and construction companies: crew tracking, GPS site check-ins, photo proof of work and customer logins. In construction since 1995. Aurora, Ontario.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap" rel="stylesheet">
@@ -145,7 +151,7 @@
     <div>
       <p class="role">AI Operations Manager · Construction and Field Service</p>
       <h1>I find the problems in your operation and build the solutions</h1>
-      <p class="lede">Apps, websites and AI tools for service and construction companies. Track your crews, prove the work was done, and stop running the business from group texts. Built by someone who has run job sites for 30 years.</p>
+      <p class="lede">Apps and websites for service and construction companies. Track your crews, prove the work was done, and stop running the business from group texts. Built by someone who has worked in construction since 1995.</p>
       <div class="ctas"><a class="btn primary" href="/apps/#quote">Get a quote</a><a class="btn secondary" href="/apps/crewline/">Try the live demo</a></div>
     </div>
     <figure class="phones" aria-label="Screens from the crew tracker demo">
@@ -165,21 +171,14 @@
   <main>
     <!-- SERVICES: get what you want -->
     <section class="block" id="services"><div class="wrap">
-      <h2>Get what you need, nothing you don't</h2>
-      <p class="intro">Start with one tool or get everything. All of it carries your company's name and logo.</p>
-      <div class="tiers">
-        <div class="tier"><h3>Single tools</h3><p>One job, done properly.</p>
-          <ul><li>Site inspection reports</li><li>Route planner</li><li>Snow event log</li><li>Security patrol log</li><li>Quote builder</li></ul>
-          <a href="/apps/">See all tools</a></div>
-        <div class="tier"><h3>Full apps</h3><p>Your tools in one app with one login.</p>
-          <ul><li>Crew tracker</li><li>Customer portal</li><li>Schedules and hours</li><li>Equipment and fleet</li></ul>
-          <a href="/apps/crewline/">Try the crew tracker</a></div>
-        <div class="tier"><h3>Websites</h3><p>A site that gets you calls.</p>
-          <ul><li>Free demo in 7 days</li><li>Your work, shown properly</li><li>Quote request forms</li><li>Fast on phones</li><li>Found on Google</li></ul>
+      <h2>What I build</h2>
+      <div class="tiers" style="grid-template-columns:1fr 1fr">
+        <div class="tier"><h3>Crew tracker</h3><p>For companies with crews out on sites every day.</p>
+          <ul><li>Daily routes with directions</li><li>Site clock in and out, checked by GPS</li><li>Before and after photos on every job</li><li>Schedules, hours and payroll export</li><li>A login for your customers to see their visits</li></ul>
+          <a href="/apps/crewline/">Try the live demo</a></div>
+        <div class="tier"><h3>Business websites</h3><p>For trades that need customers to find them and call.</p>
+          <ul><li>Your services, towns and job photos</li><li>Tap-to-call on phones</li><li>An estimate form that emails you</li><li>A free demo before you pay anything</li></ul>
           <a href="/website-demo/">Get a free website demo</a></div>
-        <div class="tier"><h3>Social media</h3><p>Posts built from your real jobs.</p>
-          <ul><li>Before and after posts</li><li>Written in your voice</li><li>Scheduled for you</li><li>Monthly service</li></ul>
-          <a href="/apps/#socialmgmt">Ask about social media</a></div>
       </div>
     </div></section>
 
@@ -206,7 +205,7 @@
       <dl>
         <dt>Construction</dt><dd>Labourer to foreman on residential and commercial builds, concrete crews and high-rise mechanical installs.</dd>
         <dt>Heavy equipment</dt><dd>Loader and rock truck operator in quarry production. General manager of an equipment sales, rental and repair business.</dd>
-        <dt>Snow and grounds</dt><dd>Supervised municipal and commercial snow crews of up to 8 every winter since 2011.</dd>
+        <dt>Snow and grounds</dt><dd>Supervised municipal and commercial snow crews of up to 8, winters 2011 to 2025.</dd>
         <dt>Facilities</dt><dd>Regional field manager running quality inspections and service partners across GTA commercial sites.</dd>
         <dt>Software</dt><dd>Computer Programmer diploma, Seneca College. Founder of a 4,000+ member student programming community.</dd>
       </dl>
@@ -215,7 +214,7 @@
 
   <!-- CLOSER: one more chance to act -->
   <section class="closer"><div class="wrap">
-    <div><h2>Tell me what's slowing your crews down</h2><p>You'll get a quote by email, usually within two business days.</p></div>
+    <div><h2>Tell me what's slowing your crews down</h2><p>I'll reply by email with a quote.</p></div>
     <a class="btn primary" href="/apps/#quote">Get a quote</a>
   </div></section>
   <footer><div class="wrap"><span>© 2026 Brent Snow</span><span>Aurora, Ontario · Serving the GTA</span></div></footer>

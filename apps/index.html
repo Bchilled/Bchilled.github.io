@@ -1,8 +1,13 @@
 <!doctype html>
 <!--
   brentsnow.ca/apps — app catalogue and quote request
-  Version: 1.2.0
+  Version: 1.3.0
   CHANGELOG
+  1.3.0 (2026-10-28) — Removed: every product without a working demo and all
+         "Built to order" / "Monthly service" labels; slogan lines; unpromised reply
+         time. Catalogue now lists only Crew tracker (live demo) and Business website
+         (sample site). Files touched: apps/index.html (changelog, lede, catalogue,
+         quote intro).
   1.2.0 (2026-10-28) — Added: "Get a free demo" button on Business website linking
          /website-demo/. Files touched: apps/index.html (changelog, website row).
   1.1.0 (2026-10-28) — Changed: catalogue grouped into Single tools, Full apps,
@@ -83,106 +88,25 @@
 
   <main class="wrap">
     <h1>Tech solutions for the service and construction fields</h1>
-    <p class="lede">Get what you want: a single tool, a full app, a website, or someone to run your social media. Everything is set up for your business, carries your name and logo, and is priced to your size.</p>
+    <p class="lede">Two products, both working today. Try them, then tell me about your business.</p>
 
-    <h2>Single tools</h2>
-    <p class="sub">One job, done well. Start with the tool you need most.</p>
-    <div class="catalogue">
-      <article class="appRow" id="inspection">
-        <div class="status">Built to order</div>
-        <div><h3>Site inspection</h3>
-          <p>Walk the property and talk. Every spoken note is matched to a photo and a location, and a finished report is ready when you leave.</p></div>
-        <div class="actions"><button class="btn" data-app="Site inspection">Request a quote</button></div>
-      </article>
-      <article class="appRow" id="routes">
-        <div class="status">Built to order</div>
-        <div><h3>Route planner</h3>
-          <p>Enter all your stops and get the best order by drive time, distance or cost per kilometre, split across trucks.</p></div>
-        <div class="actions"><button class="btn" data-app="Route planner">Request a quote</button></div>
-      </article>
-      <article class="appRow" id="snow">
-        <div class="status">Built to order</div>
-        <div><h3>Snow event log</h3>
-          <p>Log each storm: plow and salt visits per site, salt used, start and end times with GPS, for billing and slip-and-fall defence.</p></div>
-        <div class="actions"><button class="btn" data-app="Snow event log">Request a quote</button></div>
-      </article>
-      <article class="appRow" id="patrol">
-        <div class="status">Built to order</div>
-        <div><h3>Security patrol log</h3>
-          <p>Guard tours with checkpoint check-ins, incident reports with photos, and a client view of completed rounds.</p></div>
-        <div class="actions"><button class="btn" data-app="Security patrol log">Request a quote</button></div>
-      </article>
-      <article class="appRow" id="quotes">
-        <div class="status">Built to order</div>
-        <div><h3>Quote builder</h3>
-          <p>Build quotes on site with your rates, margins and photos, and send a clean PDF to the customer.</p></div>
-        <div class="actions"><button class="btn" data-app="Quote builder">Request a quote</button></div>
-      </article>
-      <article class="appRow" id="equipment">
-        <div class="status">Built to order</div>
-        <div><h3>Equipment and fleet tracker</h3>
-          <p>Where every machine is, who has it, hours, service due dates and repair history.</p></div>
-        <div class="actions"><button class="btn" data-app="Equipment and fleet tracker">Request a quote</button></div>
-      </article>
-      <article class="appRow" id="social">
-        <div class="status">Built to order</div>
-        <div><h3>Before and after posts</h3>
-          <p>Turns job photos into ready-to-post before and after images for social media, with your logo.</p></div>
-        <div class="actions"><button class="btn" data-app="Before and after posts">Request a quote</button></div>
-      </article>
-      <article class="appRow" id="timesheet">
-        <div class="status">Built to order</div>
-        <div><h3>Timesheet and payroll export</h3>
-          <p>Crew clock in and out from their phones, hours totalled by week, and a payroll-ready export.</p></div>
-        <div class="actions"><button class="btn" data-app="Timesheet and payroll export">Request a quote</button></div>
-      </article>
-    </div>
-
-    <h2>Full apps</h2>
-    <p class="sub">Tools combined into one app around how your business runs.</p>
     <div class="catalogue">
       <article class="appRow" id="crew">
         <div class="status live">Live demo</div>
         <div><h3>Crew tracker</h3>
-          <p>Run the day from one app: who goes where, proof they were there, and what they did.</p>
-          <ul><li>Daily routes with next stop and one-tap Google Maps directions</li>
-            <li>Site clock in and out checked against the site location</li>
-            <li>Before and after photos, shared and internal notes</li>
-            <li>Schedule by day, week and month; hours and timesheet export</li>
-            <li>Customer portal showing visits, photos and verified times</li></ul></div>
+          <p>Who goes where, proof they were there, and what they did.</p>
+          <ul><li>Each crew member sees today's stops in order, with Google Maps directions</li>
+            <li>Clock in and out at each site, checked against the site's location</li>
+            <li>Before and after photos on every job, with notes shared or kept internal</li>
+            <li>Schedule by day, week and month, with hours exported for payroll</li>
+            <li>Customers log in to see their visits, photos and times</li></ul></div>
         <div class="actions"><a class="btn solid" href="/apps/crewline/">Try the demo</a><button class="btn" data-app="Crew tracker">Request a quote</button></div>
       </article>
-      <article class="appRow" id="portal">
-        <div class="status">Built to order</div>
-        <div><h3>Customer portal</h3>
-          <p>A login for your customers to see every visit with photos, times and notes. Fewer "did you come?" calls.</p></div>
-        <div class="actions"><button class="btn" data-app="Customer portal">Request a quote</button></div>
-      </article>
-      <article class="appRow" id="ops">
-        <div class="status">Built to order</div>
-        <div><h3>Full operations app</h3>
-          <p>Pick the tools you need and get them as one app: one login, one database, your branding.</p></div>
-        <div class="actions"><button class="btn" data-app="Full operations app">Request a quote</button></div>
-      </article>
-    </div>
-
-    <h2>Websites</h2>
-    <div class="catalogue">
       <article class="appRow" id="website">
-        <div class="status">Built to order</div>
+        <div class="status live">Sample site</div>
         <div><h3>Business website</h3>
-          <p>A fast, professional site that shows your work and turns visitors into calls and quote requests.</p></div>
-        <div class="actions"><a class="btn solid" href="/website-demo/">Get a free demo</a><button class="btn" data-app="Business website">Request a quote</button></div>
-      </article>
-    </div>
-
-    <h2>Social media</h2>
-    <div class="catalogue">
-      <article class="appRow" id="socialmgmt">
-        <div class="status">Monthly service</div>
-        <div><h3>Social media management</h3>
-          <p>Regular posts built from your real job photos, written in your voice, scheduled for you. Before and after content is what sells trades work.</p></div>
-        <div class="actions"><button class="btn" data-app="Social media management">Request a quote</button></div>
+          <p>A site for your trade with your services, towns and job photos, tap-to-call on phones, and an estimate form that emails you.</p></div>
+        <div class="actions"><a class="btn solid" href="/demos/northfield-grounds/">See the sample</a><a class="btn" href="/website-demo/">Get a free demo</a></div>
       </article>
     </div>
   </main>
@@ -190,7 +114,7 @@
   <section class="quote" id="quote">
     <div class="wrap">
       <h2 style="margin-top:0">Request a quote</h2>
-      <p style="max-width:40rem;margin-top:-0.5rem">Tell me about your business and what you need. I'll reply by email with a quote, usually within two business days.</p>
+      <p style="max-width:40rem;margin-top:-0.5rem">Tell me about your business and what you need. I'll reply by email with a quote.</p>
       <!-- FormSubmit relays this form to Brent's email; no account needed. _next returns the visitor to a thank-you page. -->
       <form id="qf" action="https://formsubmit.co/brentlysnow@gmail.com" method="POST">
         <input type="hidden" name="_subject" value="New app quote request from brentsnow.ca">
