@@ -1,117 +1,262 @@
-<!DOCTYPE html>
+<!doctype html>
+<!--
+  brentsnow.ca — professional landing page
+  Version: 1.2.0
+  CHANGELOG
+  1.2.0 (2026-10-28) — Added: "Apps and tools" section linking the app catalogue
+         (/apps/) with a live demo link for the crew tracker, and a "Request a quote"
+         call to action. Changed: old space-themed homepage kept at /space/.
+         Files touched: index.html (changelog, new .apps CSS, new apps section
+         before Contact, contact copy).
+  1.1.0 (2026-10-28) — Changed: hero now states identity instead of a slogan.
+         H1 is the name; new .role line "Field Operations Consultant"; lede rewritten
+         as plain statement. Removed: "Built in the field" headline and .name rule.
+         Files touched: index.html (changelog lines 1-17, .role CSS ~line 78-85,
+         hero markup ~lines 165-176, meta description line ~22).
+  1.0.1 (2026-10-28) — Fixed: name in hero enlarged (1rem -> clamp 1.5–2.25rem),
+         wider and full ink colour so it reads as the page owner. Files touched:
+         index.html (lines 1-13 changelog, .name rule ~line 75).
+  1.0.0 (2026-10-28) — Added: new single-page professional site (hero, capabilities,
+         approach, contact). Removed: previous content (full replacement).
+         Files touched: index.html (all lines).
+-->
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BRENT SNOW</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background: #000000;
-            color: #ffffff;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-        }
-        
-        .universe {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 25% 30%, rgba(120, 180, 255, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 75% 70%, rgba(200, 140, 255, 0.06) 0%, transparent 60%),
-                #000000;
-            z-index: -1;
-        }
-        
-        .stars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: transparent;
-            z-index: -1;
-            box-shadow: 
-                0 0 2px #fff,
-                120px 80px 2px #fff,
-                240px 160px 1px #fff,
-                400px 60px 2px #fff,
-                550px 220px 1px #fff,
-                700px 120px 2px #fff,
-                850px 300px 1px #fff,
-                1000px 90px 2px #fff,
-                1150px 250px 1px #fff,
-                1300px 150px 2px #fff;
-            animation: twinkle 4s infinite alternate;
-        }
-        
-        .main-title {
-            font-size: 13vw;
-            line-height: 0.85;
-            font-weight: 900;
-            letter-spacing: -0.06em;
-            text-shadow: 0 0 60px rgba(255,255,255,0.3);
-        }
-        
-        .tagline {
-            font-size: 3.8rem;
-            line-height: 1.05;
-            font-weight: 300;
-            letter-spacing: -0.03em;
-        }
-        
-        .nav-btn {
-            font-size: 1.4rem;
-            padding: 26px 70px;
-            border: 1.5px solid #ffffff;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-            letter-spacing: 2px;
-        }
-        
-        .nav-btn:hover {
-            border-color: #d4af37;
-            color: #d4af37;
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.4);
-            transform: translateY(-4px);
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Brent Snow</title>
+  <meta name="description" content="Brent Snow, Field Operations Consultant. Over twenty years in construction and site operations with a background in computer programming.">
+  <!-- Archivo: one family, two widths. Expanded for display (structural, engineered feel), normal width for reading. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap" rel="stylesheet">
+  <style>
+    /* Palette: cool site-office tones. Chalk-line blue is the single accent, used only for the snapped line and links. */
+    :root {
+      --paper: #F3F5F4;     /* page background */
+      --ink: #1E2428;       /* primary text */
+      --steel: #5B6770;     /* secondary text */
+      --concrete: #C9CDCF;  /* rules and grid */
+      --chalk: #2563C9;     /* accent: chalk line */
+      --panel: #E7EBEA;     /* contact band */
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --paper: #1B2024; --ink: #E9EDEC; --steel: #9AA6AE;
+        --concrete: #3A4249; --chalk: #6A9BEA; --panel: #232A2F;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: "Archivo", system-ui, sans-serif;
+      font-variation-settings: "wdth" 100;
+      font-size: 1.125rem;
+      line-height: 1.6;
+    }
+    a { color: var(--chalk); text-underline-offset: 3px; }
+    a:focus-visible { outline: 2px solid var(--chalk); outline-offset: 3px; }
+
+    /* Shared column: left-aligned, readable measure */
+    .wrap { max-width: 68rem; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* ---------- Hero ---------- */
+    /* Faint layout grid behind the hero, like a site plan */
+    .hero {
+      position: relative;
+      padding: 6rem 0 5rem;
+      background-image:
+        linear-gradient(var(--concrete) 1px, transparent 1px),
+        linear-gradient(90deg, var(--concrete) 1px, transparent 1px);
+      background-size: 48px 48px;
+      background-position: -1px -1px;
+      border-bottom: 1px solid var(--concrete);
+    }
+    /* Fade the grid out toward the bottom so text stays clean */
+    .hero::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(to bottom, transparent 0%, var(--paper) 85%);
+      pointer-events: none;
+    }
+    .hero .wrap { position: relative; z-index: 1; }
+    /* Role line under the name: states what he is, second in the hierarchy */
+    .role {
+      margin: 1rem 0 0;
+      font-variation-settings: "wdth" 115;
+      font-size: clamp(1.4rem, 3.2vw, 2.4rem); font-weight: 600; color: var(--steel);
+      letter-spacing: -0.01em; line-height: 1.15;
+    }
+    h1 {
+      margin: 0;
+      font-variation-settings: "wdth" 125;
+      font-weight: 800;
+      font-size: clamp(2.6rem, 8vw, 6.25rem);
+      line-height: 0.98;
+      letter-spacing: -0.02em;
+      max-width: 14ch;
+    }
+    /* The memorable element: a chalk line snapped across the hero on load */
+    .chalkline { display: block; width: 100%; height: 18px; margin: 2.25rem 0 2rem; overflow: visible; }
+    .chalkline line {
+      stroke: var(--chalk); stroke-width: 2.5; stroke-linecap: round;
+      stroke-dasharray: 2000; stroke-dashoffset: 2000;
+      animation: snap 0.9s cubic-bezier(.2,.9,.2,1) 0.3s forwards;
+    }
+    .chalkline circle { fill: var(--chalk); }
+    @keyframes snap { to { stroke-dashoffset: 0; } }
+    @media (prefers-reduced-motion: reduce) {
+      .chalkline line { animation: none; stroke-dashoffset: 0; }
+    }
+    .lede { max-width: 38rem; margin: 0; font-size: 1.3rem; line-height: 1.55; color: var(--ink); }
+
+    /* ---------- Capabilities ---------- */
+    section { padding: 5rem 0; }
+    h2 {
+      margin: 0 0 2.5rem;
+      font-variation-settings: "wdth" 115;
+      font-weight: 700; font-size: clamp(1.6rem, 3.5vw, 2.25rem);
+      line-height: 1.15; max-width: 22ch;
+    }
+    .cap-grid {
+      display: grid; gap: 0;
+      grid-template-columns: repeat(3, 1fr);
+      border-top: 2px solid var(--ink);
+    }
+    .cap { padding: 1.75rem 1.75rem 0 0; }
+    .cap + .cap { padding-left: 1.75rem; border-left: 1px solid var(--concrete); }
+    h3 {
+      margin: 0 0 0.75rem;
+      font-variation-settings: "wdth" 110;
+      font-weight: 700; font-size: 1.25rem; line-height: 1.25;
+    }
+    .cap p { margin: 0; color: var(--steel); font-size: 1.05rem; }
+
+    /* ---------- Approach ---------- */
+    .approach { border-top: 1px solid var(--concrete); }
+    .approach-body { display: grid; grid-template-columns: 1fr 1.4fr; gap: 3rem; align-items: start; }
+    .approach-body h2 { margin: 0; }
+    .approach-body p { margin: 0 0 1.25rem; max-width: 40rem; }
+    .approach-body p:last-child { margin-bottom: 0; }
+
+    /* ---------- Contact ---------- */
+    .contact { background: var(--panel); }
+    .contact h2 { margin-bottom: 1rem; }
+    .contact p { margin: 0 0 0.5rem; }
+    .contact .mail {
+      display: inline-block; margin-top: 0.75rem;
+      font-variation-settings: "wdth" 115; font-weight: 700;
+      font-size: clamp(1.25rem, 3vw, 1.75rem);
+    }
+    /* ---------- Apps section ---------- */
+    .apps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 2px solid var(--ink); margin-bottom: 2rem; }
+    .app { padding: 1.5rem 1.5rem 0 0; }
+    .app + .app { padding-left: 1.5rem; border-left: 1px solid var(--concrete); }
+    .app p { margin: 0.5rem 0 0.75rem; color: var(--steel); font-size: 1.05rem; }
+    .tag { font-size: 0.85rem; font-weight: 600; color: var(--chalk); }
+    .cta { display: inline-block; padding: 0.9rem 1.4rem; border-radius: 8px; background: var(--chalk); color: #fff; font-weight: 700; text-decoration: none; }
+    .cta.ghost { background: transparent; color: var(--chalk); border: 2px solid var(--chalk); margin-left: 0.5rem; }
+    @media (max-width: 760px) { .apps-grid { grid-template-columns: 1fr; } .app, .app + .app { padding: 1.25rem 0; border-left: none; } .app + .app { border-top: 1px solid var(--concrete); } .cta.ghost { margin: 0.75rem 0 0; } }
+    footer { padding: 2rem 0; color: var(--steel); font-size: 0.9rem; }
+
+    /* ---------- Mobile ---------- */
+    @media (max-width: 760px) {
+      .hero { padding: 4rem 0 3.5rem; }
+      .cap-grid { grid-template-columns: 1fr; }
+      .cap, .cap + .cap { padding: 1.5rem 0; border-left: none; }
+      .cap + .cap { border-top: 1px solid var(--concrete); }
+      .approach-body { grid-template-columns: 1fr; gap: 1.5rem; }
+      section { padding: 3.5rem 0; }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="universe"></div>
-    <div class="stars"></div>
-    
-    <div class="relative z-10 min-h-screen flex flex-col items-center justify-center text-center px-6">
-        
-        <h1 class="main-title text-white tracking-tighter">BRENT SNOW</h1>
-        
-        <p class="tagline mt-10 text-amber-300">
-            I AM THE CENTER<br>OF THE UNIVERSE
-        </p>
-        
-        <div class="mt-24 flex flex-col sm:flex-row gap-8">
-            
-            <a href="https://github.com" target="_blank"
-               class="nav-btn text-white hover:text-amber-400">PROJECTS</a>
-            
-            <a href="#" id="dev-link"
-               class="nav-btn text-white hover:text-amber-400">DEV</a>
-            
-            <a href="https://dnd.brentsnow.ca"
-               class="nav-btn text-white hover:text-amber-400">D&amp;D</a>
-            
-        </div>
-        
+  <!-- Hero: the one idea the whole page sells — field and code are the same job -->
+  <header class="hero">
+    <div class="wrap">
+      <!-- Identity first: who he is, then what he is. A statement, not a pitch. -->
+      <h1>Brent Snow</h1>
+      <p class="role">Field Operations Consultant</p>
+      <!-- Chalk line: two set-out points, one line between them -->
+      <svg class="chalkline" viewBox="0 0 1000 18" preserveAspectRatio="none" aria-hidden="true">
+        <circle cx="6" cy="9" r="6"/>
+        <line x1="6" y1="9" x2="994" y2="9"/>
+        <circle cx="994" cy="9" r="6"/>
+      </svg>
+      <p class="lede">Over twenty years in construction and site operations, with a background in computer programming. I inspect properties, streamline how field work gets done, and build the software that tracks it.</p>
     </div>
+  </header>
 
-    <script>
-        document.getElementById('dev-link').href = '#';
-    </script>
+  <main>
+    <!-- Capabilities: three disciplines that feed one outcome (not a sequence, so no numbering) -->
+    <section>
+      <div class="wrap">
+        <h2>Three disciplines, one way of working</h2>
+        <div class="cap-grid">
+          <div class="cap">
+            <h3>Construction and infrastructure</h3>
+            <p>Two decades of hands-on work across sites and trades. I read a job quickly, know what it really takes, and know where it usually goes wrong.</p>
+          </div>
+          <div class="cap">
+            <h3>Programming and systems</h3>
+            <p>A working programmer's understanding of software, data and automation, used to build practical tools rather than slides.</p>
+          </div>
+          <div class="cap">
+            <h3>Technology on the ground</h3>
+            <p>Putting the two together: turning inspections, scope and reporting into systems that crews, managers and clients can trust.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Approach: short statement of how the pieces combine -->
+    <section class="approach">
+      <div class="wrap approach-body">
+        <h2>Where the jobsite meets the system</h2>
+        <div>
+          <p>Most infrastructure problems are information problems first. Work gets missed, scope gets argued and reports don't match what happened on site.</p>
+          <p>Because I've done the physical work and I write the code, I can close that gap from both sides: seeing the job as it really is, then building the process and technology that keep it that way.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Apps and tools: what clients can see working, then request -->
+    <section class="approach">
+      <div class="wrap">
+        <h2>Apps and tools</h2>
+        <p style="max-width:40rem;margin:-1rem 0 2rem">Field apps built for trades and property service companies, branded with your name and set up around how your crews already work.</p>
+        <div class="apps-grid">
+          <div class="app"><span class="tag">Live demo</span><h3>Crew tracker</h3>
+            <p>Daily routes, site clock in and out checked by GPS, before and after photos, hours and a customer portal.</p>
+            <a href="/apps/crewline/">Try the demo</a></div>
+          <div class="app"><span class="tag">Built to order</span><h3>Site inspection</h3>
+            <p>Walk the site and talk. Notes, photos and locations become a finished inspection report.</p>
+            <a href="/apps/#inspection">Details</a></div>
+          <div class="app"><span class="tag">Built to order</span><h3>Route planner</h3>
+            <p>Enter every stop and get the best order by time, distance or cost, ready to open in Google Maps.</p>
+            <a href="/apps/#routes">Details</a></div>
+        </div>
+        <a class="cta" href="/apps/">See all apps</a><a class="cta ghost" href="/apps/#quote">Request a quote</a>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact">
+      <div class="wrap">
+        <h2>Get in touch</h2>
+        <p>Based in Aurora, Ontario, working across the Greater Toronto Area.</p>
+        <a class="mail" href="mailto:brentlysnow@gmail.com">brentlysnow@gmail.com</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">© 2026 Brent Snow</div>
+  </footer>
 
 </body>
 </html>
