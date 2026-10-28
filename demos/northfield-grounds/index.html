@@ -1,0 +1,242 @@
+<!doctype html>
+<!--
+  Trade website template (SiteKit) — Version 1.0.1 (fixed gallery overflow into the next section)
+  Generated from clients/northfield-grounds.json by build.py. Edit the JSON, not this output.
+  Photos: Pexels (free licence) unless the client supplied their own.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Northfield Grounds Co. | Landscaping and lawn care in Aurora and Newmarket</title>
+  <meta name="description" content="Weekly mowing, spring and fall cleanups, hedge trimming and garden beds. Free estimates within 48 hours. Serving Aurora, Newmarket, Richmond Hill, King City, Stouffville, East Gwillimbury. Call (905) 555-0142.">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Big Shoulders Display: condensed signage face that reads like a truck door decal. Figtree for body text. -->
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand: #1F4D3A;      /* client's main colour */
+      --accent: #E8A33D;    /* calls to action only */
+      --ink: #17201B; --muted: #5A665F; --paper: #F6F5F0; --line: #DEDDD3; --white: #FFFFFF;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    body { margin: 0; font: 400 1.0625rem/1.6 "Figtree", system-ui, sans-serif; color: var(--ink); background: var(--paper); }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .wrap { max-width: 72rem; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+    h1, h2, h3 { font-family: "Big Shoulders Display", Impact, sans-serif; text-transform: uppercase; letter-spacing: 0.01em; line-height: 0.95; margin: 0; }
+    h2 { font-size: clamp(2.2rem, 5vw, 3.4rem); color: var(--brand); }
+    h3 { font-size: 1.6rem; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 54px; padding: 0 1.5rem; border-radius: 6px; font-weight: 700; text-decoration: none; border: 0; cursor: pointer; font-size: 1.05rem; }
+    .btn.accent { background: var(--accent); color: #1A1305; }
+    .btn.outline { border: 2px solid currentColor; }
+    .btn.brand { background: var(--brand); color: #fff; }
+
+    /* Demo banner: makes clear this is a preview, with the next step */
+    .demo { background: #111; color: #EEE; font-size: 0.9rem; text-align: center; padding: 0.55rem 1rem; }
+    .demo a { color: var(--accent); font-weight: 700; }
+
+    /* Header */
+    header.top { background: var(--white); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
+    header.top .wrap { display: flex; align-items: center; gap: 1rem; padding-block: 0.75rem; }
+    .logo { font-family: "Big Shoulders Display", sans-serif; font-weight: 900; font-size: 1.6rem; text-transform: uppercase; color: var(--brand); text-decoration: none; margin-right: auto; line-height: 1; }
+    header.top .phone { font-weight: 700; text-decoration: none; white-space: nowrap; }
+    @media (max-width: 640px) { header.top .phone, header.top .btn { display: none; } }
+
+    /* Hero: real work photo, text on a dark gradient for contrast */
+    .hero { position: relative; color: #fff; min-height: min(78vh, 720px); display: flex; align-items: flex-end; }
+    .hero img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,16,12,.86) 0%, rgba(10,16,12,.55) 55%, rgba(10,16,12,.15) 100%); }
+    .hero .wrap { position: relative; z-index: 1; padding-block: 5rem 3rem; width: 100%; }
+    .hero .kicker { color: var(--accent); font-weight: 700; margin: 0 0 0.75rem; }
+    .hero h1 { font-size: clamp(2.8rem, 8vw, 5.6rem); max-width: 14ch; }
+    .hero p.sub { font-size: 1.2rem; max-width: 36rem; margin: 1.25rem 0 2rem; color: #E7ECE8; }
+    .hero .ctas { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin-top: 2.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,.25); }
+    .chips span { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; font-size: 0.98rem; }
+    .chips svg { color: var(--accent); flex: none; }
+
+    section { padding-block: 5rem; }
+    .head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 2.5rem; }
+    .head p { margin: 0; color: var(--muted); max-width: 30rem; }
+
+    /* Services: photo cards */
+    .services { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+    .svc { background: var(--white); border-radius: 10px; overflow: hidden; border: 1px solid var(--line); display: grid; grid-template-columns: 42% 1fr; }
+    .svc img { width: 100%; height: 100%; object-fit: cover; min-height: 190px; }
+    .svc div { padding: 1.4rem 1.4rem 1.5rem; }
+    .svc h3 { color: var(--brand); margin-bottom: 0.5rem; }
+    .svc p { margin: 0; color: var(--muted); }
+
+    /* Steps: a real sequence, so numbered */
+    .steps-band { background: var(--brand); color: #fff; }
+    .steps-band h2 { color: #fff; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; counter-reset: s; }
+    .step { border-top: 3px solid var(--accent); padding-top: 1.25rem; }
+    .step b { font-family: "Big Shoulders Display", sans-serif; font-size: 3rem; line-height: 1; color: var(--accent); display: block; }
+    .step h3 { margin: 0.5rem 0; }
+    .step p { margin: 0; color: #D9E3DD; }
+
+    /* Gallery */
+    .gallery { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 0.75rem; height: 520px; }
+    .gallery img { width: 100%; height: 100%; min-height: 0; object-fit: cover; border-radius: 10px; }
+    .gallery img:first-child { grid-row: 1 / 3; }
+
+    /* Reviews */
+    .reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+    .review { background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 1.5rem; }
+    .stars { color: var(--accent); letter-spacing: 2px; font-size: 1.1rem; }
+    .review p { margin: 0.75rem 0 1rem; font-size: 1.05rem; }
+    .review span { color: var(--muted); font-size: 0.9rem; font-weight: 600; }
+    .example-note { color: var(--muted); font-size: 0.9rem; margin-top: 1rem; }
+
+    /* Area + quote */
+    .split { display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; align-items: start; }
+    .towns { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; }
+    .towns span { background: var(--white); border: 1px solid var(--line); border-radius: 99px; padding: 0.35rem 0.9rem; font-weight: 600; }
+    .contact-lines p { margin: 0.35rem 0; }
+    form.quote { background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 1.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    form.quote .full { grid-column: 1 / -1; }
+    form.quote label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.95rem; }
+    form.quote input, form.quote select, form.quote textarea { width: 100%; padding: 0.8rem; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: var(--paper); }
+    form.quote textarea { min-height: 6rem; resize: vertical; }
+    .form-note { font-size: 0.9rem; color: var(--muted); margin: 0; }
+
+    footer { background: #111813; color: #C8D1CB; padding-block: 2.5rem 6rem; font-size: 0.95rem; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; }
+    footer strong { color: #fff; font-family: "Big Shoulders Display", sans-serif; font-size: 1.4rem; text-transform: uppercase; }
+
+    /* Phone call bar: the main action for a trade site on mobile */
+    .callbar { position: fixed; left: 0; right: 0; bottom: 0; display: none; gap: 0.5rem; padding: 0.6rem max(12px, env(safe-area-inset-left)) calc(0.6rem + env(safe-area-inset-bottom)); background: var(--white); border-top: 1px solid var(--line); z-index: 20; }
+    .callbar .btn { flex: 1; min-height: 50px; }
+
+    @media (max-width: 860px) {
+      .services, .reviews, .steps, .split { grid-template-columns: 1fr; }
+      .svc { grid-template-columns: 1fr; }
+      .svc img { height: 200px; min-height: 0; }
+      .gallery { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; height: auto; }
+      .gallery img { height: 180px; }
+      .gallery img:first-child { grid-column: 1 / 3; grid-row: auto; height: 240px; }
+      .callbar { display: flex; }
+      section { padding-block: 3.5rem; }
+    }
+    @media (max-width: 520px) { form.quote { grid-template-columns: 1fr; padding: 1.25rem; } }
+  </style>
+</head>
+<body>
+
+  <div class="demo">Website demo prepared for Northfield Grounds Co. by Brent Snow. Not live yet. <a href="https://brentsnow.ca/website-demo/">Get your own free demo</a></div>
+
+  <header class="top"><div class="wrap">
+    <a class="logo" href="#">Northfield Grounds Co.</a>
+    <a class="phone" href="tel:9055550142">(905) 555-0142</a>
+    <a class="btn accent" href="#quote">Free estimate</a>
+  </div></header>
+
+  <!-- HERO -->
+  <section class="hero" style="padding:0">
+    <img class="bg" src="https://images.pexels.com/photos/4920293/pexels-photo-4920293.jpeg?auto=compress&cs=tinysrgb&w=2000" alt="Landscaper trimming a garden on a sunny day" fetchpriority="high">
+    <div class="wrap">
+      <p class="kicker">Landscaping and lawn care · Aurora, Newmarket and area</p>
+      <h1>Lawns, gardens and yard cleanups across York Region</h1>
+      <p class="sub">Weekly mowing, spring and fall cleanups, hedge trimming and garden beds. Free estimates within 48 hours.</p>
+      <div class="ctas"><a class="btn accent" href="#quote">Get a free estimate</a><a class="btn outline" href="tel:9055550142">Call (905) 555-0142</a></div>
+      <div class="chips">
+        <span>12 years in business</span>
+        <span><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M7.6 14.2 3.4 10l1.4-1.4 2.8 2.8 7.6-7.6L16.6 5z"/></svg>Fully insured</span><span><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M7.6 14.2 3.4 10l1.4-1.4 2.8 2.8 7.6-7.6L16.6 5z"/></svg>WSIB covered</span><span><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M7.6 14.2 3.4 10l1.4-1.4 2.8 2.8 7.6-7.6L16.6 5z"/></svg>Free estimates</span><span><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M7.6 14.2 3.4 10l1.4-1.4 2.8 2.8 7.6-7.6L16.6 5z"/></svg>Same crew every visit</span>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <!-- SERVICES -->
+    <section id="services"><div class="wrap">
+      <div class="head"><h2>What we do</h2><p>Serving homes and businesses in Aurora, Newmarket, Richmond Hill and nearby towns.</p></div>
+      <div class="services">
+        
+        <article class="svc"><img src="https://images.pexels.com/photos/11937296/pexels-photo-11937296.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Landscaper in coveralls mowing a large lawn" loading="lazy"><div><h3>Weekly lawn care</h3><p>Mowing, trimming and edging on the same day every week, April to November.</p></div></article>
+        
+        <article class="svc"><img src="https://images.pexels.com/photos/38936347/pexels-photo-38936347/free-photo-of-man-trimming-hedges-with-garden-shears.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Hedges being trimmed with garden shears" loading="lazy"><div><h3>Hedge and shrub trimming</h3><p>Clean lines, healthy growth, and every clipping hauled away.</p></div></article>
+        
+        <article class="svc"><img src="https://images.pexels.com/photos/8134817/pexels-photo-8134817.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Front garden beds at a modern house" loading="lazy"><div><h3>Garden beds and mulch</h3><p>Weeding, edging and fresh mulch so beds stay neat all season.</p></div></article>
+        
+        <article class="svc"><img src="https://images.pexels.com/photos/7174111/pexels-photo-7174111.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Clean garden path and lawn beside a gazebo" loading="lazy"><div><h3>Spring and fall cleanups</h3><p>Leaves, debris and winter damage cleared, lawns raked and ready.</p></div></article>
+        
+      </div>
+    </div></section>
+
+    <!-- HOW IT WORKS -->
+    <section class="steps-band"><div class="wrap">
+      <div class="head"><h2>How it works</h2></div>
+      <div class="steps">
+        <div class="step"><b>1</b><h3>Tell us about your yard</h3><p>Call or send the form with your address and what you need.</p></div><div class="step"><b>2</b><h3>Get a written quote</h3><p>We visit, measure and send a fixed price within 48 hours.</p></div><div class="step"><b>3</b><h3>We get to work</h3><p>Same crew, same day each week, with photos when the job is done.</p></div>
+      </div>
+    </div></section>
+
+    <!-- GALLERY -->
+    <section><div class="wrap">
+      <div class="head"><h2>Recent work</h2><p>Your own job photos go here.</p></div>
+      <div class="gallery"><img src="https://images.pexels.com/photos/12792322/pexels-photo-12792322.jpeg?auto=compress&cs=tinysrgb&w=1400" alt="Brick pathway through a maintained garden" loading="lazy"><img src="https://images.pexels.com/photos/130154/pexels-photo-130154.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Garden path with planted borders" loading="lazy"><img src="https://images.pexels.com/photos/9678161/pexels-photo-9678161.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Hydrangeas in front of a brick wall" loading="lazy"></div>
+    </div></section>
+
+    <!-- REVIEWS -->
+    <section style="padding-top:0"><div class="wrap">
+      <div class="head"><h2>What customers say</h2></div>
+      <div class="reviews">
+        <figure class="review" style="margin:0"><div class="stars" aria-label="5 out of 5 stars">★★★★★</div><p>“They show up on the same day every week and the edges are always sharp. Never had to chase them once.”</p><span>Example review</span></figure><figure class="review" style="margin:0"><div class="stars" aria-label="5 out of 5 stars">★★★★★</div><p>“The fall cleanup was done in one visit and they hauled everything away. Yard looked better than when we moved in.”</p><span>Example review</span></figure><figure class="review" style="margin:0"><div class="stars" aria-label="5 out of 5 stars">★★★★★</div><p>“Fair price, clear quote, and they sent photos when they finished.”</p><span>Example review</span></figure>
+      </div>
+      <p class="example-note">These are example reviews for the demo. Your real Google reviews replace them before the site goes live.</p>
+    </div></section>
+
+    <!-- AREA + QUOTE -->
+    <section id="quote" style="background:var(--white);border-top:1px solid var(--line)"><div class="wrap split">
+      <div>
+        <h2>Free estimate</h2>
+        <p style="color:var(--muted);margin:1rem 0 0">Tell us what you need. We reply within one business day.</p>
+        <div class="towns"><span>Aurora</span><span>Newmarket</span><span>Richmond Hill</span><span>King City</span><span>Stouffville</span><span>East Gwillimbury</span></div>
+        <div class="contact-lines">
+          <p><b>Phone:</b> <a href="tel:9055550142">(905) 555-0142</a></p>
+          <p><b>Email:</b> quotes@example.com</p>
+          <p><b>Hours:</b> Mon–Sat, 7 am to 6 pm</p>
+        </div>
+      </div>
+      <form class="quote" id="qf" >
+        <input type="hidden" name="_subject" value="New estimate request from your website">
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div><label for="q-name">Name</label><input id="q-name" name="Name" required autocomplete="name"></div>
+        <div><label for="q-phone">Phone</label><input id="q-phone" name="Phone" type="tel" required autocomplete="tel"></div>
+        <div class="full"><label for="q-email">Email</label><input id="q-email" name="email" type="email" autocomplete="email"></div>
+        <div class="full"><label for="q-addr">Property address</label><input id="q-addr" name="Address" required autocomplete="street-address"></div>
+        <div class="full"><label for="q-svc">Service</label><select id="q-svc" name="Service"><option>Weekly lawn care</option><option>Hedge and shrub trimming</option><option>Garden beds and mulch</option><option>Spring and fall cleanups</option><option>Something else</option></select></div>
+        <div class="full"><label for="q-msg">Details</label><textarea id="q-msg" name="Details" placeholder="Lot size, timing, anything we should know"></textarea></div>
+        <div class="full"><button class="btn brand" type="submit" style="width:100%">Request my free estimate</button></div>
+        <p class="form-note full" id="q-note">Demo: this form is not connected yet. On your live site it sends requests straight to your email.</p>
+      </form>
+    </div></section>
+  </main>
+
+  <footer><div class="wrap">
+    <div><strong>Northfield Grounds Co.</strong><br>Landscaping and lawn care · Aurora, Newmarket, Richmond Hill, King City, Stouffville, East Gwillimbury</div>
+    <div><a href="tel:9055550142">(905) 555-0142</a><br>Mon–Sat, 7 am to 6 pm</div>
+    <div>© 2026 Northfield Grounds Co.<br><span style="opacity:.7">Photos: Pexels</span></div>
+  </div></footer>
+
+  <div class="callbar"><a class="btn brand" href="tel:9055550142">Call now</a><a class="btn accent" href="#quote">Free estimate</a></div>
+
+  <script>
+    // Demo only: the form is not connected, so submitting shows a message instead of going nowhere
+    document.getElementById('qf').addEventListener('submit', e => {
+      e.preventDefault();
+      const n = document.getElementById('q-note');
+      n.textContent = 'Demo: on your live site, this request would now be in your inbox.';
+      n.style.color = 'var(--brand)'; n.style.fontWeight = '700';
+    });
+  </script>
+
+</body>
+</html>

@@ -1,262 +1,223 @@
 <!doctype html>
 <!--
-  brentsnow.ca — professional landing page
-  Version: 1.2.0
+  brentsnow.ca — homepage
+  Version: 2.1.0
   CHANGELOG
-  1.2.0 (2026-10-28) — Added: "Apps and tools" section linking the app catalogue
-         (/apps/) with a live demo link for the crew tracker, and a "Request a quote"
-         call to action. Changed: old space-themed homepage kept at /space/.
-         Files touched: index.html (changelog, new .apps CSS, new apps section
-         before Contact, contact copy).
-  1.1.0 (2026-10-28) — Changed: hero now states identity instead of a slogan.
-         H1 is the name; new .role line "Field Operations Consultant"; lede rewritten
-         as plain statement. Removed: "Built in the field" headline and .name rule.
-         Files touched: index.html (changelog lines 1-17, .role CSS ~line 78-85,
-         hero markup ~lines 165-176, meta description line ~22).
-  1.0.1 (2026-10-28) — Fixed: name in hero enlarged (1rem -> clamp 1.5–2.25rem),
-         wider and full ink colour so it reads as the page owner. Files touched:
-         index.html (lines 1-13 changelog, .name rule ~line 75).
-  1.0.0 (2026-10-28) — Added: new single-page professional site (hero, capabilities,
-         approach, contact). Removed: previous content (full replacement).
-         Files touched: index.html (all lines).
+  2.1.0 (2026-10-28) — Changed: title "AI Operations Manager · Construction and Field
+         Service"; headline is Brent's line "I find the problems in your operation and
+         build the solutions". Added: free website demo links (nav, Websites tier).
+         Files touched: index.html (changelog, nav, hero role/h1/lede, Websites tier).
+  2.0.0 (2026-10-28) — Rebuilt. Offer and calls to action first; real work-history
+         stats; screenshots of the live crew tracker; services in four tiers; short
+         factual background. Removed: abstract "three disciplines" and "approach"
+         sections and the slogan-style copy. Files touched: index.html (all lines),
+         img/app-crew-route.jpg, img/app-customer-visit.jpg, img/app-schedule.jpg (new).
+  1.2.0 (2026-10-28) — Added apps section and quote button.
+  1.1.0 (2026-10-28) — Name and title as heading.
+  1.0.0 (2026-10-28) — First professional homepage.
 -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Brent Snow</title>
-  <meta name="description" content="Brent Snow, Field Operations Consultant. Over twenty years in construction and site operations with a background in computer programming.">
-  <!-- Archivo: one family, two widths. Expanded for display (structural, engineered feel), normal width for reading. -->
+  <meta name="description" content="Brent Snow builds apps and websites for service and construction companies: crew tracking, GPS site check-ins, photo proof of work, routes and customer portals. 30 years in construction. Aurora, Ontario.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap" rel="stylesheet">
   <style>
-    /* Palette: cool site-office tones. Chalk-line blue is the single accent, used only for the snapped line and links. */
+    /* Palette: job-site dark. Asphalt base, concrete greys, one safety-amber accent
+       used only for actions and key numbers. Layout: offer first, proof second. */
     :root {
-      --paper: #F3F5F4;     /* page background */
-      --ink: #1E2428;       /* primary text */
-      --steel: #5B6770;     /* secondary text */
-      --concrete: #C9CDCF;  /* rules and grid */
-      --chalk: #2563C9;     /* accent: chalk line */
-      --panel: #E7EBEA;     /* contact band */
+      --asphalt:#15191C; --asphalt-2:#1D2327; --line:#2E363C; --concrete:#A9B2B8; --white:#F2F4F5;
+      --amber:#F2A516; --amber-ink:#1B1405; --paper:#F3F5F4; --ink:#15191C; --steel:#55616A; --rule:#D3D9DC;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --paper: #1B2024; --ink: #E9EDEC; --steel: #9AA6AE;
-        --concrete: #3A4249; --chalk: #6A9BEA; --panel: #232A2F;
-      }
-    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+    body { margin:0; font-family:"Archivo",system-ui,sans-serif; font-size:1.0625rem; line-height:1.6; color:var(--ink); background:var(--paper); }
+    a { color:inherit; }
+    :focus-visible { outline:3px solid var(--amber); outline-offset:3px; }
+    img { max-width:100%; display:block; }
+    .wrap { max-width:72rem; margin:0 auto; padding-left:max(20px, env(safe-area-inset-left)); padding-right:max(20px, env(safe-area-inset-right)); }
 
-    * { box-sizing: border-box; }
-    html { -webkit-text-size-adjust: 100%; }
-    body {
-      margin: 0;
-      background: var(--paper);
-      color: var(--ink);
-      font-family: "Archivo", system-ui, sans-serif;
-      font-variation-settings: "wdth" 100;
-      font-size: 1.125rem;
-      line-height: 1.6;
-    }
-    a { color: var(--chalk); text-underline-offset: 3px; }
-    a:focus-visible { outline: 2px solid var(--chalk); outline-offset: 3px; }
+    /* ---------- Top bar ---------- */
+    .bar { background:var(--asphalt); color:var(--white); }
+    .bar .wrap { display:flex; align-items:center; gap:1.5rem; padding-block:1rem; }
+    .bar .name { font-variation-settings:"wdth" 120; font-weight:800; font-size:1.15rem; text-decoration:none; margin-right:auto; }
+    .bar nav { display:flex; gap:1.5rem; font-weight:600; font-size:0.95rem; }
+    .bar nav a { text-decoration:none; color:var(--concrete); }
+    .bar nav a:hover { color:var(--white); }
+    @media (max-width:640px) { .bar nav a:not(.keep) { display:none; } }
 
-    /* Shared column: left-aligned, readable measure */
-    .wrap { max-width: 68rem; margin: 0 auto; padding: 0 1.5rem; }
+    /* ---------- Hero: what I do + buttons, with the real app beside it ---------- */
+    .hero { background:var(--asphalt); color:var(--white); overflow:hidden; }
+    .hero .wrap { display:grid; grid-template-columns:1.1fr 0.9fr; gap:3rem; align-items:center; padding-block:4rem 0; }
+    .role { color:var(--amber); font-weight:700; font-size:1rem; margin:0 0 1rem; }
+    h1 { font-variation-settings:"wdth" 118; font-weight:850; font-size:clamp(2.4rem,5.4vw,4.4rem); line-height:1.02; letter-spacing:-0.02em; margin:0 0 1.25rem; text-wrap:balance; }
+    .hero p.lede { color:var(--concrete); font-size:1.2rem; max-width:34rem; margin:0 0 2rem; }
+    .ctas { display:flex; flex-wrap:wrap; gap:0.75rem; margin-bottom:4rem; }
+    .btn { display:inline-flex; align-items:center; min-height:52px; padding:0 1.4rem; border-radius:8px; font-weight:700; text-decoration:none; }
+    .btn.primary { background:var(--amber); color:var(--amber-ink); }
+    .btn.secondary { border:2px solid var(--line); color:var(--white); }
+    .btn.secondary:hover { border-color:var(--concrete); }
+    /* Two phones from the live demo, overlapped, bleeding off the bottom of the hero */
+    .phones { position:relative; height:540px; align-self:end; }
+    .phone { position:absolute; width:250px; border-radius:28px; border:8px solid #000; overflow:hidden; box-shadow:0 30px 60px rgba(0,0,0,.5); background:#000; }
+    .phone img { width:100%; height:auto; }
+    .phone.a { left:0; top:30px; transform:rotate(-4deg); }
+    .phone.b { right:0; top:0; transform:rotate(3deg); }
+    .phones figcaption { position:absolute; bottom:12px; left:0; right:0; text-align:center; font-size:0.85rem; color:var(--concrete); }
 
-    /* ---------- Hero ---------- */
-    /* Faint layout grid behind the hero, like a site plan */
-    .hero {
-      position: relative;
-      padding: 6rem 0 5rem;
-      background-image:
-        linear-gradient(var(--concrete) 1px, transparent 1px),
-        linear-gradient(90deg, var(--concrete) 1px, transparent 1px);
-      background-size: 48px 48px;
-      background-position: -1px -1px;
-      border-bottom: 1px solid var(--concrete);
-    }
-    /* Fade the grid out toward the bottom so text stays clean */
-    .hero::after {
-      content: ""; position: absolute; inset: 0;
-      background: linear-gradient(to bottom, transparent 0%, var(--paper) 85%);
-      pointer-events: none;
-    }
-    .hero .wrap { position: relative; z-index: 1; }
-    /* Role line under the name: states what he is, second in the hierarchy */
-    .role {
-      margin: 1rem 0 0;
-      font-variation-settings: "wdth" 115;
-      font-size: clamp(1.4rem, 3.2vw, 2.4rem); font-weight: 600; color: var(--steel);
-      letter-spacing: -0.01em; line-height: 1.15;
-    }
-    h1 {
-      margin: 0;
-      font-variation-settings: "wdth" 125;
-      font-weight: 800;
-      font-size: clamp(2.6rem, 8vw, 6.25rem);
-      line-height: 0.98;
-      letter-spacing: -0.02em;
-      max-width: 14ch;
-    }
-    /* The memorable element: a chalk line snapped across the hero on load */
-    .chalkline { display: block; width: 100%; height: 18px; margin: 2.25rem 0 2rem; overflow: visible; }
-    .chalkline line {
-      stroke: var(--chalk); stroke-width: 2.5; stroke-linecap: round;
-      stroke-dasharray: 2000; stroke-dashoffset: 2000;
-      animation: snap 0.9s cubic-bezier(.2,.9,.2,1) 0.3s forwards;
-    }
-    .chalkline circle { fill: var(--chalk); }
-    @keyframes snap { to { stroke-dashoffset: 0; } }
-    @media (prefers-reduced-motion: reduce) {
-      .chalkline line { animation: none; stroke-dashoffset: 0; }
-    }
-    .lede { max-width: 38rem; margin: 0; font-size: 1.3rem; line-height: 1.55; color: var(--ink); }
+    /* ---------- Stats: real numbers from the work history ---------- */
+    .stats { background:var(--asphalt-2); color:var(--white); border-top:1px solid var(--line); }
+    .stats .wrap { display:grid; grid-template-columns:repeat(4,1fr); }
+    .stat { padding:1.75rem 1.25rem 1.75rem 0; }
+    .stat + .stat { padding-left:1.25rem; border-left:1px solid var(--line); }
+    .stat b { display:block; font-variation-settings:"wdth" 120; font-weight:850; font-size:clamp(2rem,4vw,2.8rem); line-height:1; color:var(--amber); font-variant-numeric:tabular-nums; }
+    .stat span { display:block; margin-top:0.5rem; color:var(--concrete); font-size:0.95rem; line-height:1.4; }
 
-    /* ---------- Capabilities ---------- */
-    section { padding: 5rem 0; }
-    h2 {
-      margin: 0 0 2.5rem;
-      font-variation-settings: "wdth" 115;
-      font-weight: 700; font-size: clamp(1.6rem, 3.5vw, 2.25rem);
-      line-height: 1.15; max-width: 22ch;
-    }
-    .cap-grid {
-      display: grid; gap: 0;
-      grid-template-columns: repeat(3, 1fr);
-      border-top: 2px solid var(--ink);
-    }
-    .cap { padding: 1.75rem 1.75rem 0 0; }
-    .cap + .cap { padding-left: 1.75rem; border-left: 1px solid var(--concrete); }
-    h3 {
-      margin: 0 0 0.75rem;
-      font-variation-settings: "wdth" 110;
-      font-weight: 700; font-size: 1.25rem; line-height: 1.25;
-    }
-    .cap p { margin: 0; color: var(--steel); font-size: 1.05rem; }
+    /* ---------- Sections on light ground ---------- */
+    section.block { padding-block:5rem; }
+    h2 { font-variation-settings:"wdth" 115; font-weight:800; font-size:clamp(1.8rem,3.6vw,2.6rem); line-height:1.1; margin:0 0 0.75rem; text-wrap:balance; }
+    .intro { color:var(--steel); max-width:40rem; margin:0 0 2.5rem; font-size:1.125rem; }
 
-    /* ---------- Approach ---------- */
-    .approach { border-top: 1px solid var(--concrete); }
-    .approach-body { display: grid; grid-template-columns: 1fr 1.4fr; gap: 3rem; align-items: start; }
-    .approach-body h2 { margin: 0; }
-    .approach-body p { margin: 0 0 1.25rem; max-width: 40rem; }
-    .approach-body p:last-child { margin-bottom: 0; }
+    /* What you get: four tiers, the core of the offer */
+    .tiers { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:12px; overflow:hidden; }
+    .tier { background:#fff; padding:1.5rem; display:flex; flex-direction:column; }
+    .tier h3 { font-variation-settings:"wdth" 110; font-size:1.25rem; margin:0 0 0.5rem; }
+    .tier p { color:var(--steel); margin:0 0 1rem; font-size:1rem; }
+    .tier ul { margin:0 0 1.25rem; padding-left:1.1rem; color:var(--ink); font-size:0.97rem; }
+    .tier a { margin-top:auto; font-weight:700; color:#1F5FBF; }
 
-    /* ---------- Contact ---------- */
-    .contact { background: var(--panel); }
-    .contact h2 { margin-bottom: 1rem; }
-    .contact p { margin: 0 0 0.5rem; }
-    .contact .mail {
-      display: inline-block; margin-top: 0.75rem;
-      font-variation-settings: "wdth" 115; font-weight: 700;
-      font-size: clamp(1.25rem, 3vw, 1.75rem);
+    /* Live demo feature: big screenshot + what it does */
+    .demo { display:grid; grid-template-columns:1.2fr 1fr; gap:3rem; align-items:center; }
+    .demo .shot { border-radius:12px; overflow:hidden; border:1px solid var(--rule); box-shadow:0 20px 40px rgba(21,25,28,.12); }
+    .demo ul { padding-left:1.1rem; margin:0 0 1.75rem; }
+    .demo li { margin:0.35rem 0; }
+    .tag { display:inline-block; font-size:0.85rem; font-weight:700; background:var(--amber); color:var(--amber-ink); padding:0.15rem 0.6rem; border-radius:99px; margin-bottom:0.75rem; }
+    .btn.dark { background:var(--ink); color:#fff; }
+
+    /* Background: short and factual */
+    .bg { display:grid; grid-template-columns:1fr 1.4fr; gap:3rem; }
+    .bg dl { margin:0; display:grid; grid-template-columns:auto 1fr; gap:0.6rem 1.5rem; }
+    .bg dt { font-weight:700; white-space:nowrap; }
+    .bg dd { margin:0; color:var(--steel); }
+
+    /* Closing call to action */
+    .closer { background:var(--asphalt); color:var(--white); }
+    .closer .wrap { padding-block:4.5rem; display:flex; flex-wrap:wrap; gap:2rem; align-items:center; justify-content:space-between; }
+    .closer h2 { margin:0; max-width:24ch; }
+    .closer p { color:var(--concrete); margin:0.5rem 0 0; }
+    footer { background:var(--asphalt); color:var(--concrete); border-top:1px solid var(--line); font-size:0.9rem; }
+    footer .wrap { padding-block:1.5rem; display:flex; flex-wrap:wrap; gap:1rem; justify-content:space-between; }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width:900px) {
+      .hero .wrap { grid-template-columns:1fr; padding-top:3rem; }
+      .ctas { margin-bottom:2rem; }
+      .phones { height:420px; max-width:420px; width:100%; margin:0 auto; }
+      .phone { width:200px; }
+      .stats .wrap { grid-template-columns:1fr 1fr; }
+      .stat:nth-child(3) { padding-left:0; border-left:none; }
+      .stat:nth-child(n+3) { border-top:1px solid var(--line); }
+      .tiers { grid-template-columns:1fr 1fr; }
+      .demo, .bg { grid-template-columns:1fr; gap:2rem; }
     }
-    /* ---------- Apps section ---------- */
-    .apps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 2px solid var(--ink); margin-bottom: 2rem; }
-    .app { padding: 1.5rem 1.5rem 0 0; }
-    .app + .app { padding-left: 1.5rem; border-left: 1px solid var(--concrete); }
-    .app p { margin: 0.5rem 0 0.75rem; color: var(--steel); font-size: 1.05rem; }
-    .tag { font-size: 0.85rem; font-weight: 600; color: var(--chalk); }
-    .cta { display: inline-block; padding: 0.9rem 1.4rem; border-radius: 8px; background: var(--chalk); color: #fff; font-weight: 700; text-decoration: none; }
-    .cta.ghost { background: transparent; color: var(--chalk); border: 2px solid var(--chalk); margin-left: 0.5rem; }
-    @media (max-width: 760px) { .apps-grid { grid-template-columns: 1fr; } .app, .app + .app { padding: 1.25rem 0; border-left: none; } .app + .app { border-top: 1px solid var(--concrete); } .cta.ghost { margin: 0.75rem 0 0; } }
-    footer { padding: 2rem 0; color: var(--steel); font-size: 0.9rem; }
-
-    /* ---------- Mobile ---------- */
-    @media (max-width: 760px) {
-      .hero { padding: 4rem 0 3.5rem; }
-      .cap-grid { grid-template-columns: 1fr; }
-      .cap, .cap + .cap { padding: 1.5rem 0; border-left: none; }
-      .cap + .cap { border-top: 1px solid var(--concrete); }
-      .approach-body { grid-template-columns: 1fr; gap: 1.5rem; }
-      section { padding: 3.5rem 0; }
+    @media (max-width:520px) {
+      .tiers { grid-template-columns:1fr; }
+      .phone { width:170px; }
+      .phones { height:360px; }
+      .bg dl { grid-template-columns:1fr; gap:0.1rem; }
+      .bg dd { margin-bottom:0.6rem; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Hero: the one idea the whole page sells — field and code are the same job -->
-  <header class="hero">
-    <div class="wrap">
-      <!-- Identity first: who he is, then what he is. A statement, not a pitch. -->
-      <h1>Brent Snow</h1>
-      <p class="role">Field Operations Consultant</p>
-      <!-- Chalk line: two set-out points, one line between them -->
-      <svg class="chalkline" viewBox="0 0 1000 18" preserveAspectRatio="none" aria-hidden="true">
-        <circle cx="6" cy="9" r="6"/>
-        <line x1="6" y1="9" x2="994" y2="9"/>
-        <circle cx="994" cy="9" r="6"/>
-      </svg>
-      <p class="lede">Over twenty years in construction and site operations, with a background in computer programming. I inspect properties, streamline how field work gets done, and build the software that tracks it.</p>
+  <div class="bar"><div class="wrap">
+    <a class="name" href="/">Brent Snow</a>
+    <nav aria-label="Main"><a href="#services">Services</a><a href="/apps/crewline/">Live demo</a><a href="/website-demo/">Free website demo</a><a href="#background">Background</a><a class="keep" href="/apps/#quote">Get a quote</a></nav>
+  </div></div>
+
+  <!-- HERO: the offer in one line, two actions, and the real product beside it -->
+  <header class="hero"><div class="wrap">
+    <div>
+      <p class="role">AI Operations Manager · Construction and Field Service</p>
+      <h1>I find the problems in your operation and build the solutions</h1>
+      <p class="lede">Apps, websites and AI tools for service and construction companies. Track your crews, prove the work was done, and stop running the business from group texts. Built by someone who has run job sites for 30 years.</p>
+      <div class="ctas"><a class="btn primary" href="/apps/#quote">Get a quote</a><a class="btn secondary" href="/apps/crewline/">Try the live demo</a></div>
     </div>
-  </header>
+    <figure class="phones" aria-label="Screens from the crew tracker demo">
+      <div class="phone a"><img src="/img/app-crew-route.jpg" alt="Crew app showing today's route, the next stop and a clock-out button" width="647" height="1400"></div>
+      <div class="phone b"><img src="/img/app-customer-visit.jpg" alt="Customer portal showing a completed visit with verified arrival time and before and after photos" width="642" height="1400"></div>
+    </figure>
+  </div></header>
+
+  <!-- STATS: verifiable numbers from Brent's own work history -->
+  <div class="stats"><div class="wrap">
+    <div class="stat"><b>30</b><span>years in construction, since 1995</span></div>
+    <div class="stat"><b>55</b><span>commercial sites inspected in one day across the GTA</span></div>
+    <div class="stat"><b>14</b><span>winters supervising snow crews</span></div>
+    <div class="stat"><b>4,000+</b><span>members in the programming community I founded at Seneca</span></div>
+  </div></div>
 
   <main>
-    <!-- Capabilities: three disciplines that feed one outcome (not a sequence, so no numbering) -->
-    <section>
-      <div class="wrap">
-        <h2>Three disciplines, one way of working</h2>
-        <div class="cap-grid">
-          <div class="cap">
-            <h3>Construction and infrastructure</h3>
-            <p>Two decades of hands-on work across sites and trades. I read a job quickly, know what it really takes, and know where it usually goes wrong.</p>
-          </div>
-          <div class="cap">
-            <h3>Programming and systems</h3>
-            <p>A working programmer's understanding of software, data and automation, used to build practical tools rather than slides.</p>
-          </div>
-          <div class="cap">
-            <h3>Technology on the ground</h3>
-            <p>Putting the two together: turning inspections, scope and reporting into systems that crews, managers and clients can trust.</p>
-          </div>
-        </div>
+    <!-- SERVICES: get what you want -->
+    <section class="block" id="services"><div class="wrap">
+      <h2>Get what you need, nothing you don't</h2>
+      <p class="intro">Start with one tool or get everything. All of it carries your company's name and logo.</p>
+      <div class="tiers">
+        <div class="tier"><h3>Single tools</h3><p>One job, done properly.</p>
+          <ul><li>Site inspection reports</li><li>Route planner</li><li>Snow event log</li><li>Security patrol log</li><li>Quote builder</li></ul>
+          <a href="/apps/">See all tools</a></div>
+        <div class="tier"><h3>Full apps</h3><p>Your tools in one app with one login.</p>
+          <ul><li>Crew tracker</li><li>Customer portal</li><li>Schedules and hours</li><li>Equipment and fleet</li></ul>
+          <a href="/apps/crewline/">Try the crew tracker</a></div>
+        <div class="tier"><h3>Websites</h3><p>A site that gets you calls.</p>
+          <ul><li>Free demo in 7 days</li><li>Your work, shown properly</li><li>Quote request forms</li><li>Fast on phones</li><li>Found on Google</li></ul>
+          <a href="/website-demo/">Get a free website demo</a></div>
+        <div class="tier"><h3>Social media</h3><p>Posts built from your real jobs.</p>
+          <ul><li>Before and after posts</li><li>Written in your voice</li><li>Scheduled for you</li><li>Monthly service</li></ul>
+          <a href="/apps/#socialmgmt">Ask about social media</a></div>
       </div>
-    </section>
+    </div></section>
 
-    <!-- Approach: short statement of how the pieces combine -->
-    <section class="approach">
-      <div class="wrap approach-body">
-        <h2>Where the jobsite meets the system</h2>
-        <div>
-          <p>Most infrastructure problems are information problems first. Work gets missed, scope gets argued and reports don't match what happened on site.</p>
-          <p>Because I've done the physical work and I write the code, I can close that gap from both sides: seeing the job as it really is, then building the process and technology that keep it that way.</p>
-        </div>
+    <!-- LIVE DEMO: proof it works -->
+    <section class="block" style="padding-top:0"><div class="wrap demo">
+      <div class="shot"><img src="/img/app-schedule.jpg" alt="Owner schedule showing each crew member's jobs for the week" width="900" height="605" loading="lazy"></div>
+      <div>
+        <span class="tag">Live demo</span>
+        <h2>Crew tracker</h2>
+        <ul>
+          <li>Each crew member gets today's route, in order, with directions</li>
+          <li>Clock in and out at each site, checked against the site's GPS location</li>
+          <li>Before and after photos on every job</li>
+          <li>Schedule by day, week or month, with hours ready for payroll</li>
+          <li>Customers log in to see their visits, photos and times</li>
+        </ul>
+        <a class="btn dark" href="/apps/crewline/">Open the demo</a>
       </div>
-    </section>
+    </div></section>
 
-    <!-- Apps and tools: what clients can see working, then request -->
-    <section class="approach">
-      <div class="wrap">
-        <h2>Apps and tools</h2>
-        <p style="max-width:40rem;margin:-1rem 0 2rem">Field apps built for trades and property service companies, branded with your name and set up around how your crews already work.</p>
-        <div class="apps-grid">
-          <div class="app"><span class="tag">Live demo</span><h3>Crew tracker</h3>
-            <p>Daily routes, site clock in and out checked by GPS, before and after photos, hours and a customer portal.</p>
-            <a href="/apps/crewline/">Try the demo</a></div>
-          <div class="app"><span class="tag">Built to order</span><h3>Site inspection</h3>
-            <p>Walk the site and talk. Notes, photos and locations become a finished inspection report.</p>
-            <a href="/apps/#inspection">Details</a></div>
-          <div class="app"><span class="tag">Built to order</span><h3>Route planner</h3>
-            <p>Enter every stop and get the best order by time, distance or cost, ready to open in Google Maps.</p>
-            <a href="/apps/#routes">Details</a></div>
-        </div>
-        <a class="cta" href="/apps/">See all apps</a><a class="cta ghost" href="/apps/#quote">Request a quote</a>
-      </div>
-    </section>
-
-    <!-- Contact -->
-    <section class="contact">
-      <div class="wrap">
-        <h2>Get in touch</h2>
-        <p>Based in Aurora, Ontario, working across the Greater Toronto Area.</p>
-        <a class="mail" href="mailto:brentlysnow@gmail.com">brentlysnow@gmail.com</a>
-      </div>
-    </section>
+    <!-- BACKGROUND: why the tools fit real job sites -->
+    <section class="block" id="background" style="background:#fff;border-top:1px solid var(--rule)"><div class="wrap bg">
+      <div><h2>Background</h2><p class="intro" style="margin:0">I build for the kind of companies I've worked in.</p></div>
+      <dl>
+        <dt>Construction</dt><dd>Labourer to foreman on residential and commercial builds, concrete crews and high-rise mechanical installs.</dd>
+        <dt>Heavy equipment</dt><dd>Loader and rock truck operator in quarry production. General manager of an equipment sales, rental and repair business.</dd>
+        <dt>Snow and grounds</dt><dd>Supervised municipal and commercial snow crews of up to 8 every winter since 2011.</dd>
+        <dt>Facilities</dt><dd>Regional field manager running quality inspections and service partners across GTA commercial sites.</dd>
+        <dt>Software</dt><dd>Computer Programmer diploma, Seneca College. Founder of a 4,000+ member student programming community.</dd>
+      </dl>
+    </div></section>
   </main>
 
-  <footer>
-    <div class="wrap">© 2026 Brent Snow</div>
-  </footer>
-
+  <!-- CLOSER: one more chance to act -->
+  <section class="closer"><div class="wrap">
+    <div><h2>Tell me what's slowing your crews down</h2><p>You'll get a quote by email, usually within two business days.</p></div>
+    <a class="btn primary" href="/apps/#quote">Get a quote</a>
+  </div></section>
+  <footer><div class="wrap"><span>© 2026 Brent Snow</span><span>Aurora, Ontario · Serving the GTA</span></div></footer>
 </body>
 </html>

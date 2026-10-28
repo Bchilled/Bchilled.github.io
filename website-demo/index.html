@@ -1,0 +1,122 @@
+<!doctype html>
+<!--
+  brentsnow.ca/website-demo — free website demo offer and intake form
+  Version: 1.0.0
+  CHANGELOG
+  1.0.0 (2026-10-28) — Added: offer page (free demo in 7 days, pay only to go live),
+         sample demo preview, 3-step process, intake form emailing Brent via FormSubmit.
+         Files touched: website-demo/index.html (new), img/demo-northfield.jpg (new).
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Free Website Demo | Brent Snow</title>
+  <meta name="description" content="Get a free demo of your new business website in 7 days. See it before you pay anything. Websites for trades and service companies in the GTA.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap" rel="stylesheet">
+  <style>
+    :root { --paper:#F3F5F4; --ink:#1E2428; --steel:#5B6770; --concrete:#C9CDCF; --chalk:#2563C9; --panel:#E7EBEA; --surface:#FFFFFF; --amber:#F2A516; }
+    @media (prefers-color-scheme: dark) { :root { --paper:#1B2024; --ink:#E9EDEC; --steel:#9AA6AE; --concrete:#3A4249; --chalk:#6A9BEA; --panel:#232A2F; --surface:#20262B; } }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:1.0625rem/1.6 "Archivo",system-ui,sans-serif; }
+    a { color:var(--chalk); text-underline-offset:3px; }
+    :focus-visible { outline:2px solid var(--chalk); outline-offset:3px; }
+    img { max-width:100%; display:block; }
+    .wrap { max-width:68rem; margin:0 auto; padding-left:max(20px, env(safe-area-inset-left)); padding-right:max(20px, env(safe-area-inset-right)); }
+    nav.top { border-bottom:1px solid var(--concrete); }
+    nav.top .wrap { display:flex; align-items:center; gap:1.5rem; padding-block:1rem; }
+    nav.top .home { font-variation-settings:"wdth" 115; font-weight:800; font-size:1.2rem; color:var(--ink); text-decoration:none; margin-right:auto; }
+    h1 { font-variation-settings:"wdth" 122; font-weight:850; font-size:clamp(2.4rem,6vw,4.2rem); line-height:1; letter-spacing:-0.02em; margin:0 0 1.25rem; text-wrap:balance; }
+    h2 { font-variation-settings:"wdth" 115; font-weight:800; font-size:clamp(1.6rem,3.2vw,2.2rem); line-height:1.1; margin:0 0 1rem; }
+    .hero .wrap { display:grid; grid-template-columns:1fr 1.05fr; gap:3rem; align-items:center; padding-block:3.5rem; }
+    .lede { font-size:1.2rem; margin:0 0 1.5rem; max-width:32rem; }
+    .points { list-style:none; padding:0; margin:0 0 2rem; display:grid; gap:0.5rem; }
+    .points li { display:flex; gap:0.6rem; font-weight:600; }
+    .points li::before { content:"✓"; color:var(--chalk); font-weight:900; }
+    .btn { display:inline-flex; align-items:center; min-height:52px; padding:0 1.4rem; border-radius:8px; font-weight:700; text-decoration:none; background:var(--chalk); color:#fff; border:0; font:inherit; font-weight:700; cursor:pointer; }
+    .btn.ghost { background:transparent; color:var(--chalk); border:2px solid var(--chalk); }
+    .ctas { display:flex; flex-wrap:wrap; gap:0.75rem; }
+    /* Sample demo shown in a browser frame so it reads as a real website */
+    .browser { display:block; border-radius:12px; overflow:hidden; border:1px solid var(--concrete); box-shadow:0 24px 48px rgba(0,0,0,.15); background:var(--surface); }
+    .browser .chrome { display:flex; gap:6px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--concrete); }
+    .browser .chrome i { width:10px; height:10px; border-radius:50%; background:var(--concrete); }
+    .browser .chrome span { margin-left:10px; font-size:0.8rem; color:var(--steel); }
+    .browser + p { font-size:0.95rem; color:var(--steel); margin:0.75rem 0 0; }
+    .steps { background:var(--surface); border-block:1px solid var(--concrete); }
+    .steps .wrap { padding-block:3.5rem; }
+    .steps ol { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(3,1fr); gap:2rem; counter-reset:n; }
+    .steps li { counter-increment:n; border-top:3px solid var(--chalk); padding-top:1rem; }
+    .steps li::before { content:counter(n); display:block; font-variation-settings:"wdth" 120; font-weight:900; font-size:2.4rem; line-height:1; color:var(--chalk); margin-bottom:0.4rem; }
+    .steps b { display:block; font-size:1.15rem; margin-bottom:0.3rem; }
+    .steps p { margin:0; color:var(--steel); }
+    .intake .wrap { padding-block:4rem; }
+    form { display:grid; grid-template-columns:1fr 1fr; gap:1rem 1.5rem; max-width:52rem; margin-top:2rem; }
+    .full { grid-column:1 / -1; }
+    label { display:block; font-weight:600; margin-bottom:0.3rem; }
+    .hint { font-weight:400; color:var(--steel); font-size:0.9rem; }
+    input, select, textarea { width:100%; padding:0.75rem; border:1px solid var(--concrete); border-radius:8px; background:var(--surface); color:var(--ink); font:inherit; }
+    textarea { min-height:6.5rem; resize:vertical; }
+    .note { font-size:0.9rem; color:var(--steel); }
+    footer { padding:2rem 0; color:var(--steel); font-size:0.9rem; border-top:1px solid var(--concrete); }
+    @media (max-width:860px) { .hero .wrap { grid-template-columns:1fr; } .steps ol { grid-template-columns:1fr; } form { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="top"><div class="wrap"><a class="home" href="/">Brent Snow</a><a href="/apps/">Apps</a><a href="#start">Get started</a></div></nav>
+
+  <header class="hero"><div class="wrap">
+    <div>
+      <h1>See your new website before you pay a cent</h1>
+      <p class="lede">Send me your business details and I'll build a working demo of your new site in 7 days. Like it, and we go live. Don't, and you owe nothing.</p>
+      <ul class="points"><li>Free demo, ready in 7 days</li><li>Built around your services, towns and photos</li><li>Works on phones, with tap-to-call and a quote form</li><li>You only pay if you want it live</li></ul>
+      <div class="ctas"><a class="btn" href="#start">Get my free demo</a><a class="btn ghost" href="/demos/northfield-grounds/">See a sample demo</a></div>
+    </div>
+    <div>
+      <a class="browser" href="/demos/northfield-grounds/" aria-label="Open the sample demo website">
+        <div class="chrome"><i></i><i></i><i></i><span>yourbusiness.ca</span></div>
+        <img src="/img/demo-northfield.jpg" alt="Sample demo website for a landscaping company, with a crew photo, headline and free estimate buttons" width="1200" height="806">
+      </a>
+      <p>A sample demo for a landscaping company. Yours is built for your business.</p>
+    </div>
+  </div></header>
+
+  <section class="steps"><div class="wrap">
+    <h2>How it works</h2>
+    <ol>
+      <li><b>Send your details</b><p>Fill out the form below. It takes about five minutes.</p></li>
+      <li><b>Get your demo in 7 days</b><p>I email you a link to your working demo site to look over.</p></li>
+      <li><b>Go live, or don't</b><p>Want changes? I make them. Want it live? I quote the price and set it up on your domain.</p></li>
+    </ol>
+  </div></section>
+
+  <section class="intake" id="start"><div class="wrap">
+    <h2>Get your free demo</h2>
+    <p style="max-width:40rem;margin:0">The more you tell me, the closer the demo is to your finished site.</p>
+    <!-- FormSubmit relays the form to Brent's email; _next returns the visitor to a confirmation page -->
+    <form id="df" action="https://formsubmit.co/brentlysnow@gmail.com" method="POST">
+      <input type="hidden" name="_subject" value="New free website demo request from brentsnow.ca">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_next" value="https://brentsnow.ca/website-demo/thanks.html">
+      <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div><label for="d-name">Your name</label><input id="d-name" name="Name" required autocomplete="name"></div>
+      <div><label for="d-biz">Business name</label><input id="d-biz" name="Business" required autocomplete="organization"></div>
+      <div><label for="d-email">Email</label><input id="d-email" name="email" type="email" required autocomplete="email"></div>
+      <div><label for="d-phone">Business phone</label><input id="d-phone" name="Phone" type="tel" required autocomplete="tel"></div>
+      <div><label for="d-trade">Type of business</label>
+        <select id="d-trade" name="Trade" required><option value="">Choose one</option><option>Landscaping and lawn care</option><option>Snow and ice</option><option>Property maintenance</option><option>Security</option><option>Cleaning</option><option>Construction or renovation</option><option>Flooring</option><option>Plumbing, electrical or HVAC</option><option>Other</option></select></div>
+      <div><label for="d-years">Years in business</label><input id="d-years" name="Years in business" inputmode="numeric"></div>
+      <div class="full"><label for="d-services">Your main services <span class="hint">one per line</span></label><textarea id="d-services" name="Services" required placeholder="Weekly lawn care&#10;Spring and fall cleanups&#10;Hedge trimming"></textarea></div>
+      <div class="full"><label for="d-area">Towns you serve</label><input id="d-area" name="Service area" required placeholder="e.g. Aurora, Newmarket, Richmond Hill"></div>
+      <div class="full"><label for="d-site">Current website, if you have one</label><input id="d-site" name="Current website" type="url" placeholder="https://"></div>
+      <div class="full"><label for="d-photos">Link to your job photos and logo <span class="hint">Google Drive, Dropbox, Google Photos or Facebook page</span></label><input id="d-photos" name="Photos link" placeholder="Paste a share link"></div>
+      <div class="full"><label for="d-extra">Anything else <span class="hint">colours you like, sites you like, what makes you different</span></label><textarea id="d-extra" name="Notes"></textarea></div>
+      <div class="full"><button class="btn" type="submit">Send my details</button>
+        <p class="note">Your details go only to Brent Snow and are used to build your demo. No payment needed to get a demo.</p></div>
+    </form>
+  </div></section>
+
+  <footer><div class="wrap">© 2026 Brent Snow · Aurora, Ontario</div></footer>
+</body>
+</html>
