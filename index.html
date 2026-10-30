@@ -1,8 +1,11 @@
 <!doctype html>
 <!--
   brentsnow.ca — homepage
-  Version: 2.3.0
+  Version: 2.4.0
   CHANGELOG
+  2.4.0 (2026-10-30) — Added: Site inspection to "What I build" (three columns). Fixed: the
+         services grid had an inline two-column style that overrode the phone layout, so it
+         never went to one column. Files touched: index.html (changelog, .tiers CSS, services).
   2.3.0 (2026-10-30) — Removed all personal details: stats row, work-history section
          and its nav link, dated career claims, home town. Files touched: index.html.
   2.2.0 (2026-10-28) — Services list only built products.
@@ -76,7 +79,7 @@
     .intro { color:var(--steel); max-width:40rem; margin:0 0 2.5rem; font-size:1.125rem; }
 
     /* What you get: four tiers, the core of the offer */
-    .tiers { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:12px; overflow:hidden; }
+    .tiers { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:12px; overflow:hidden; }
     .tier { background:#fff; padding:1.5rem; display:flex; flex-direction:column; }
     .tier h3 { font-variation-settings:"wdth" 110; font-size:1.25rem; margin:0 0 0.5rem; }
     .tier p { color:var(--steel); margin:0 0 1rem; font-size:1rem; }
@@ -114,7 +117,7 @@
       .stats .wrap { grid-template-columns:1fr 1fr; }
       .stat:nth-child(3) { padding-left:0; border-left:none; }
       .stat:nth-child(n+3) { border-top:1px solid var(--line); }
-      .tiers { grid-template-columns:1fr 1fr; }
+      .tiers { grid-template-columns:1fr; }
       .demo, .bg { grid-template-columns:1fr; gap:2rem; }
     }
     @media (max-width:520px) {
@@ -151,10 +154,13 @@
     <!-- SERVICES: get what you want -->
     <section class="block" id="services"><div class="wrap">
       <h2>What I build</h2>
-      <div class="tiers" style="grid-template-columns:1fr 1fr">
+      <div class="tiers">
         <div class="tier"><h3>Crew tracker</h3><p>For companies with crews out on sites every day.</p>
           <ul><li>Daily routes with directions</li><li>Site clock in and out, checked by GPS</li><li>Before and after photos on every job</li><li>Schedules, hours and payroll export</li><li>A login for your customers to see their visits</li></ul>
           <a href="/apps/crewline/">Try the live demo</a></div>
+        <div class="tier"><h3>Site inspection</h3><p>For companies that check sites on a schedule and report to clients.</p>
+          <ul><li>Checklists on a phone, Pass, Fail or N/A</li><li>Photos and notes on anything that fails</li><li>Location checked at every site</li><li>Signed reports clients can view or print</li><li>Every failed item tracked until it's fixed</li></ul>
+          <a href="/apps/site-inspection/">See the app and live demo</a></div>
         <div class="tier"><h3>Business websites</h3><p>For trades that need customers to find them and call.</p>
           <ul><li>Your services, towns and job photos</li><li>Tap-to-call on phones</li><li>An estimate form that emails you</li><li>A free demo before you pay anything</li></ul>
           <a href="/website-demo/">Get a free website demo</a></div>

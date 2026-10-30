@@ -1,0 +1,150 @@
+<!doctype html>
+<!--
+  brentsnow.ca/apps/site-inspection — product page for the Site Inspection app
+  Version: 1.0.0
+  CHANGELOG
+  1.0.0 (2026-10-30) — Added: product page with demo video, screenshots of the manager,
+         inspector and client views, feature list, specs, best fit, and quote link.
+         Files touched: apps/site-inspection/index.html (new), img/inspection-*.jpg and
+         img/inspection-demo.mp4 (new).
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Site Inspection App | Brent Snow</title>
+  <meta name="description" content="Inspection checklists on a phone, photo reports with scores, location checked at every site, and every failed item tracked until it's fixed. Try the live demo.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&display=swap" rel="stylesheet">
+  <style>
+    /* Same palette and type as the rest of brentsnow.ca */
+    :root { --paper:#F3F5F4; --ink:#1E2428; --steel:#5B6770; --concrete:#C9CDCF; --chalk:#2563C9; --panel:#E7EBEA; --surface:#FFFFFF; }
+    @media (prefers-color-scheme: dark) { :root { --paper:#1B2024; --ink:#E9EDEC; --steel:#9AA6AE; --concrete:#3A4249; --chalk:#6A9BEA; --panel:#232A2F; --surface:#20262B; } }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:1.0625rem/1.6 "Archivo",system-ui,sans-serif; }
+    a { color:var(--chalk); text-underline-offset:3px; }
+    :focus-visible { outline:2px solid var(--chalk); outline-offset:3px; }
+    img, video { max-width:100%; height:auto; display:block; }
+    .wrap { max-width:68rem; margin:0 auto; padding-left:max(20px, env(safe-area-inset-left)); padding-right:max(20px, env(safe-area-inset-right)); }
+    nav.top { border-bottom:1px solid var(--concrete); }
+    nav.top .wrap { display:flex; align-items:center; gap:1.5rem; padding-block:1rem; }
+    nav.top .home { font-variation-settings:"wdth" 115; font-weight:800; font-size:1.2rem; color:var(--ink); text-decoration:none; margin-right:auto; }
+    h1 { font-variation-settings:"wdth" 122; font-weight:850; font-size:clamp(2.3rem,6vw,4rem); line-height:1; letter-spacing:-0.02em; margin:0 0 1rem; text-wrap:balance; }
+    h2 { font-variation-settings:"wdth" 115; font-weight:800; font-size:clamp(1.5rem,3vw,2.1rem); line-height:1.1; margin:0 0 1rem; }
+    h3 { font-variation-settings:"wdth" 110; font-weight:700; font-size:1.2rem; margin:0 0 .4rem; }
+    .btn { display:inline-flex; align-items:center; min-height:50px; padding:0 1.3rem; border-radius:8px; font-weight:700; text-decoration:none; border:2px solid var(--chalk); color:var(--chalk); }
+    .btn.solid { background:var(--chalk); color:#fff; }
+    .ctas { display:flex; flex-wrap:wrap; gap:.75rem; }
+    section { padding-block:3.5rem; }
+    .hero .wrap { display:grid; grid-template-columns:1.1fr .9fr; gap:3rem; align-items:center; padding-block:3rem; }
+    .lede { font-size:1.2rem; margin:0 0 1.75rem; max-width:34rem; }
+    .phone { width:100%; max-width:300px; margin:0 auto; border-radius:28px; border:8px solid #1E2428; overflow:hidden; background:#000; box-shadow:0 24px 48px rgba(0,0,0,.18); }
+    .phone video { width:100%; aspect-ratio:390/844; object-fit:cover; }
+    .cap { font-size:.9rem; color:var(--steel); margin:.6rem 0 0; text-align:center; }
+    .band { background:var(--surface); border-block:1px solid var(--concrete); }
+    .views { display:grid; gap:3rem; }
+    .view { display:grid; grid-template-columns:1fr 1.4fr; gap:2.5rem; align-items:center; }
+    .view.flip { grid-template-columns:1.4fr 1fr; }
+    .view.flip .txt { order:2; }
+    .view ul { margin:.5rem 0 0; padding-left:1.1rem; }
+    .view li { margin:.25rem 0; }
+    .shot { border-radius:10px; border:1px solid var(--concrete); box-shadow:0 12px 30px rgba(0,0,0,.10); }
+    .phones { display:flex; gap:1rem; justify-content:center; }
+    .phones img { width:calc(50% - .5rem); max-width:240px; border-radius:18px; border:6px solid #1E2428; }
+    .specs { display:grid; grid-template-columns:repeat(2,1fr); gap:0 3rem; border-top:2px solid var(--ink); }
+    .specs div { display:grid; grid-template-columns:10rem 1fr; gap:1rem; padding:.9rem 0; border-bottom:1px solid var(--concrete); }
+    .specs b { font-weight:700; }
+    .specs span { color:var(--steel); }
+    .fit p { max-width:44rem; }
+    .end { background:var(--panel); }
+    footer { padding:2rem 0; color:var(--steel); font-size:.9rem; }
+    @media (max-width:860px) {
+      .hero .wrap, .view, .view.flip { grid-template-columns:1fr; gap:1.5rem; }
+      .view.flip .txt { order:0; }
+      .specs { grid-template-columns:1fr; }
+      .specs div { grid-template-columns:8rem 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="top"><div class="wrap"><a class="home" href="/">Brent Snow</a><a href="/apps/">Apps</a><a href="/apps/#quote">Request a quote</a></div></nav>
+
+  <header class="hero"><div class="wrap">
+    <div>
+      <h1>Site inspection app</h1>
+      <p class="lede">Inspectors work through a checklist on their phone, take photos of what's wrong and sign the report on site. Managers see every site's score on a map, and every failed item stays on a list until it's fixed.</p>
+      <div class="ctas"><a class="btn solid" href="/apps/inspection/">Try the live demo</a><a class="btn" href="/apps/#quote">Request a quote</a></div>
+      <p class="cap" style="text-align:left">The demo opens with sample sites and reports. Switch between manager, inspector and client at the top.</p>
+    </div>
+    <div>
+      <div class="phone"><video src="/img/inspection-demo.mp4" poster="/img/inspection-demo-poster.jpg" autoplay muted loop playsinline aria-label="Screen recording: an inspector completes a checklist, fails two items with notes, signs and submits the report"></video></div>
+      <p class="cap">An inspection from start to signed report, in 20 seconds</p>
+    </div>
+  </div></header>
+
+  <section class="band"><div class="wrap views">
+    <div class="view">
+      <div class="txt"><h2>Manager</h2>
+        <ul><li>Map of every site, coloured by its latest score</li>
+          <li>Inspections, average score and open issues for the last 30 days</li>
+          <li>Schedule inspections by site, checklist, inspector and date</li>
+          <li>Score history and open issues for each site</li>
+          <li>Write and edit your own checklists</li></ul></div>
+      <img class="shot" src="/img/inspection-overview.jpg" alt="Manager overview: four stats, a map of sites with coloured pins, and a list of sites needing attention" width="1280" height="800" loading="lazy">
+    </div>
+    <div class="view flip">
+      <div class="txt"><h2>Inspector</h2>
+        <ul><li>Today's inspections with directions to each site</li>
+          <li>Location checked against the site when the inspection starts</li>
+          <li>Pass, Fail or N/A on each item, with large buttons for use outdoors</li>
+          <li>A failed item needs a note and a priority, and can take photos</li>
+          <li>Every answer saves as it's tapped, so nothing is lost if the phone loses signal</li>
+          <li>Signed on the screen and submitted on site</li></ul></div>
+      <div class="phones"><img src="/img/inspection-phone-today.jpg" alt="Inspector's list of today's sites with Directions and Start buttons" width="780" height="1688" loading="lazy"><img src="/img/inspection-phone-inspect.jpg" alt="Inspection screen with a failed item, its note and priority" width="780" height="1688" loading="lazy"></div>
+    </div>
+    <div class="view">
+      <div class="txt"><h2>Report and issues</h2>
+        <ul><li>Score, pass/fail/N/A counts, start and finish times</li>
+          <li>Shows whether the inspector was on site, and how far from the site pin</li>
+          <li>Every item with its result, notes and photos</li>
+          <li>Print it or save it as a PDF</li>
+          <li>Each failed item becomes an issue with priority, status (open, quoted, fixed) and an estimate</li>
+          <li>Issues download as a spreadsheet (CSV)</li></ul></div>
+      <img class="shot" src="/img/inspection-issues.jpg" alt="Issues list with photo, description, priority, status and estimate for each failed item" width="1280" height="800" loading="lazy">
+    </div>
+    <div class="view flip">
+      <div class="txt"><h2>Client</h2>
+        <ul><li>Your clients see the reports and issues for their own sites, and nothing else</li>
+          <li>They can see an issue's status but can't change it</li></ul></div>
+      <img class="shot" src="/img/inspection-report.jpg" alt="Inspection report with score, location check, summary and issues raised" width="1280" height="800" loading="lazy">
+    </div>
+  </div></section>
+
+  <section><div class="wrap">
+    <h2>Specs</h2>
+    <div class="specs">
+      <div><b>Runs on</b><span>Any phone, tablet or computer, in the web browser. Nothing to install.</span></div>
+      <div><b>Users</b><span>Managers, inspectors and clients, each with their own view</span></div>
+      <div><b>Checklists</b><span>As many as you need, with your own sections and wording</span></div>
+      <div><b>Photos</b><span>Taken with the phone's camera inside the app and shrunk automatically</span></div>
+      <div><b>Location</b><span>Taken when the inspection starts; within 200 m of the site pin counts as on site</span></div>
+      <div><b>Reports</b><span>On screen, printed, or saved as PDF</span></div>
+      <div><b>Exports</b><span>Issues to CSV for Excel or Google Sheets</span></div>
+      <div><b>Map</b><span>OpenStreetMap, no extra map fees</span></div>
+    </div>
+  </div></section>
+
+  <section class="band fit"><div class="wrap">
+    <h2>Who it's for</h2>
+    <p>Companies that check sites on a schedule and need proof: property and facility managers, contractors checking their own crews' work, snow and landscape companies, security patrols, and anyone who reports site conditions to a client.</p>
+  </div></section>
+
+  <section class="end"><div class="wrap">
+    <h2>Try it, then tell me about your sites</h2>
+    <div class="ctas"><a class="btn solid" href="/apps/inspection/">Try the live demo</a><a class="btn" href="/apps/#quote">Request a quote</a></div>
+  </div></section>
+
+  <footer><div class="wrap">© 2026 Brent Snow</div></footer>
+</body>
+</html>

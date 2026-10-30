@@ -1,8 +1,10 @@
 <!doctype html>
 <!--
   brentsnow.ca/apps — app catalogue and quote request
-  Version: 1.3.0
+  Version: 1.4.0
   CHANGELOG
+  1.4.0 (2026-10-30) — Added: Site inspection app (live demo and product page). Changed: lede
+         now says three products. Files touched: apps/index.html (changelog, lede, catalogue).
   1.3.0 (2026-10-28) — Removed: every product without a working demo and all
          "Built to order" / "Monthly service" labels; slogan lines; unpromised reply
          time. Catalogue now lists only Crew tracker (live demo) and Business website
@@ -88,7 +90,7 @@
 
   <main class="wrap">
     <h1>Tech solutions for the service and construction fields</h1>
-    <p class="lede">Two products, both working today. Try them, then tell me about your business.</p>
+    <p class="lede">Three products, all working today. Try them, then tell me about your business.</p>
 
     <div class="catalogue">
       <article class="appRow" id="crew">
@@ -101,6 +103,18 @@
             <li>Schedule by day, week and month, with hours exported for payroll</li>
             <li>Customers log in to see their visits, photos and times</li></ul></div>
         <div class="actions"><a class="btn solid" href="/apps/crewline/">Try the demo</a><button class="btn" data-app="Crew tracker">Request a quote</button></div>
+      </article>
+      <article class="appRow" id="inspection">
+        <div class="status live">Live demo</div>
+        <div><h3>Site inspection</h3>
+          <p>Checklists on a phone, photo reports with a score, and every failed item tracked until it's fixed.</p>
+          <ul><li>Pass, Fail or N/A on each item, with photos and notes on anything that fails</li>
+            <li>Location checked against the site when the inspection starts</li>
+            <li>Signed report the client can view, print or save as PDF</li>
+            <li>Map of sites by score, issues with priority, status and estimate</li>
+            <li>Clients see only their own sites</li></ul>
+          <p style="margin-top:.5rem"><a href="/apps/site-inspection/">Features, screenshots and video</a></p></div>
+        <div class="actions"><a class="btn solid" href="/apps/inspection/">Try the demo</a><button class="btn" data-app="Site inspection">Request a quote</button></div>
       </article>
       <article class="appRow" id="website">
         <div class="status live">Sample site</div>
