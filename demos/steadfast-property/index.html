@@ -1,0 +1,248 @@
+<!doctype html>
+<!--
+  Trade website template (SiteKit) — Version 1.2.0
+  CHANGELOG
+  1.2.0 (2026-10-30) — Added: optional "theme": "luxury" (serif headings, no all-caps) and optional
+         years chip (omit "years" to hide it), "reviews_title" word, full-width last card when
+         the service count is odd. Files touched: templates/trade.html.j2.
+  1.1.0 — trade-specific wording via "words" in the client file.
+  Generated from clients/steadfast-property.json by build.py. Edit the JSON, not this output.
+  Photos: Pexels (free licence) unless the client supplied their own.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Steadfast Property Maintenance | Property maintenance in Markham and Richmond Hill</title>
+  <meta name="description" content="One crew for repairs, unit turnovers, inspections and grounds, booked by the job or on a monthly plan. Serving Markham, Richmond Hill, Scarborough, Pickering, Stouffville, Unionville. Call (905) 555-0119.">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Big Shoulders Display: condensed signage face that reads like a truck door decal. Figtree for body text. -->
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand: #2F3E46;      /* client's main colour */
+      --accent: #E9A23B;    /* calls to action only */
+      --ink: #17201B; --muted: #5A665F; --paper: #F6F5F0; --line: #DEDDD3; --white: #FFFFFF;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    body { margin: 0; font: 400 1.0625rem/1.6 "Figtree", system-ui, sans-serif; color: var(--ink); background: var(--paper); }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .wrap { max-width: 72rem; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+    h1, h2, h3 { font-family: "Big Shoulders Display", Impact, sans-serif; text-transform: uppercase; letter-spacing: 0.01em; line-height: 0.95; margin: 0; }
+    h2 { font-size: clamp(2.2rem, 5vw, 3.4rem); color: var(--brand); }
+    h3 { font-size: 1.6rem; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 54px; padding: 0 1.5rem; border-radius: 6px; font-weight: 700; text-decoration: none; border: 0; cursor: pointer; font-size: 1.05rem; }
+    .btn.accent { background: var(--accent); color: #1A1305; }
+    .btn.outline { border: 2px solid currentColor; }
+    .btn.brand { background: var(--brand); color: #fff; }
+
+    /* Demo banner: makes clear this is a preview, with the next step */
+    .demo { background: #111; color: #EEE; font-size: 0.9rem; text-align: center; padding: 0.55rem 1rem; }
+    .demo a { color: var(--accent); font-weight: 700; }
+
+    /* Header */
+    header.top { background: var(--white); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
+    header.top .wrap { display: flex; align-items: center; gap: 1rem; padding-block: 0.75rem; }
+    .logo { font-family: "Big Shoulders Display", sans-serif; font-weight: 900; font-size: 1.6rem; text-transform: uppercase; color: var(--brand); text-decoration: none; margin-right: auto; line-height: 1; }
+    header.top .phone { font-weight: 700; text-decoration: none; white-space: nowrap; }
+    @media (max-width: 640px) { header.top .phone, header.top .btn { display: none; } }
+
+    /* Hero: real work photo, text on a dark gradient for contrast */
+    .hero { position: relative; color: #fff; min-height: min(78vh, 720px); display: flex; align-items: flex-end; }
+    .hero img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(10,16,12,.86) 0%, rgba(10,16,12,.55) 55%, rgba(10,16,12,.15) 100%); }
+    .hero .wrap { position: relative; z-index: 1; padding-block: 5rem 3rem; width: 100%; }
+    .hero .kicker { color: var(--accent); font-weight: 700; margin: 0 0 0.75rem; }
+    .hero h1 { font-size: clamp(2.8rem, 8vw, 5.6rem); max-width: 14ch; }
+    .hero p.sub { font-size: 1.2rem; max-width: 36rem; margin: 1.25rem 0 2rem; color: #E7ECE8; }
+    .hero .ctas { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin-top: 2.25rem; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,.25); }
+    .chips span { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 600; font-size: 0.98rem; }
+    .chips svg { color: var(--accent); flex: none; }
+
+    section { padding-block: 5rem; }
+    .head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 2.5rem; }
+    .head p { margin: 0; color: var(--muted); max-width: 30rem; }
+
+    /* Services: photo cards */
+    .services { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+    .svc { background: var(--white); border-radius: 10px; overflow: hidden; border: 1px solid var(--line); display: grid; grid-template-columns: 42% 1fr; }
+    .svc img { width: 100%; height: 100%; object-fit: cover; min-height: 190px; }
+    .svc div { padding: 1.4rem 1.4rem 1.5rem; }
+    .svc h3 { color: var(--brand); margin-bottom: 0.5rem; }
+    .svc p { margin: 0; color: var(--muted); }
+    @media (min-width: 861px) { .svc:last-child:nth-child(odd) { grid-column: 1 / -1; grid-template-columns: 30% 1fr; } }   /* odd count: last card spans the row */
+
+    /* Steps: a real sequence, so numbered */
+    .steps-band { background: var(--brand); color: #fff; }
+    .steps-band h2 { color: #fff; }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; counter-reset: s; }
+    .step { border-top: 3px solid var(--accent); padding-top: 1.25rem; }
+    .step b { font-family: "Big Shoulders Display", sans-serif; font-size: 3rem; line-height: 1; color: var(--accent); display: block; }
+    .step h3 { margin: 0.5rem 0; }
+    .step p { margin: 0; color: #D9E3DD; }
+
+    /* Gallery */
+    .gallery { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 0.75rem; height: 520px; }
+    .gallery img { width: 100%; height: 100%; min-height: 0; object-fit: cover; border-radius: 10px; }
+    .gallery img:first-child { grid-row: 1 / 3; }
+
+    /* Reviews */
+    .reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; }
+    .review { background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 1.5rem; }
+    .stars { color: var(--accent); letter-spacing: 2px; font-size: 1.1rem; }
+    .review p { margin: 0.75rem 0 1rem; font-size: 1.05rem; }
+    .review span { color: var(--muted); font-size: 0.9rem; font-weight: 600; }
+    .example-note { color: var(--muted); font-size: 0.9rem; margin-top: 1rem; }
+
+    /* Area + quote */
+    .split { display: grid; grid-template-columns: 1fr 1.2fr; gap: 3rem; align-items: start; }
+    .towns { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0; }
+    .towns span { background: var(--white); border: 1px solid var(--line); border-radius: 99px; padding: 0.35rem 0.9rem; font-weight: 600; }
+    .contact-lines p { margin: 0.35rem 0; }
+    form.quote { background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 1.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    form.quote .full { grid-column: 1 / -1; }
+    form.quote label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.95rem; }
+    form.quote input, form.quote select, form.quote textarea { width: 100%; padding: 0.8rem; border: 1px solid var(--line); border-radius: 6px; font: inherit; background: var(--paper); }
+    form.quote textarea { min-height: 6rem; resize: vertical; }
+    .form-note { font-size: 0.9rem; color: var(--muted); margin: 0; }
+
+    footer { background: #111813; color: #C8D1CB; padding-block: 2.5rem 6rem; font-size: 0.95rem; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: space-between; }
+    footer strong { color: #fff; font-family: "Big Shoulders Display", sans-serif; font-size: 1.4rem; text-transform: uppercase; }
+
+    /* Phone call bar: the main action for a trade site on mobile */
+    .callbar { position: fixed; left: 0; right: 0; bottom: 0; display: none; gap: 0.5rem; padding: 0.6rem max(12px, env(safe-area-inset-left)) calc(0.6rem + env(safe-area-inset-bottom)); background: var(--white); border-top: 1px solid var(--line); z-index: 20; }
+    .callbar .btn { flex: 1; min-height: 50px; }
+
+    @media (max-width: 860px) {
+      .services, .reviews, .steps, .split { grid-template-columns: 1fr; }
+      .svc { grid-template-columns: 1fr; }
+      .svc img { height: 200px; min-height: 0; }
+      .gallery { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; height: auto; }
+      .gallery img { height: 180px; }
+      .gallery img:first-child { grid-column: 1 / 3; grid-row: auto; height: 240px; }
+      .callbar { display: flex; }
+      section { padding-block: 3.5rem; }
+    }
+    @media (max-width: 520px) { form.quote { grid-template-columns: 1fr; padding: 1.25rem; } }
+  </style>
+</head>
+<body>
+
+  <div class="demo">Website demo prepared for Steadfast Property Maintenance by Brent Snow. Not live yet. <a href="https://brentsnow.ca/website-demo/">Get your own free demo</a></div>
+
+  <header class="top"><div class="wrap">
+    <a class="logo" href="#">Steadfast Property Maintenance</a>
+    <a class="phone" href="tel:9055550119">(905) 555-0119</a>
+    <a class="btn accent" href="#quote">Request service</a>
+  </div></header>
+
+  <!-- HERO -->
+  <section class="hero" style="padding:0">
+    <img class="bg" src="https://images.pexels.com/photos/11953905/pexels-photo-11953905.jpeg?auto=compress&cs=tinysrgb&w=2000" alt="Crew working on a townhouse from a lift" fetchpriority="high">
+    <div class="wrap">
+      <p class="kicker">Property maintenance · Markham and area</p>
+      <h1>Repairs and upkeep for rental and commercial properties</h1>
+      <p class="sub">One crew for repairs, unit turnovers, inspections and grounds, booked by the job or on a monthly plan.</p>
+      <div class="ctas"><a class="btn accent" href="#quote">Request service</a><a class="btn outline" href="tel:9055550119">Call (905) 555-0119</a></div>
+      <div class="chips">
+        
+        <span><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M7.6 14.2 3.4 10l1.4-1.4 2.8 2.8 7.6-7.6L16.6 5z"/></svg>Fully insured</span><span><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M7.6 14.2 3.4 10l1.4-1.4 2.8 2.8 7.6-7.6L16.6 5z"/></svg>WSIB covered</span><span><svg width="18" height="18" viewBox="0 0 20 20" aria-hidden="true"><path fill="currentColor" d="M7.6 14.2 3.4 10l1.4-1.4 2.8 2.8 7.6-7.6L16.6 5z"/></svg>Photo report on every job</span>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <!-- SERVICES -->
+    <section id="services"><div class="wrap">
+      <div class="head"><h2>Maintenance services</h2><p>For landlords, property managers and condo boards in Markham, Richmond Hill and Durham.</p></div>
+      <div class="services">
+        
+        <article class="svc"><img src="https://images.pexels.com/photos/5691503/pexels-photo-5691503.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Worker repairing a window frame with a drill" loading="lazy"><div><h3>Repairs</h3><p>Doors, hardware, drywall, caulking, fixtures and small carpentry, fixed in one visit where possible.</p></div></article>
+        
+        <article class="svc"><img src="https://images.pexels.com/photos/8293640/pexels-photo-8293640.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Worker checking an outlet in an empty unit" loading="lazy"><div><h3>Unit turnovers</h3><p>Paint, patching, cleaning and repairs between tenants so the unit is ready to rent.</p></div></article>
+        
+        <article class="svc"><img src="https://images.pexels.com/photos/8293673/pexels-photo-8293673.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Inspector in a hard hat checking a front door" loading="lazy"><div><h3>Property inspections</h3><p>Scheduled walk-throughs with a written, photo report of anything that needs attention.</p></div></article>
+        
+        <article class="svc"><img src="https://images.pexels.com/photos/28180214/pexels-photo-28180214/free-photo-of-mower.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Worker mowing the lawn outside a house" loading="lazy"><div><h3>Grounds</h3><p>Lawn cutting, cleanups and garden beds for townhouse complexes and commercial sites.</p></div></article>
+        
+      </div>
+    </div></section>
+
+    <!-- HOW IT WORKS -->
+    <section class="steps-band"><div class="wrap">
+      <div class="head"><h2>How it works</h2></div>
+      <div class="steps">
+        <div class="step"><b>1</b><h3>Send the request</h3><p>Call or send the form with the property and what needs doing.</p></div><div class="step"><b>2</b><h3>Price and date</h3><p>We reply with a price and the day the crew will be there.</p></div><div class="step"><b>3</b><h3>Done, with photos</h3><p>You get before and after photos when the job is finished.</p></div>
+      </div>
+    </div></section>
+
+    <!-- GALLERY -->
+    <section><div class="wrap">
+      <div class="head"><h2>On the job</h2><p>Photos of your own crews and properties go here.</p></div>
+      <div class="gallery"><img src="https://images.pexels.com/photos/5691518/pexels-photo-5691518.jpeg?auto=compress&cs=tinysrgb&w=1400" alt="Hinge being fitted to a window frame" loading="lazy"><img src="https://images.pexels.com/photos/4567374/pexels-photo-4567374.jpeg?auto=compress&cs=tinysrgb&w=800" alt="House entrance during repair work" loading="lazy"><img src="https://images.pexels.com/photos/6195882/pexels-photo-6195882.jpeg?auto=compress&cs=tinysrgb&w=800" alt="Crew loading equipment into a van" loading="lazy"></div>
+    </div></section>
+
+    <!-- REVIEWS -->
+    <section style="padding-top:0"><div class="wrap">
+      <div class="head"><h2>What customers say</h2></div>
+      <div class="reviews">
+        <figure class="review" style="margin:0"><div class="stars" aria-label="5 out of 5 stars">★★★★★</div><p>“They turn our units around in days, not weeks.”</p><span>Example review</span></figure><figure class="review" style="margin:0"><div class="stars" aria-label="5 out of 5 stars">★★★★★</div><p>“Every job comes with photos, so I don&#39;t have to drive out to check.”</p><span>Example review</span></figure><figure class="review" style="margin:0"><div class="stars" aria-label="5 out of 5 stars">★★★★★</div><p>“One number for repairs, grass and inspections across all our buildings.”</p><span>Example review</span></figure>
+      </div>
+      <p class="example-note">These are example reviews for the demo. Your real Google reviews replace them before the site goes live.</p>
+    </div></section>
+
+    <!-- AREA + QUOTE -->
+    <section id="quote" style="background:var(--white);border-top:1px solid var(--line)"><div class="wrap split">
+      <div>
+        <h2>Request service</h2>
+        <p style="color:var(--muted);margin:1rem 0 0">Tell us the property and what needs doing. We reply with a price and a date.</p>
+        <div class="towns"><span>Markham</span><span>Richmond Hill</span><span>Scarborough</span><span>Pickering</span><span>Stouffville</span><span>Unionville</span></div>
+        <div class="contact-lines">
+          <p><b>Phone:</b> <a href="tel:9055550119">(905) 555-0119</a></p>
+          <p><b>Email:</b> service@example.com</p>
+          <p><b>Hours:</b> Monday to Friday, 7 am to 6 pm. Emergency line after hours.</p>
+        </div>
+      </div>
+      <form class="quote" id="qf" >
+        <input type="hidden" name="_subject" value="New maintenance request from your website">
+        <input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div><label for="q-name">Name</label><input id="q-name" name="Name" required autocomplete="name"></div>
+        <div><label for="q-phone">Phone</label><input id="q-phone" name="Phone" type="tel" required autocomplete="tel"></div>
+        <div class="full"><label for="q-email">Email</label><input id="q-email" name="email" type="email" autocomplete="email"></div>
+        <div class="full"><label for="q-addr">Property address</label><input id="q-addr" name="Address" required autocomplete="street-address"></div>
+        <div class="full"><label for="q-svc">Service</label><select id="q-svc" name="Service"><option>Repairs</option><option>Unit turnovers</option><option>Property inspections</option><option>Grounds</option><option>Something else</option></select></div>
+        <div class="full"><label for="q-msg">Details</label><textarea id="q-msg" name="Details" placeholder="What needs fixing, unit number, access instructions"></textarea></div>
+        <div class="full"><button class="btn brand" type="submit" style="width:100%">Send my request</button></div>
+        <p class="form-note full" id="q-note">Demo: this form is not connected yet. On your live site it sends requests straight to your email.</p>
+      </form>
+    </div></section>
+  </main>
+
+  <footer><div class="wrap">
+    <div><strong>Steadfast Property Maintenance</strong><br>Property maintenance · Markham, Richmond Hill, Scarborough, Pickering, Stouffville, Unionville</div>
+    <div><a href="tel:9055550119">(905) 555-0119</a><br>Monday to Friday, 7 am to 6 pm. Emergency line after hours.</div>
+    <div>© 2026 Steadfast Property Maintenance<br><span style="opacity:.7">Photos: Pexels</span></div>
+  </div></footer>
+
+  <div class="callbar"><a class="btn brand" href="tel:9055550119">Call now</a><a class="btn accent" href="#quote">Request service</a></div>
+
+  <script>
+    // Demo only: the form is not connected, so submitting shows a message instead of going nowhere
+    document.getElementById('qf').addEventListener('submit', e => {
+      e.preventDefault();
+      const n = document.getElementById('q-note');
+      n.textContent = 'Demo: on your live site, this request would now be in your inbox.';
+      n.style.color = 'var(--brand)'; n.style.fontWeight = '700';
+    });
+  </script>
+
+</body>
+</html>
