@@ -1,6 +1,11 @@
 <!doctype html>
 <!--
-  Trade website template (SiteKit) — Version 1.1.0 (trade-specific wording via "words" in the client file)
+  Trade website template (SiteKit) — Version 1.2.0
+  CHANGELOG
+  1.2.0 (2026-10-30) — Added: optional "theme": "luxury" (serif headings, no all-caps) and optional
+         years chip (omit "years" to hide it), "reviews_title" word, full-width last card when
+         the service count is odd. Files touched: templates/trade.html.j2.
+  1.1.0 — trade-specific wording via "words" in the client file.
   Generated from clients/northgate-security.json by build.py. Edit the JSON, not this output.
   Photos: Pexels (free licence) unless the client supplied their own.
 -->
@@ -72,6 +77,7 @@
     .svc div { padding: 1.4rem 1.4rem 1.5rem; }
     .svc h3 { color: var(--brand); margin-bottom: 0.5rem; }
     .svc p { margin: 0; color: var(--muted); }
+    @media (min-width: 861px) { .svc:last-child:nth-child(odd) { grid-column: 1 / -1; grid-template-columns: 30% 1fr; } }   /* odd count: last card spans the row */
 
     /* Steps: a real sequence, so numbered */
     .steps-band { background: var(--brand); color: #fff; }
